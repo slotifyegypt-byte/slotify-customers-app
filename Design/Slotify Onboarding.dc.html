@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#DCDAE8;font-family:'Plus Jakarta Sans',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#7C6FF0;text-decoration:underline}
+a:hover{color:#4C41A8}
+*{box-sizing:border-box}
+::-webkit-scrollbar{display:none}
+input::placeholder{color:#B4AFC7}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+</style>
+</helmet>
+
+<div style="height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#DCDAE8">
+<div style="width:{{ scaledW }}px;height:{{ scaledH }}px;position:relative">
+<div style="width:402px;height:874px;transform:scale({{ scale }});transform-origin:top left">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;overflow:hidden;background:#F0EFF7;font-family:'Plus Jakarta Sans',sans-serif;display:flex;flex-direction:column">
+
+<!-- ============ SCREEN 1: SIGN IN / SIGN UP ============ -->
+<sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:76px 28px 36px">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:12px">
+    <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#8F84F5,#4C41A8);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(124,111,240,0.35)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="4" stroke="#fff" stroke-width="1.8"></rect><line x1="3" y1="9" x2="21" y2="9" stroke="#fff" stroke-width="1.8"></line><path d="M8 13.5l2.2 2.2L16 10" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </div>
+    <span style="font-size:23px;font-weight:700;color:#241B4E;letter-spacing:-0.01em">Slotify</span>
+    <span style="font-size:13px;color:#8C87A6;text-align:center;max-width:230px;line-height:1.5">Book barbers, spas, and more near you</span>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div onClick="{{ continueApple }}" style="height:52px;border-radius:999px;background:#000000;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M16.365 1.43c0 1.14-.47 2.11-1.24 2.86-.83.83-2.02 1.44-3.05 1.36-.13-1.1.43-2.24 1.19-2.98.83-.82 2.24-1.42 3.1-1.24zM20.7 17.2c-.5 1.15-.74 1.66-1.38 2.68-.9 1.43-2.16 3.21-3.73 3.22-1.4.02-1.76-.9-3.66-.9-1.9 0-2.3.88-3.69.92-1.5.05-2.65-1.55-3.55-2.97C2.7 17.02 1.3 12.4 3.2 9.28c.94-1.55 2.63-2.53 4.46-2.56 1.44-.02 2.8.97 3.68.97.87 0 2.53-1.2 4.27-1.02.73.03 2.77.29 4.09 2.2-.1.07-2.44 1.42-2.41 4.24.03 3.37 2.96 4.5 3 4.5-.03.1-.47 1.6-1.59 3.09z"></path></svg>
+      <span style="font-size:15px;font-weight:600;color:#fff">Continue with Apple</span>
+    </div>
+    <div onClick="{{ continueGoogle }}" style="height:52px;border-radius:999px;background:#FFFFFF;border:0.5px solid #E3E1EF;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer">
+      <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.3-3.5z"></path><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 13 24 13c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"></path><path fill="#4CAF50" d="M24 43.5c5.1 0 9.8-2 13.2-5.1l-6.1-5.2C29.2 34.7 26.7 35.5 24 35.5c-5.3 0-9.7-3.4-11.3-8.1l-6.5 5C9.2 39 16 43.5 24 43.5z"></path><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5.2C40.5 36 43.5 30.6 43.5 24c0-1.2-.1-2.4-.3-3.5z"></path></svg>
+      <span style="font-size:15px;font-weight:600;color:#241B4E">Continue with Google</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:4px 0">
+      <div style="flex:1;height:1px;background:#E3E1EF"></div>
+      <span style="font-size:12px;color:#8C87A6">or</span>
+      <div style="flex:1;height:1px;background:#E3E1EF"></div>
+    </div>
+
+    <div style="height:52px;border-radius:14px;border:0.5px solid #E3E1EF;background:#FFFFFF;display:flex;align-items:stretch;overflow:hidden">
+      <div style="position:relative;display:flex;align-items:center;border-right:0.5px solid #E3E1EF;padding:0 18px 0 16px">
+        <select value="{{ countryCode }}" onChange="{{ handleCountryChange }}" style="border:none;background:transparent;font-size:14px;font-family:inherit;color:#241B4E;outline:none;-webkit-appearance:none;appearance:none;padding-right:14px;cursor:pointer">
+          <option value="+20">EG +20</option>
+          <option value="+1">US +1</option>
+          <option value="+44">GB +44</option>
+          <option value="+971">AE +971</option>
+          <option value="+966">SA +966</option>
+        </select>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="position:absolute;right:0;pointer-events:none"><path d="M1 1l4 4 4-4" stroke="#8C87A6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <input type="tel" value="{{ phone }}" onChange="{{ handlePhoneChange }}" placeholder="10 123 4567" style="flex:1;height:100%;border:none;padding:0 16px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:transparent"></input>
+    </div>
+    <div onClick="{{ continuePhone }}" style="height:52px;border-radius:999px;border:1.5px solid #7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <span style="font-size:15px;font-weight:600;color:#7C6FF0">Continue with Phone</span>
+    </div>
+    <div style="text-align:center;margin-top:2px">
+      <span onClick="{{ continueEmail }}" style="font-size:13px;color:#8C87A6;text-decoration:underline;cursor:pointer">Continue with email instead</span>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:22px">
+    <span style="font-size:11px;color:#8C87A6;line-height:1.6">By continuing, you agree to our <a href="#" onClick="{{ preventDefault }}">Terms</a> &amp; <a href="#" onClick="{{ preventDefault }}">Privacy Policy</a></span>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCREEN 1b: OTP VERIFICATION ============ -->
+<sc-if value="{{ isOtp }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:20px 24px 36px">
+  <div style="display:flex;align-items:center;height:40px">
+    <div onClick="{{ goBackFromOtp }}" style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#241B4E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </div>
+  </div>
+
+  <div style="margin-top:22px;display:flex;flex-direction:column;gap:8px">
+    <span style="font-size:22px;font-weight:700;color:#241B4E;letter-spacing:-0.01em">Verify your number</span>
+    <span style="font-size:13px;color:#8C87A6;line-height:1.6">We sent a code to {{ maskedPhone }}&nbsp;&nbsp;<a href="#" onClick="{{ changeNumber }}">Change</a></span>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:32px">
+    <sc-for list="{{ otpBoxes }}" as="box" hint-placeholder-count="6">
+      <input type="text" inputmode="numeric" maxlength="1" value="{{ box.value }}" onChange="{{ box.onChange }}" onKeyDown="{{ box.onKeyDown }}" ref="{{ box.setRef }}" style="flex:1;min-width:0;width:0;height:56px;border-radius:14px;border:1.5px solid {{ box.borderColor }};text-align:center;font-size:20px;font-weight:700;color:#241B4E;font-family:inherit;outline:none;background:#FFFFFF"></input>
+    </sc-for>
+  </div>
+
+  <div style="text-align:center;margin-top:20px">
+    <sc-if value="{{ resendActive }}">
+      <span onClick="{{ resendCode }}" style="font-size:13px;font-weight:600;color:#7C6FF0;cursor:pointer">Resend code</span>
+    </sc-if>
+    <sc-if value="{{ resendWaiting }}">
+      <span style="font-size:13px;font-weight:600;color:#B4AFC7">Resend in {{ countdownLabel }}</span>
+    </sc-if>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <div onClick="{{ verifyOtp }}" style="height:52px;border-radius:999px;background:{{ verifyBg }};display:flex;align-items:center;justify-content:center;cursor:{{ verifyCursor }};box-shadow:{{ verifyShadow }}">
+    <span style="font-size:15px;font-weight:600;color:#fff">Verify</span>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCREEN 2: LOCATION PRIMING ============ -->
+<sc-if value="{{ isLocation }}">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;gap:22px;position:relative">
+  <div style="position:absolute;top:74px;left:0;right:0;display:flex;justify-content:center;gap:6px">
+    <div style="width:22px;height:4px;border-radius:999px;background:#7C6FF0"></div>
+    <div style="width:22px;height:4px;border-radius:999px;background:#E3E1EF"></div>
+  </div>
+
+  <div style="width:140px;height:140px;border-radius:999px;background:radial-gradient(circle at 32% 26%, rgba(255,255,255,0.5), transparent 55%), linear-gradient(135deg,#8F84F5,#4C41A8);display:flex;align-items:center;justify-content:center;box-shadow:0 16px 32px rgba(76,65,168,0.28)">
+    <svg width="60" height="60" viewBox="0 0 24 24"><path d="M12 2C7.6 2 4 5.6 4 10c0 6.4 8 12 8 12s8-5.6 8-12c0-4.4-3.6-8-8-8z" fill="#fff"></path><circle cx="12" cy="10" r="3.2" fill="#4C41A8"></circle></svg>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;align-items:center;max-width:270px">
+    <span style="font-size:22px;font-weight:600;color:#241B4E;text-align:center;letter-spacing:-0.01em">Find what's near you</span>
+    <span style="font-size:13px;color:#8C87A6;text-align:center;line-height:1.6">Slotify uses your location to show nearby barbers, salons, and more, and estimate accurate travel times.</span>
+  </div>
+
+  <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:6px">
+    <div onClick="{{ enableLocation }}" style="height:52px;border-radius:999px;background:#7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,111,240,0.35)"><span style="font-size:15px;font-weight:600;color:#fff">Enable Location</span></div>
+    <div onClick="{{ skipLocation }}" style="text-align:center;padding:6px"><span style="font-size:13px;font-weight:600;color:#8C87A6;cursor:pointer">Not now</span></div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCREEN 3: NOTIFICATIONS PRIMING ============ -->
+<sc-if value="{{ isNotif }}">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;gap:22px;position:relative">
+  <div style="position:absolute;top:74px;left:0;right:0;display:flex;justify-content:center;gap:6px">
+    <div style="width:22px;height:4px;border-radius:999px;background:#E3E1EF"></div>
+    <div style="width:22px;height:4px;border-radius:999px;background:#7C6FF0"></div>
+  </div>
+
+  <div style="width:140px;height:140px;border-radius:999px;background:radial-gradient(circle at 32% 26%, rgba(255,255,255,0.5), transparent 55%), linear-gradient(135deg,#8F84F5,#4C41A8);display:flex;align-items:center;justify-content:center;box-shadow:0 16px 32px rgba(76,65,168,0.28)">
+    <svg width="58" height="58" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 00-5 5v3.6c0 .6-.2 1.2-.6 1.7L5 15.8h14l-1.4-2.5a3 3 0 01-.6-1.7V8a5 5 0 00-5-5z" fill="#fff"></path><path d="M9.5 18.5a2.5 2.5 0 005 0" stroke="#fff" stroke-width="1.8" stroke-linecap="round"></path></svg>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;align-items:center;max-width:270px">
+    <span style="font-size:22px;font-weight:600;color:#241B4E;text-align:center;letter-spacing:-0.01em">Stay on top of your bookings</span>
+    <span style="font-size:13px;color:#8C87A6;text-align:center;line-height:1.6">Get reminders before your appointment and updates if your queue position changes.</span>
+  </div>
+
+  <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:6px">
+    <div onClick="{{ enableNotif }}" style="height:52px;border-radius:999px;background:#7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,111,240,0.35)"><span style="font-size:15px;font-weight:600;color:#fff">Enable Notifications</span></div>
+    <div onClick="{{ skipNotif }}" style="text-align:center;padding:6px"><span style="font-size:13px;font-weight:600;color:#8C87A6;cursor:pointer">Not now</span></div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ HOME STUB (demo context for recovery modal) ============ -->
+<sc-if value="{{ isHomeStub }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:76px 24px 24px;gap:22px">
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <span style="font-size:20px;font-weight:600;color:#241B4E">You're all set</span>
+    <span style="font-size:13px;color:#8C87A6">Let's find your next appointment.</span>
+  </div>
+  <div onClick="{{ tapExplore }}" style="background:#FFFFFF;border-radius:20px;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(36,27,78,0.08);cursor:pointer">
+    <div style="width:46px;height:46px;border-radius:999px;background:#F0EDFC;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#7C6FF0" stroke-width="1.6"></circle><path d="M15 9L13 13L9 15L11 11L15 9Z" stroke="#7C6FF0" stroke-width="1.3" stroke-linejoin="round"></path></svg></div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-size:15px;font-weight:600;color:#241B4E">Explore nearby</span>
+      <span style="font-size:12px;color:#8C87A6">{{ locationStatusHint }}</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCREEN: LOGIN ============ -->
+<sc-if value="{{ isLogin }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:76px 28px 30px">
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:26px">
+    <span style="font-size:26px;font-weight:700;color:#241B4E;letter-spacing:-0.01em">Login</span>
+    <span style="font-size:13px;color:#8C87A6">Please login to your account.</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="position:relative;display:flex;align-items:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute;left:16px"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#8C87A6" stroke-width="1.6"></rect><path d="M4 7l8 6 8-6" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <input type="email" value="{{ loginEmail }}" onChange="{{ handleLoginEmailChange }}" placeholder="Email Address" style="height:52px;width:100%;border-radius:14px;border:0.5px solid #E3E1EF;padding:0 16px 0 44px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:#FFFFFF"></input>
+    </div>
+    <div style="position:relative;display:flex;align-items:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute;left:16px"><rect x="5" y="10" width="14" height="10" rx="2.5" stroke="#8C87A6" stroke-width="1.6"></rect><path d="M8 10V7a4 4 0 018 0v3" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      <input type="{{ loginPasswordType }}" value="{{ loginPassword }}" onChange="{{ handleLoginPasswordChange }}" placeholder="Password" style="height:52px;width:100%;border-radius:14px;border:0.5px solid #E3E1EF;padding:0 44px 0 44px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:#FFFFFF"></input>
+      <div onClick="{{ toggleLoginPasswordVisibility }}" style="position:absolute;right:16px;cursor:pointer;display:flex">
+        <sc-if value="{{ loginShowPassword }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="#8C87A6" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="#8C87A6" stroke-width="1.6"></circle></svg></sc-if>
+        <sc-if value="{{ loginHidePassword }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="#8C87A6" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="#8C87A6" stroke-width="1.6"></circle><line x1="3" y1="3" x2="21" y2="21" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round"></line></svg></sc-if>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
+    <div onClick="{{ toggleRememberMe }}" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div style="width:18px;height:18px;border-radius:5px;border:1.5px solid {{ rememberBorder }};background:{{ rememberBg }};display:flex;align-items:center;justify-content:center">
+        <sc-if value="{{ rememberMe }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+      </div>
+      <span style="font-size:13px;color:#5B5570">Remember me</span>
+    </div>
+    <span onClick="{{ goToForgotPassword }}" style="font-size:13px;font-weight:600;color:#7C6FF0;cursor:pointer">Forgot Password?</span>
+  </div>
+
+  <div onClick="{{ submitLogin }}" style="height:52px;border-radius:999px;background:#7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,111,240,0.35);margin-top:24px">
+    <span style="font-size:15px;font-weight:600;color:#fff">Login</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin:22px 0 18px">
+    <div style="flex:1;height:1px;background:#E3E1EF"></div>
+    <span style="font-size:12px;color:#8C87A6">or login with</span>
+    <div style="flex:1;height:1px;background:#E3E1EF"></div>
+  </div>
+
+  <div style="display:flex;justify-content:center;gap:14px">
+    <div style="width:52px;height:52px;border-radius:999px;background:#FFFFFF;border:0.5px solid #E3E1EF;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.3-3.5z"></path><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 13 24 13c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"></path><path fill="#4CAF50" d="M24 43.5c5.1 0 9.8-2 13.2-5.1l-6.1-5.2C29.2 34.7 26.7 35.5 24 35.5c-5.3 0-9.7-3.4-11.3-8.1l-6.5 5C9.2 39 16 43.5 24 43.5z"></path><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5.2C40.5 36 43.5 30.6 43.5 24c0-1.2-.1-2.4-.3-3.5z"></path></svg>
+    </div>
+    <div style="width:52px;height:52px;border-radius:999px;background:#000000;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M16.365 1.43c0 1.14-.47 2.11-1.24 2.86-.83.83-2.02 1.44-3.05 1.36-.13-1.1.43-2.24 1.19-2.98.83-.82 2.24-1.42 3.1-1.24zM20.7 17.2c-.5 1.15-.74 1.66-1.38 2.68-.9 1.43-2.16 3.21-3.73 3.22-1.4.02-1.76-.9-3.66-.9-1.9 0-2.3.88-3.69.92-1.5.05-2.65-1.55-3.55-2.97C2.7 17.02 1.3 12.4 3.2 9.28c.94-1.55 2.63-2.53 4.46-2.56 1.44-.02 2.8.97 3.68.97.87 0 2.53-1.2 4.27-1.02.73.03 2.77.29 4.09 2.2-.1.07-2.44 1.42-2.41 4.24.03 3.37 2.96 4.5 3 4.5-.03.1-.47 1.6-1.59 3.09z"></path></svg>
+    </div>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <div style="text-align:center">
+    <span style="font-size:13px;color:#8C87A6">Don't have an account? </span><a href="#" onClick="{{ goToSignupLink }}">Sign up</a>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCREEN: SIGNUP ============ -->
+<sc-if value="{{ isSignup }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:60px 28px 26px">
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:22px">
+    <span style="font-size:26px;font-weight:700;color:#241B4E;letter-spacing:-0.01em">Signup</span>
+    <span style="font-size:13px;color:#8C87A6">Please create your account.</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="position:relative;display:flex;align-items:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute;left:16px"><circle cx="12" cy="8" r="3.6" stroke="#8C87A6" stroke-width="1.6"></circle><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      <input type="text" value="{{ signupName }}" onChange="{{ handleSignupNameChange }}" placeholder="Full Name" style="height:50px;width:100%;border-radius:14px;border:0.5px solid #E3E1EF;padding:0 16px 0 44px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:#FFFFFF"></input>
+    </div>
+    <div style="position:relative;display:flex;align-items:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute;left:16px"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#8C87A6" stroke-width="1.6"></rect><path d="M4 7l8 6 8-6" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <input type="email" value="{{ signupEmail }}" onChange="{{ handleSignupEmailChange }}" placeholder="Email Address" style="height:50px;width:100%;border-radius:14px;border:0.5px solid #E3E1EF;padding:0 16px 0 44px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:#FFFFFF"></input>
+    </div>
+    <div style="position:relative;display:flex;align-items:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute;left:16px"><rect x="5" y="10" width="14" height="10" rx="2.5" stroke="#8C87A6" stroke-width="1.6"></rect><path d="M8 10V7a4 4 0 018 0v3" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      <input type="{{ signupPasswordType }}" value="{{ signupPassword }}" onChange="{{ handleSignupPasswordChange }}" placeholder="Password" style="height:50px;width:100%;border-radius:14px;border:0.5px solid #E3E1EF;padding:0 44px 0 44px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:#FFFFFF"></input>
+      <div onClick="{{ toggleSignupPasswordVisibility }}" style="position:absolute;right:16px;cursor:pointer;display:flex">
+        <sc-if value="{{ signupShowPassword }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="#8C87A6" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="#8C87A6" stroke-width="1.6"></circle></svg></sc-if>
+        <sc-if value="{{ signupHidePassword }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="#8C87A6" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="#8C87A6" stroke-width="1.6"></circle><line x1="3" y1="3" x2="21" y2="21" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round"></line></svg></sc-if>
+      </div>
+    </div>
+    <div style="position:relative;display:flex;align-items:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute;left:16px"><rect x="5" y="10" width="14" height="10" rx="2.5" stroke="#8C87A6" stroke-width="1.6"></rect><path d="M8 10V7a4 4 0 018 0v3" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      <input type="{{ signupConfirmPasswordType }}" value="{{ signupConfirmPassword }}" onChange="{{ handleSignupConfirmPasswordChange }}" placeholder="Confirm Password" style="height:50px;width:100%;border-radius:14px;border:0.5px solid #E3E1EF;padding:0 44px 0 44px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:#FFFFFF"></input>
+      <div onClick="{{ toggleSignupConfirmPasswordVisibility }}" style="position:absolute;right:16px;cursor:pointer;display:flex">
+        <sc-if value="{{ signupShowConfirmPassword }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="#8C87A6" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="#8C87A6" stroke-width="1.6"></circle></svg></sc-if>
+        <sc-if value="{{ signupHideConfirmPassword }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="#8C87A6" stroke-width="1.6" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="#8C87A6" stroke-width="1.6"></circle><line x1="3" y1="3" x2="21" y2="21" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round"></line></svg></sc-if>
+      </div>
+    </div>
+  </div>
+
+  <div onClick="{{ submitSignup }}" style="height:52px;border-radius:999px;background:#7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,111,240,0.35);margin-top:20px">
+    <span style="font-size:15px;font-weight:600;color:#fff">Signup</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin:18px 0 16px">
+    <div style="flex:1;height:1px;background:#E3E1EF"></div>
+    <span style="font-size:12px;color:#8C87A6">or signup with</span>
+    <div style="flex:1;height:1px;background:#E3E1EF"></div>
+  </div>
+
+  <div style="display:flex;justify-content:center;gap:14px">
+    <div style="width:52px;height:52px;border-radius:999px;background:#FFFFFF;border:0.5px solid #E3E1EF;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.3-3.5z"></path><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 13 24 13c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"></path><path fill="#4CAF50" d="M24 43.5c5.1 0 9.8-2 13.2-5.1l-6.1-5.2C29.2 34.7 26.7 35.5 24 35.5c-5.3 0-9.7-3.4-11.3-8.1l-6.5 5C9.2 39 16 43.5 24 43.5z"></path><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5.2C40.5 36 43.5 30.6 43.5 24c0-1.2-.1-2.4-.3-3.5z"></path></svg>
+    </div>
+    <div style="width:52px;height:52px;border-radius:999px;background:#000000;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M16.365 1.43c0 1.14-.47 2.11-1.24 2.86-.83.83-2.02 1.44-3.05 1.36-.13-1.1.43-2.24 1.19-2.98.83-.82 2.24-1.42 3.1-1.24zM20.7 17.2c-.5 1.15-.74 1.66-1.38 2.68-.9 1.43-2.16 3.21-3.73 3.22-1.4.02-1.76-.9-3.66-.9-1.9 0-2.3.88-3.69.92-1.5.05-2.65-1.55-3.55-2.97C2.7 17.02 1.3 12.4 3.2 9.28c.94-1.55 2.63-2.53 4.46-2.56 1.44-.02 2.8.97 3.68.97.87 0 2.53-1.2 4.27-1.02.73.03 2.77.29 4.09 2.2-.1.07-2.44 1.42-2.41 4.24.03 3.37 2.96 4.5 3 4.5-.03.1-.47 1.6-1.59 3.09z"></path></svg>
+    </div>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <div style="text-align:center">
+    <span style="font-size:13px;color:#8C87A6">Already have an account? </span><a href="#" onClick="{{ goToLoginLink }}">Log in</a>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCREEN: FORGOT PASSWORD ============ -->
+<sc-if value="{{ isForgotPassword }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:20px 28px 36px">
+  <div style="display:flex;align-items:center;height:40px">
+    <div onClick="{{ goToLoginFromForgot }}" style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#241B4E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </div>
+  </div>
+
+  <div style="margin-top:22px;display:flex;flex-direction:column;gap:8px">
+    <span style="font-size:24px;font-weight:700;color:#241B4E;letter-spacing:-0.01em">Reset Password</span>
+    <span style="font-size:13px;color:#8C87A6;line-height:1.6;max-width:300px">Enter your email and we'll send you a reset link.</span>
+  </div>
+
+  <div style="margin-top:28px;position:relative;display:flex;align-items:center">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="position:absolute;left:16px"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#8C87A6" stroke-width="1.6"></rect><path d="M4 7l8 6 8-6" stroke="#8C87A6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    <input type="email" value="{{ forgotEmail }}" onChange="{{ handleForgotEmailChange }}" placeholder="Email Address" style="height:52px;width:100%;border-radius:14px;border:0.5px solid #E3E1EF;padding:0 16px 0 44px;font-size:14px;font-family:inherit;color:#241B4E;outline:none;background:#FFFFFF"></input>
+  </div>
+
+  <div onClick="{{ submitForgotPassword }}" style="height:52px;border-radius:999px;background:#7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,111,240,0.35);margin-top:22px">
+    <span style="font-size:15px;font-weight:600;color:#fff">Send Reset Link</span>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCREEN 4: LOCATION DISABLED RECOVERY MODAL ============ -->
+<sc-if value="{{ showRecoveryModal }}">
+<div style="position:absolute;inset:0;z-index:40;display:flex;flex-direction:column">
+  <div onClick="{{ dismissModal }}" style="position:absolute;inset:0;background:rgba(36,27,78,0.55)"></div>
+  <sc-if value="{{ isSheetStyle }}">
+  <div style="position:relative;margin-top:auto;background:#FFFFFF;border-radius:26px 26px 0 0;padding:14px 24px 34px;display:flex;flex-direction:column;align-items:center;gap:14px;animation:cardIn 220ms cubic-bezier(.33,1,.68,1)">
+    <div style="width:36px;height:5px;border-radius:999px;background:#E3E1EF"></div>
+    <div style="width:64px;height:64px;border-radius:999px;background:#F0EDFC;display:flex;align-items:center;justify-content:center;margin-top:6px"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2C7.6 2 4 5.6 4 10c0 6.4 8 12 8 12s8-5.6 8-12c0-4.4-3.6-8-8-8z" fill="#7C6FF0"></path><circle cx="12" cy="10" r="3.2" fill="#F0EDFC"></circle></svg></div>
+    <span style="font-size:18px;font-weight:600;color:#241B4E">Location is off</span>
+    <span style="font-size:13px;color:#8C87A6;text-align:center;line-height:1.6;max-width:280px">Turn on location access in Settings to see what's nearby and get accurate directions.</span>
+    <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:6px">
+      <div onClick="{{ openSettings }}" style="height:52px;border-radius:999px;background:#7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:15px;font-weight:600;color:#fff">Open Settings</span></div>
+      <div onClick="{{ dismissModal }}" style="text-align:center;padding:4px"><span style="font-size:13px;font-weight:600;color:#8C87A6;cursor:pointer">Not now</span></div>
+    </div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ isCenteredStyle }}">
+  <div style="position:relative;margin:auto;width:82%;background:#FFFFFF;border-radius:24px;padding:28px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;animation:popIn 220ms cubic-bezier(.33,1,.68,1)">
+    <div style="width:64px;height:64px;border-radius:999px;background:#F0EDFC;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2C7.6 2 4 5.6 4 10c0 6.4 8 12 8 12s8-5.6 8-12c0-4.4-3.6-8-8-8z" fill="#7C6FF0"></path><circle cx="12" cy="10" r="3.2" fill="#F0EDFC"></circle></svg></div>
+    <span style="font-size:18px;font-weight:600;color:#241B4E">Location is off</span>
+    <span style="font-size:13px;color:#8C87A6;text-align:center;line-height:1.6">Turn on location access in Settings to see what's nearby and get accurate directions.</span>
+    <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:6px">
+      <div onClick="{{ openSettings }}" style="height:52px;border-radius:999px;background:#7C6FF0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:15px;font-weight:600;color:#fff">Open Settings</span></div>
+      <div onClick="{{ dismissModal }}" style="text-align:center;padding:4px"><span style="font-size:13px;font-weight:600;color:#8C87A6;cursor:pointer">Not now</span></div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:900},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Sign In / Up&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;Sign In / Up&quot;,&quot;OTP Verification&quot;,&quot;Location Priming&quot;,&quot;Notifications Priming&quot;,&quot;Home + Recovery Modal&quot;,&quot;Login&quot;,&quot;Signup&quot;,&quot;Forgot Password&quot;],&quot;section&quot;:&quot;Preview&quot;},&quot;recoveryModalStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Bottom sheet&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;Bottom sheet&quot;,&quot;Centered&quot;],&quot;section&quot;:&quot;Behavior&quot;}}">
+const ONBOARD_STEPS = ['Sign In / Up', 'OTP Verification', 'Location Priming', 'Notifications Priming', 'Home + Recovery Modal', 'Login', 'Signup', 'Forgot Password'];
+const OTP_LENGTH = 6;
+const OTP_WAIT = 30;
+class Component extends DCLogic {
+  state = {
+    step: Math.max(0, ONBOARD_STEPS.indexOf(this.props.startScreen || ONBOARD_STEPS[0])),
+    email: '',
+    countryCode: '+20',
+    phone: '',
+    otpDigits: Array(OTP_LENGTH).fill(''),
+    otpCountdown: OTP_WAIT,
+    locationChoice: null,
+    notifChoice: null,
+    showRecoveryModal: false,
+    scale: 1,
+    loginEmail: '', loginPassword: '', loginShowPassword: false, rememberMe: false,
+    signupName: '', signupEmail: '', signupPassword: '', signupConfirmPassword: '',
+    signupShowPassword: false, signupShowConfirmPassword: false,
+    forgotEmail: '',
+  };
+  otpRefs = [];
+  componentDidMount() {
+    this.updateScale();
+    this._onResize = () => this.updateScale();
+    window.addEventListener('resize', this._onResize);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); clearInterval(this._otpTimer); }
+  updateScale() {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const s = Math.min((vw - 40) / 402, (vh - 40) / 874, 1);
+    this.setState({ scale: Math.max(s, 0.3) });
+  }
+  preventDefault = (e) => e.preventDefault();
+  goToLocation = () => this.setState({ step: 2 });
+  continueApple = () => this.goToLocation();
+  continueGoogle = () => this.goToLocation();
+  continueEmail = () => this.goToLocation();
+  handleEmailChange = (e) => { const v = e.target.value; this.setState({ email: v }); };
+  handleCountryChange = (e) => this.setState({ countryCode: e.target.value });
+  handlePhoneChange = (e) => { const v = e.target.value.replace(/[^0-9 ]/g, ''); this.setState({ phone: v }); };
+  startOtpTimer() {
+    clearInterval(this._otpTimer);
+    this._otpTimer = setInterval(() => {
+      this.setState((s) => {
+        if (s.otpCountdown <= 1) { clearInterval(this._otpTimer); return { otpCountdown: 0 }; }
+        return { otpCountdown: s.otpCountdown - 1 };
+      });
+    }, 1000);
+  }
+  continuePhone = () => {
+    this.otpRefs = [];
+    this.setState({ step: 1, otpDigits: Array(OTP_LENGTH).fill(''), otpCountdown: OTP_WAIT });
+    this.startOtpTimer();
+    setTimeout(() => { if (this.otpRefs[0]) this.otpRefs[0].focus(); }, 50);
+  };
+  goBackFromOtp = () => { clearInterval(this._otpTimer); this.setState({ step: 0 }); };
+  changeNumber = (e) => { e.preventDefault(); clearInterval(this._otpTimer); this.setState({ step: 0 }); };
+  handleOtpInput = (i, e) => {
+    const val = e.target.value.replace(/[^0-9]/g, '').slice(-1);
+    const arr = [...this.state.otpDigits];
+    arr[i] = val;
+    this.setState({ otpDigits: arr });
+    if (val && this.otpRefs[i + 1]) this.otpRefs[i + 1].focus();
+  };
+  handleOtpKeyDown = (i, e) => {
+    if (e.key === 'Backspace' && !this.state.otpDigits[i] && this.otpRefs[i - 1]) this.otpRefs[i - 1].focus();
+  };
+  resendCode = () => {
+    if (this.state.otpCountdown > 0) return;
+    this.otpRefs = [];
+    this.setState({ otpDigits: Array(OTP_LENGTH).fill(''), otpCountdown: OTP_WAIT });
+    this.startOtpTimer();
+    if (this.otpRefs[0]) this.otpRefs[0].focus();
+  };
+  verifyOtp = () => { if (this.state.otpDigits.every((d) => d !== '')) { clearInterval(this._otpTimer); this.goToLocation(); } };
+  enableLocation = () => this.setState({ locationChoice: 'enabled', step: 3 });
+  skipLocation = () => this.setState({ locationChoice: 'skipped', step: 3 });
+  enableNotif = () => this.setState({ notifChoice: 'enabled', step: 4 });
+  skipNotif = () => this.setState({ notifChoice: 'skipped', step: 4 });
+  tapExplore = () => { if (this.state.locationChoice === 'skipped') this.setState({ showRecoveryModal: true }); };
+  openSettings = () => this.setState({ showRecoveryModal: false, locationChoice: 'enabled' });
+  dismissModal = () => this.setState({ showRecoveryModal: false });
+
+  handleLoginEmailChange = (e) => this.setState({ loginEmail: e.target.value });
+  handleLoginPasswordChange = (e) => this.setState({ loginPassword: e.target.value });
+  toggleLoginPasswordVisibility = () => this.setState((s) => ({ loginShowPassword: !s.loginShowPassword }));
+  toggleRememberMe = () => this.setState((s) => ({ rememberMe: !s.rememberMe }));
+  submitLogin = () => this.goToLocation();
+  goToForgotPassword = (e) => { if (e) e.preventDefault(); this.setState({ step: 7 }); };
+  goToSignupLink = (e) => { e.preventDefault(); this.setState({ step: 6 }); };
+  goToLoginLink = (e) => { e.preventDefault(); this.setState({ step: 5 }); };
+  goToLoginFromForgot = () => this.setState({ step: 5 });
+  handleSignupNameChange = (e) => this.setState({ signupName: e.target.value });
+  handleSignupEmailChange = (e) => this.setState({ signupEmail: e.target.value });
+  handleSignupPasswordChange = (e) => this.setState({ signupPassword: e.target.value });
+  handleSignupConfirmPasswordChange = (e) => this.setState({ signupConfirmPassword: e.target.value });
+  toggleSignupPasswordVisibility = () => this.setState((s) => ({ signupShowPassword: !s.signupShowPassword }));
+  toggleSignupConfirmPasswordVisibility = () => this.setState((s) => ({ signupShowConfirmPassword: !s.signupShowConfirmPassword }));
+  submitSignup = () => this.goToLocation();
+  handleForgotEmailChange = (e) => this.setState({ forgotEmail: e.target.value });
+  submitForgotPassword = () => this.setState({ step: 5 });
+
+  renderVals() {
+    const s = this.state;
+    const modalStyle = this.props.recoveryModalStyle || 'Bottom sheet';
+    const digits = s.phone.replace(/\D/g, '');
+    const lastTwo = digits.length >= 2 ? digits.slice(-2) : digits.padStart(2, 'X');
+    const maskedPhone = `${s.countryCode} XXX XXX ${lastTwo}`;
+    const otpBoxes = s.otpDigits.map((d, i) => ({
+      value: d,
+      onChange: (e) => this.handleOtpInput(i, e),
+      onKeyDown: (e) => this.handleOtpKeyDown(i, e),
+      setRef: (el) => { this.otpRefs[i] = el; },
+      borderColor: d ? '#7C6FF0' : '#E3E1EF',
+    }));
+    const allFilled = s.otpDigits.every((d) => d !== '');
+    const mins = Math.floor(s.otpCountdown / 60), secs = s.otpCountdown % 60;
+    return {
+      scale: s.scale, scaledW: Math.round(402 * s.scale), scaledH: Math.round(874 * s.scale),
+      isSignIn: s.step === 0, isOtp: s.step === 1, isLocation: s.step === 2, isNotif: s.step === 3, isHomeStub: s.step === 4,
+      isLogin: s.step === 5, isSignup: s.step === 6, isForgotPassword: s.step === 7,
+      loginEmail: s.loginEmail, loginPassword: s.loginPassword, loginPasswordType: s.loginShowPassword ? 'text' : 'password',
+      loginShowPassword: s.loginShowPassword, loginHidePassword: !s.loginShowPassword,
+      handleLoginEmailChange: this.handleLoginEmailChange, handleLoginPasswordChange: this.handleLoginPasswordChange,
+      toggleLoginPasswordVisibility: this.toggleLoginPasswordVisibility,
+      rememberMe: s.rememberMe, toggleRememberMe: this.toggleRememberMe,
+      rememberBorder: s.rememberMe ? '#7C6FF0' : '#E3E1EF', rememberBg: s.rememberMe ? '#7C6FF0' : '#FFFFFF',
+      submitLogin: this.submitLogin, goToForgotPassword: this.goToForgotPassword,
+      goToSignupLink: this.goToSignupLink, goToLoginLink: this.goToLoginLink, goToLoginFromForgot: this.goToLoginFromForgot,
+      signupName: s.signupName, signupEmail: s.signupEmail, signupPassword: s.signupPassword, signupConfirmPassword: s.signupConfirmPassword,
+      signupPasswordType: s.signupShowPassword ? 'text' : 'password', signupConfirmPasswordType: s.signupShowConfirmPassword ? 'text' : 'password',
+      signupShowPassword: s.signupShowPassword, signupHidePassword: !s.signupShowPassword,
+      signupShowConfirmPassword: s.signupShowConfirmPassword, signupHideConfirmPassword: !s.signupShowConfirmPassword,
+      handleSignupNameChange: this.handleSignupNameChange, handleSignupEmailChange: this.handleSignupEmailChange,
+      handleSignupPasswordChange: this.handleSignupPasswordChange, handleSignupConfirmPasswordChange: this.handleSignupConfirmPasswordChange,
+      toggleSignupPasswordVisibility: this.toggleSignupPasswordVisibility, toggleSignupConfirmPasswordVisibility: this.toggleSignupConfirmPasswordVisibility,
+      submitSignup: this.submitSignup,
+      forgotEmail: s.forgotEmail, handleForgotEmailChange: this.handleForgotEmailChange, submitForgotPassword: this.submitForgotPassword,
+      email: s.email, handleEmailChange: this.handleEmailChange, preventDefault: this.preventDefault,
+      countryCode: s.countryCode, phone: s.phone, handleCountryChange: this.handleCountryChange, handlePhoneChange: this.handlePhoneChange,
+      continueApple: this.continueApple, continueGoogle: this.continueGoogle, continueEmail: this.continueEmail, continuePhone: this.continuePhone,
+      goBackFromOtp: this.goBackFromOtp, changeNumber: this.changeNumber, maskedPhone,
+      otpBoxes, resendCode: this.resendCode, resendActive: s.otpCountdown <= 0, resendWaiting: s.otpCountdown > 0,
+      countdownLabel: `${mins}:${String(secs).padStart(2, '0')}`,
+      verifyOtp: this.verifyOtp, verifyBg: allFilled ? '#7C6FF0' : '#C9C4E8', verifyCursor: allFilled ? 'pointer' : 'default',
+      verifyShadow: allFilled ? '0 6px 16px rgba(124,111,240,0.35)' : 'none',
+      enableLocation: this.enableLocation, skipLocation: this.skipLocation,
+      enableNotif: this.enableNotif, skipNotif: this.skipNotif,
+      tapExplore: this.tapExplore,
+      locationStatusHint: s.locationChoice === 'skipped' ? 'Tap to turn on location' : 'Location enabled',
+      showRecoveryModal: s.showRecoveryModal,
+      isSheetStyle: modalStyle !== 'Centered', isCenteredStyle: modalStyle === 'Centered',
+      openSettings: this.openSettings, dismissModal: this.dismissModal,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

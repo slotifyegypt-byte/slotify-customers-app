@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:relative;width:{{ pinWidth }}px;height:{{ pinHeight }}px;transform:{{ scaleTransform }};transform-origin:bottom center;transition:transform 160ms ease">
+  <div onClick="{{ handleTap }}" style="position:absolute;inset:0;cursor:pointer">
+    <svg width="100%" height="100%" viewBox="0 0 24 32" style="position:absolute;inset:0;overflow:visible">
+      <ellipse cx="12" cy="31.5" rx="5.5" ry="1.8" fill="rgba(20,15,40,0.28)"></ellipse>
+    </svg>
+    <svg width="100%" height="100%" viewBox="0 0 24 32" style="filter:drop-shadow(0 3px 5px rgba(36,27,78,0.3))">
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 8.5 12 20 12 20s12-11.5 12-20C24 5.373 18.627 0 12 0z" fill="{{ fillColor }}"></path>
+    </svg>
+    <div style="position:absolute;top:0;left:0;width:100%;height:75%;display:flex;align-items:center;justify-content:center;pointer-events:none">
+      <sc-if value="{{ isBarbers }}"><svg width="{{ iconPx }}" height="{{ iconPx }}" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="6" r="2.6" stroke="#fff" stroke-width="1.8"></circle><circle cx="6" cy="18" r="2.6" stroke="#fff" stroke-width="1.8"></circle><line x1="8.3" y1="7.8" x2="20" y2="18" stroke="#fff" stroke-width="1.8" stroke-linecap="round"></line><line x1="8.3" y1="16.2" x2="20" y2="6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"></line></svg></sc-if>
+      <sc-if value="{{ isSalons }}"><svg width="{{ iconPx }}" height="{{ iconPx }}" viewBox="0 0 24 24" fill="none"><rect x="3" y="5.5" width="11" height="7" rx="3.5" stroke="#fff" stroke-width="1.8"></rect><path d="M13 6.5L18.5 9L13 11.5Z" fill="#fff"></path><rect x="6" y="12.5" width="4" height="7.5" rx="2" stroke="#fff" stroke-width="1.8"></rect></svg></sc-if>
+      <sc-if value="{{ isSpa }}"><svg width="{{ iconPx }}" height="{{ iconPx }}" viewBox="0 0 24 24" fill="none"><path d="M12 3C9.5 7 9.3 12 12 15.5C14.7 12 14.5 7 12 3Z" fill="#fff"></path><path d="M11.3 15.3C7.8 14.6 5 11.8 4 8.2C7.7 8 10.8 10.3 11.3 15.3Z" fill="#fff"></path><path d="M12.7 15.3C16.2 14.6 19 11.8 20 8.2C16.3 8 13.2 10.3 12.7 15.3Z" fill="#fff"></path></svg></sc-if>
+      <sc-if value="{{ isCarcare }}"><svg width="{{ iconPx }}" height="{{ iconPx }}" viewBox="0 0 24 24" fill="none"><path d="M4 16V13.5L6.2 11.3H15.8L18 13.5V16" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><line x1="2" y1="16" x2="20" y2="16" stroke="#fff" stroke-width="1.8" stroke-linecap="round"></line><circle cx="7" cy="16.3" r="1.8" fill="#fff"></circle><circle cx="15" cy="16.3" r="1.8" fill="#fff"></circle></svg></sc-if>
+      <sc-if value="{{ isTailors }}"><svg width="{{ iconPx }}" height="{{ iconPx }}" viewBox="0 0 24 24" fill="none"><line x1="18" y1="4" x2="6" y2="19" stroke="#fff" stroke-width="1.9" stroke-linecap="round"></line><circle cx="16.8" cy="5.7" r="1.9" stroke="#fff" stroke-width="1.5"></circle><path d="M15.5 7.5C11.5 9.3 13.5 12 9.5 14C6.8 15.3 8.2 17.3 6 19" stroke="#fff" stroke-width="1.5" stroke-linecap="round"></path></svg></sc-if>
+      <sc-if value="{{ isRepair }}"><svg width="{{ iconPx }}" height="{{ iconPx }}" viewBox="0 0 24 24" fill="none"><path d="M6.3 5.8a3 3 0 104 4L18 18l2.3-2.3-7.7-7.7a3 3 0 10-6.3-2.2z" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"></path><line x1="18" y1="6" x2="6" y2="18" stroke="#fff" stroke-width="2" stroke-linecap="round"></line><rect x="16.2" y="3.8" width="4" height="4" rx="1" transform="rotate(45 18.2 5.8)" fill="#fff"></rect></svg></sc-if>
+    </div>
+    <sc-if value="{{ openNow }}"><div style="position:absolute;top:0;right:0;width:{{ dotPx }}px;height:{{ dotPx }}px;border-radius:999px;background:#17A567;border:2px solid #fff"></div></sc-if>
+  </div>
+  <sc-if value="{{ tapped }}">
+  <div onClick="{{ handleCalloutTap }}" style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:6px;display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:5">
+    <div style="background:#FFFFFF;border-radius:14px;padding:10px 14px;box-shadow:0 8px 18px rgba(36,27,78,0.24);white-space:nowrap;display:flex;flex-direction:column;gap:4px">
+      <span style="font-size:12px;font-weight:600;color:#241B4E">{{ venueName }}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:3px"><svg width="10" height="10" viewBox="0 0 16 16"><path d="M8 1l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 11.8 3.8 14l.8-4.7L1.2 6l4.7-.7Z" fill="#F5A623"></path></svg><span style="font-size:11px;font-weight:600;color:#241B4E">{{ rating }}</span></div>
+        <span style="font-size:11px;color:#8C87A6">{{ distanceLabel }}</span>
+      </div>
+    </div>
+    <svg width="14" height="7" viewBox="0 0 14 7" style="margin-top:-1px"><path d="M0 0H14L7 7Z" fill="#FFFFFF"></path></svg>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:40,&quot;height&quot;:54},&quot;category&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;barbers&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;barbers&quot;,&quot;salons&quot;,&quot;spa&quot;,&quot;carcare&quot;,&quot;tailors&quot;,&quot;repair&quot;]},&quot;size&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:40,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:20,&quot;max&quot;:60},&quot;openNow&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;tapped&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;venueName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Fade Room Barbershop&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;rating&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;4.8&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;distanceLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;1.2 km&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onTap&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onOpen&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+const MAPPIN_CAT_COLOR = { barbers: '#4C6FD1', salons: '#C4517C', spa: '#4C41A8', carcare: '#0F6E56', tailors: '#A8511F', repair: '#854F0B' };
+class Component extends DCLogic {
+  handleTap = (e) => { e.stopPropagation(); if (this.props.onTap) this.props.onTap(); };
+  handleCalloutTap = (e) => { e.stopPropagation(); if (this.props.onOpen) this.props.onOpen(); };
+  renderVals() {
+    const cat = this.props.category || 'barbers';
+    const size = this.props.size || 40;
+    const tapped = !!this.props.tapped;
+    return {
+      pinWidth: size, pinHeight: Math.round(size * 32 / 24),
+      scaleTransform: tapped ? 'scale(1.18)' : 'scale(1)',
+      fillColor: MAPPIN_CAT_COLOR[cat] || MAPPIN_CAT_COLOR.barbers,
+      iconPx: Math.max(10, Math.round(size * 0.42)),
+      dotPx: Math.max(8, Math.round(size * 0.26)),
+      isBarbers: cat === 'barbers', isSalons: cat === 'salons', isSpa: cat === 'spa', isCarcare: cat === 'carcare', isTailors: cat === 'tailors', isRepair: cat === 'repair',
+      openNow: !!this.props.openNow, tapped,
+      venueName: this.props.venueName || '', rating: this.props.rating || '', distanceLabel: this.props.distanceLabel || '',
+      handleTap: this.handleTap, handleCalloutTap: this.handleCalloutTap,
+    };
+  }
+}
+</script>
+</body>
+</html>
