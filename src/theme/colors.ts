@@ -1,52 +1,68 @@
-// Design token sheet — sourced from Slotify Mockups.dc.html and confirmed
-// throughout Slotify App.dc.html / Slotify Onboarding.dc.html.
-
-export const colors = {
-  // ── Core palette ──────────────────────────────────────────────────────────
-  ink: '#241B4E',          // primary text, deep navy-purple
-  inkSoft: '#4C41A8',      // secondary headings / softer purple
-  brand: '#7C6FF0',        // main accent — CTAs, active states, links
-  brandTint: '#E7E4FA',    // brand light tint — chips, tab pills, highlights
-  canvas: '#EEEDF8',       // app screen background
-  surface: '#FFFFFF',      // card / sheet backgrounds
-  surfaceAlt: '#F4F3FA',   // subtle secondary surface (search bar bg, icon bg)
-  textMuted: '#8C87A6',    // placeholder / secondary text / labels
-  border: '#E3E1EF',       // dividers, input borders
-
-  // ── Semantic / status ─────────────────────────────────────────────────────
-  confirmed: {
-    bg: '#E1F5EE',
-    fg: '#0F6E56',
-  },
-  inQueue: {
-    bg: '#FCEEDC',
-    fg: '#854F0B',
-  },
-  cancelled: {
-    bg: '#FBEAF0',
-    fg: '#C4517C',
-  },
-
-  // ── Notification badge ────────────────────────────────────────────────────
-  badge: '#C4517C',
-
-  // ── Category accent pairs (bg / fg) ──────────────────────────────────────
-  category: {
-    barbers: { bg: '#EEF3FC', fg: '#4C6FD1' },
-    salons:  { bg: '#FBEAF0', fg: '#C4517C' },
-    spa:     { bg: '#E7E4FA', fg: '#4C41A8' },
-    carcare: { bg: '#E1F5EE', fg: '#0F6E56' },
-    tailors: { bg: '#FAEDE4', fg: '#A8511F' },
-    repair:  { bg: '#FCEEDC', fg: '#854F0B' },
-  } as const,
-
-  // ── Misc / utility ────────────────────────────────────────────────────────
-  white: '#FFFFFF',
+// Source: Design & Guideline & Map/slotify-brand-guidelines.md
+export const palette = {
+  deepPurple: '#3A246B',
+  turquoise: '#39D2C0',
+  skyBlue: '#009FD0',
+  lime: '#DBFA7B',
   black: '#000000',
-  transparent: 'transparent',
-
-  // Outer canvas (desktop / browser preview background — not used in native)
-  outerCanvas: '#DCDAE8',
+  white: '#FFFFFF',
+  offWhite: '#F6F7F8',
+  // Brighter interactive purple from the product mockups (Design.html) —
+  // used for highlight surfaces (next-up card, selected states, CTA accents)
+  // everywhere the mockups reach for purple. Distinct from `deepPurple`,
+  // which the brand guide reserves for dark header/nav surfaces — the
+  // mockups don't actually use a dark header on these screens.
+  brightPurple: '#7C6FF0',
 } as const;
 
-export type CategoryKey = keyof typeof colors.category;
+export const colors = {
+  brand: palette.deepPurple,
+  brandAccent: palette.brightPurple,
+  accent: palette.turquoise,
+  accentSecondary: palette.skyBlue,
+  accentDecorative: palette.lime,
+
+  background: palette.white,
+  backgroundMuted: palette.offWhite,
+  surface: palette.white,
+
+  textPrimary: palette.black,
+  textSecondary: '#6B6B76',
+  textInverse: palette.white,
+  textOnBrand: palette.white,
+
+  border: '#E5E4EA',
+  divider: '#EFEFF3',
+
+  success: '#2FAF63',
+  warning: '#E0A72D',
+  danger: '#E24A4A',
+  info: palette.skyBlue,
+  // Warm gold used specifically for star-rating fills (reviews, venue rating
+  // badge) — distinct from `warning`, which is semantically about alerts
+  // even though the two happen to sit in the same amber family.
+  ratingStar: '#F2A93B',
+
+  overlay: 'rgba(17, 12, 33, 0.5)',
+  // Light tints of `brandAccent` for soft fills — selected/CTA pills, icon
+  // wells — where a flat fill would be too heavy.
+  brandTint: 'rgba(124, 111, 240, 0.12)',
+  brandTintStrong: 'rgba(124, 111, 240, 0.18)',
+  // Light tint of `success`, same formula as `brandTint` — used for the
+  // pickup-ready notification icon well (Design.html notifications screen).
+  successTint: 'rgba(47, 175, 99, 0.14)',
+  // Light tint of `textSecondary`, same formula as `brandTint`/`successTint`
+  // — used for the "general" notification icon well now that
+  // `notification_type` (customer-app-api-map.md §12 — VERIFIED against the
+  // live backend's /openapi.json, 2026-09-20) distinguishes it from
+  // booking/pickup notifications instead of falling back to the brand tint.
+  neutralTint: 'rgba(107, 107, 118, 0.12)',
+
+  tabActive: palette.brightPurple,
+  tabInactive: '#A7A5B3',
+
+  disabled: '#C9C7D1',
+  disabledText: '#9C9AA6',
+} as const;
+
+export type ColorToken = keyof typeof colors;
