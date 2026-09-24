@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -55,10 +55,7 @@ export function ExploreScreen() {
   const location = useCustomerLocation();
   const categories = useCategories();
 
-  const nearbyParams =
-    location.latitude !== null
-      ? { latitude: location.latitude, longitude: location.longitude!, radius_km: 15, limit: 50 }
-      : null;
+  const nearbyParams = { latitude: location.latitude, longitude: location.longitude, radius_km: 15, limit: 50 };
   const nearby = useNearbyStores(nearbyParams);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -103,19 +100,11 @@ export function ExploreScreen() {
     setSheetExpanded(false);
   };
 
-  if (location.latitude === null) {
-    return (
-      <Screen style={styles.center}>
-        <ActivityIndicator color={colors.brandAccent} />
-      </Screen>
-    );
-  }
-
   return (
     <Screen edges={[]} style={styles.screen}>
       <ExploreMap
         latitude={location.latitude}
-        longitude={location.longitude!}
+        longitude={location.longitude}
         showsUserLocation={location.status === 'granted'}
         isLoading={nearby.isLoading}
         isError={nearby.isError}
@@ -237,9 +226,10 @@ export function ExploreScreen() {
 
 // Owns the map itself: camera/region, clustering, and the pin/sheet overlay.
 // Split out from ExploreScreen so `region`'s initial state can be seeded
-// directly from `latitude`/`longitude` (guaranteed non-null here — the
-// parent only renders this once `location.latitude` has resolved) instead of
-// needing a ref or an effect to correct a placeholder value after the fact.
+// directly from `latitude`/`longitude` on mount. Those start as a fallback
+// (Cairo) position so the screen never blocks on GPS — see the recenter
+// effect below, which moves the camera once useCustomerLocation resolves a
+// real fix.
 function ExploreMap({
   latitude,
   longitude,
@@ -287,6 +277,20 @@ function ExploreMap({
     latitudeDelta: DEFAULT_DELTA,
     longitudeDelta: DEFAULT_DELTA,
   }));
+
+  // `region` above is only seeded once, on mount — it won't pick up a later
+  // `latitude`/`longitude` change on its own. Since those start as a Cairo
+  // fallback and update in place once useCustomerLocation resolves a real
+  // fix, recenter the camera whenever that resolved position actually
+  // changes (skipping the mount itself, which already used it as the seed).
+  const centeredOnRef = useRef({ latitude, longitude });
+  useEffect(() => {
+    if (latitude === centeredOnRef.current.latitude && longitude === centeredOnRef.current.longitude) return;
+    centeredOnRef.current = { latitude, longitude };
+    const next: Region = { latitude, longitude, latitudeDelta: DEFAULT_DELTA, longitudeDelta: DEFAULT_DELTA };
+    mapRef.current?.animateToRegion(next, 350);
+    setRegion(next);
+  }, [latitude, longitude]);
 
   const storesById = useMemo(() => {
     const map = new Map<string, NearbyStore>();

@@ -41,10 +41,7 @@ export function CategoryListingScreen() {
     return { id, label };
   }, [categoryKey, categories.data]);
 
-  const nearbyParams =
-    location.latitude !== null
-      ? { latitude: location.latitude, longitude: location.longitude!, radius_km: 15, limit: 50 }
-      : null;
+  const nearbyParams = { latitude: location.latitude, longitude: location.longitude, radius_km: 15, limit: 50 };
   const nearby = useNearbyStores(nearbyParams);
 
   const stores = useMemo(() => {
@@ -61,7 +58,7 @@ export function CategoryListingScreen() {
         <ThemedText variant="h1">{title} near you</ThemedText>
       </View>
 
-      {location.latitude === null || nearby.isLoading ? (
+      {nearby.isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.brandAccent} />
         </View>

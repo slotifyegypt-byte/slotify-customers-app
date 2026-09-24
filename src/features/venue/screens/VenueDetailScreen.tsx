@@ -37,8 +37,9 @@ export function VenueDetailScreen() {
 
   // Passing the customer's own location gets `distance_km` back on the
   // response (customer-app-api-map.md §5) — same pattern Home/Explore use
-  // for the nearby-stores fetch. `location.latitude`/`longitude` are `null`
-  // until permission resolves, so useStoreDetail simply omits them until then.
+  // for the nearby-stores fetch. useCustomerLocation always returns coordinates
+  // immediately (a Cairo fallback until permission/GPS resolves), so this
+  // just uses whatever it currently has rather than waiting.
   const location = useCustomerLocation();
   const storeDetail = useStoreDetail(storeId, {
     latitude: location.latitude ?? undefined,

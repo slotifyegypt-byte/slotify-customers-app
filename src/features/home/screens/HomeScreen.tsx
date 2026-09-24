@@ -43,10 +43,7 @@ export function HomeScreen() {
   const toggleCategory = (id: number) => setSelectedCategoryId((prev) => (prev === id ? null : id));
   const clearCategoryFilter = () => setSelectedCategoryId(null);
 
-  const nearbyParams =
-    location.latitude !== null
-      ? { latitude: location.latitude, longitude: location.longitude!, radius_km: 15, limit: 20 }
-      : null;
+  const nearbyParams = { latitude: location.latitude, longitude: location.longitude, radius_km: 15, limit: 20 };
   const nearby = useNearbyStores(nearbyParams);
 
   const upcoming = useMyBookings('confirmed');
@@ -87,7 +84,7 @@ export function HomeScreen() {
     [topRated, categoryNameById],
   );
 
-  const mapRegion = location.latitude !== null ? { latitude: location.latitude, longitude: location.longitude! } : null;
+  const mapRegion = { latitude: location.latitude, longitude: location.longitude };
 
   const deals = useMemo(() => {
     if (!offers.data) return [];

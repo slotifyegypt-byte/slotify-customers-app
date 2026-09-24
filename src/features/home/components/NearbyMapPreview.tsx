@@ -32,6 +32,11 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
     <Pressable onPress={onPress} style={styles.card}>
       {region ? (
         <MapView
+          // `initialRegion` only applies on first mount — remount when the
+          // resolved location moves meaningfully (e.g. the Cairo fallback
+          // is replaced by a real GPS fix) so the preview recenters instead
+          // of staying stuck on whatever region it first rendered with.
+          key={`${region.latitude.toFixed(2)},${region.longitude.toFixed(2)}`}
           provider={MAP_PROVIDER}
           customMapStyle={ANDROID_MAP_STYLE}
           style={StyleSheet.absoluteFill}
