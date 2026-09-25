@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, fontFamily, radius, spacing } from '@/theme';
+import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
 
 import { ThemedText } from './ThemedText';
 
@@ -30,6 +30,8 @@ export function SegmentedControl<T extends string>({
   onChange,
   tone = 'accent',
 }: SegmentedControlProps<T>) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.track}>
       {options.map((option) => {
@@ -56,23 +58,24 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  track: {
-    flexDirection: 'row',
-    backgroundColor: colors.backgroundMuted,
-    borderRadius: radius.pill,
-    padding: 4,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-  },
-  // Bright-purple "selected" fill from the mockups (colors.brandAccent) —
-  // `colors.brand` is the deep-navy tone reserved for dark header/hero
-  // surfaces, not interactive selected states.
-  segmentSelected: { backgroundColor: colors.brandAccent },
-  segmentSelectedBrand: { backgroundColor: colors.brand },
-  labelSelected: { fontFamily: fontFamily.bodySemiBold },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    track: {
+      flexDirection: 'row',
+      backgroundColor: colors.backgroundMuted,
+      borderRadius: radius.pill,
+      padding: 4,
+    },
+    segment: {
+      flex: 1,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+    },
+    // Bright-purple "selected" fill from the mockups (colors.brandAccent) —
+    // `colors.brand` is the deep-navy tone reserved for dark header/hero
+    // surfaces, not interactive selected states.
+    segmentSelected: { backgroundColor: colors.brandAccent },
+    segmentSelectedBrand: { backgroundColor: colors.brand },
+    labelSelected: { fontFamily: fontFamily.bodySemiBold },
+  });

@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from 'react-native';
 
-import { colors, radius, spacing, type ColorToken } from '@/theme';
+import { radius, spacing, useColors, type ColorToken, type Colors } from '@/theme';
 
 import { ThemedText } from './ThemedText';
 
@@ -28,6 +28,9 @@ export function Button({
   style,
   ...rest
 }: ButtonProps) {
+  const colors = useColors();
+  const variantStyles = createVariantStyles(colors);
+  const dangerStyles = createDangerStyles(colors);
   const isDisabled = disabled || loading;
 
   return (
@@ -85,19 +88,21 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
 });
 
-const variantStyles = StyleSheet.create({
-  primary: { backgroundColor: colors.accent },
-  secondary: { backgroundColor: colors.brand },
-  ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-  // Bright-purple CTA used for the booking flow's primary action (Confirm
-  // Booking) — matches the mockups' "selected/CTA accent" purple (see
-  // colors.brandAccent), distinct from `secondary`'s dark navy brand color.
-  accent: { backgroundColor: colors.brandAccent },
-});
+const createVariantStyles = (colors: Colors) =>
+  StyleSheet.create({
+    primary: { backgroundColor: colors.accent },
+    secondary: { backgroundColor: colors.brand },
+    ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+    // Bright-purple CTA used for the booking flow's primary action (Confirm
+    // Booking) — matches the mockups' "selected/CTA accent" purple (see
+    // colors.brandAccent), distinct from `secondary`'s dark navy brand color.
+    accent: { backgroundColor: colors.brandAccent },
+  });
 
-const dangerStyles = StyleSheet.create({
-  primary: { backgroundColor: colors.danger },
-  secondary: { backgroundColor: colors.danger },
-  accent: { backgroundColor: colors.danger },
-  ghost: { borderColor: colors.danger },
-});
+const createDangerStyles = (colors: Colors) =>
+  StyleSheet.create({
+    primary: { backgroundColor: colors.danger },
+    secondary: { backgroundColor: colors.danger },
+    accent: { backgroundColor: colors.danger },
+    ghost: { borderColor: colors.danger },
+  });

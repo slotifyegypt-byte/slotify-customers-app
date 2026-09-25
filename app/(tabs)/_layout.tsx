@@ -3,7 +3,7 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useTranslation } from 'react-i18next';
 import type { ColorValue } from 'react-native';
 
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 function makeTabIcon(outline: SymbolViewProps['name'], filled: SymbolViewProps['name']) {
   function TabIcon({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) {
@@ -14,6 +14,7 @@ function makeTabIcon(outline: SymbolViewProps['name'], filled: SymbolViewProps['
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const colors = useColors();
 
   return (
     <Tabs

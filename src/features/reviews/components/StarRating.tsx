@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 interface StarRatingProps {
   rating: number;
@@ -13,6 +13,7 @@ interface StarRatingProps {
 const STARS = [1, 2, 3, 4, 5];
 
 export function StarRating({ rating, onChange, size = 22, spacing = 4 }: StarRatingProps) {
+  const colors = useColors();
   const readonly = !onChange;
 
   return (

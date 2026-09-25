@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { useNotificationPreferencesStore } from '../store/notificationPreferencesStore';
 
@@ -16,6 +16,8 @@ const ROWS = [
 ] as const;
 
 export function NotificationSettingsScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const preferences = useNotificationPreferencesStore();
 
   return (
@@ -42,25 +44,26 @@ export function NotificationSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  padded: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  title: { marginBottom: spacing.lg },
-  section: {
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.divider,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  rowLast: { borderBottomWidth: 0 },
-  rowLabel: { flex: 1 },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    padded: { padding: spacing.lg, paddingBottom: spacing.xxl },
+    title: { marginBottom: spacing.lg },
+    section: {
+      borderRadius: radius.lg,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.divider,
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+    },
+    rowLast: { borderBottomWidth: 0 },
+    rowLabel: { flex: 1 },
+  });

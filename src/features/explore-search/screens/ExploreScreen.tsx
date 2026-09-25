@@ -17,8 +17,8 @@ import { MapPin } from '@/features/home/components/MapPin';
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { iconForCategory, pinColorForCategory } from '@/features/home/utils/categoryIcon';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
-import { ANDROID_MAP_STYLE, CLUSTER_COLOR, MAP_PROVIDER, MAP_SHADOW_COLOR } from '@/lib/maps';
-import { colors, fontFamily, radius, shadows, spacing } from '@/theme';
+import { ANDROID_MAP_STYLE_DARK, ANDROID_MAP_STYLE_LIGHT, CLUSTER_COLOR, MAP_PROVIDER, MAP_SHADOW_COLOR } from '@/lib/maps';
+import { fontFamily, radius, shadows, spacing, useColors, useTheme, type Colors } from '@/theme';
 
 import { type NearbyStore } from '../api/schemas';
 import { useNearbyStores } from '../hooks/useNearbyStores';
@@ -52,6 +52,8 @@ type StorePoint = SuperclusterNS.PointFeature<StorePointProps>;
 
 export function ExploreScreen() {
   const { t } = useTranslation();
+  const colors = useColors();
+  const styles = createStyles(colors);
   const location = useCustomerLocation();
   const categories = useCategories();
 
@@ -270,6 +272,9 @@ function ExploreMap({
   onSheetHeightChange: (height: number) => void;
 }) {
   const { t } = useTranslation();
+  const colors = useColors();
+  const { scheme } = useTheme();
+  const styles = createStyles(colors);
   const mapRef = useRef<MapView>(null);
   const [region, setRegion] = useState<Region>(() => ({
     latitude,
@@ -340,7 +345,8 @@ function ExploreMap({
         <MapView
           ref={mapRef}
           provider={MAP_PROVIDER}
-          customMapStyle={ANDROID_MAP_STYLE}
+          userInterfaceStyle={scheme}
+          customMapStyle={scheme === 'dark' ? ANDROID_MAP_STYLE_DARK : ANDROID_MAP_STYLE_LIGHT}
           style={styles.map}
           initialRegion={region}
           onRegionChangeComplete={setRegion}
@@ -383,7 +389,7 @@ function ExploreMap({
               >
                 <MapPin
                   categoryName={categoryNameById.get(store.category_id) ?? ''}
-                  color={pinColorForCategory(categoryNameById.get(store.category_id) ?? '')}
+                  color={pinColorForCategory(categoryNameById.get(store.category_id) ?? '', colors)}
                   isOpen={store.status === 'open'}
                   size={store.id === selectedStoreId ? 36 : 30}
                 />
@@ -453,6 +459,7 @@ function ExploreMap({
 }
 
 function ClusterBadge({ count }: { count: number }) {
+  const styles = createStyles(useColors());
   return (
     <View style={styles.clusterBadge}>
       <ThemedText variant="bodyMedium" color="textInverse" style={styles.clusterCount}>
@@ -463,6 +470,8 @@ function ClusterBadge({ count }: { count: number }) {
 }
 
 function SelectedStoreCallout({ store }: { store: NearbyStore }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.callout} pointerEvents="none">
       <ThemedText variant="bodyMedium" numberOfLines={1}>
@@ -513,6 +522,8 @@ function SheetDragHandle({ onExpand, onCollapse }: { onExpand?: () => void; onCo
     transform: [{ translateY: translateY.value * 0.35 }],
   }));
 
+  const styles = createStyles(useColors());
+
   return (
     <GestureDetector gesture={composed}>
       <Animated.View style={[styles.sheetHandleWrap, animatedStyle]}>
@@ -533,6 +544,8 @@ function FilterChip({
   active: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]}>
       {icon ? <Ionicons name={icon} size={13} color={active ? colors.textInverse : colors.brand} /> : null}
@@ -554,6 +567,8 @@ function PanelRow({
   selected: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <Pressable onPress={onPress} style={[styles.panelRow, selected && styles.panelRowSelected]}>
       {icon ? (
@@ -570,6 +585,7 @@ function PanelRow({
 }
 
 function StorePhoto({ store, style }: { store: NearbyStore; style: object }) {
+  const styles = createStyles(useColors());
   return store.logo ? (
     <Image source={{ uri: store.logo }} style={style} contentFit="cover" />
   ) : (
@@ -579,6 +595,7 @@ function StorePhoto({ store, style }: { store: NearbyStore; style: object }) {
 
 function StatusPill({ open }: { open: boolean }) {
   const { t } = useTranslation();
+  const styles = createStyles(useColors());
   return (
     <View style={[styles.statusPill, open ? styles.statusPillOpen : styles.statusPillClosed]}>
       <ThemedText variant="caption" color={open ? 'success' : 'textSecondary'} style={styles.statusPillText}>
@@ -601,6 +618,8 @@ function ExploreSheetCollapsed({
   onExpand: () => void;
   onLayout: (e: LayoutChangeEvent) => void;
 }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.sheetCollapsed} onLayout={onLayout}>
       <SheetDragHandle onExpand={onExpand} />
@@ -652,6 +671,8 @@ function ExploreSheetExpanded({
   onLayout: (e: LayoutChangeEvent) => void;
 }) {
   const { t } = useTranslation();
+  const colors = useColors();
+  const styles = createStyles(colors);
 
   const call = () => {
     if (!store.phone_number) return;
@@ -734,7 +755,8 @@ function ExploreSheetExpanded({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   screen: { padding: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   mapLayer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
@@ -747,7 +769,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: colors.overlayLoading,
   },
   headerCard: {
     backgroundColor: colors.surface,
@@ -934,4 +956,4 @@ const styles = StyleSheet.create({
   expandedTop: { gap: spacing.sm },
   expandedPhoto: { width: '100%', height: 160, borderRadius: radius.lg },
   expandedInfo: { gap: 4 },
-});
+  });

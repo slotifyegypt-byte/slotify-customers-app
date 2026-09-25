@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, shadows, spacing } from '@/theme';
+import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import type { GalleryItem } from '../api/schemas';
 
@@ -57,6 +57,8 @@ export function VenueHeader({
   onBack,
   onOpenDirections,
 }: VenueHeaderProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -201,6 +203,7 @@ function CircleButton({
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
 }) {
+  const styles = createStyles(useColors());
   return (
     <Pressable
       accessibilityRole="button"
@@ -215,7 +218,8 @@ function CircleButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   coverWrap: { position: 'relative' },
   cover: { width: PHOTO_WIDTH, height: PHOTO_HEIGHT },
   coverFallback: { backgroundColor: colors.backgroundMuted },

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radius, shadows, spacing } from '@/theme';
+import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { ThemedText } from './ThemedText';
 
@@ -17,6 +17,8 @@ interface StoreCardProps {
 }
 
 export function StoreCard({ name, logo, address, rating, distanceKm, isOpen, onPress, width = 220 }: StoreCardProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <Pressable onPress={onPress} style={[styles.card, { width }]}>
       <View style={styles.imageWrap}>
@@ -56,20 +58,21 @@ export function StoreCard({ name, logo, address, rating, distanceKm, isOpen, onP
   );
 }
 
-const styles = StyleSheet.create({
-  card: { marginRight: spacing.sm },
-  imageWrap: { position: 'relative', marginBottom: spacing.xxs },
-  image: { width: '100%', height: 120, borderRadius: radius.md },
-  imageFallback: { backgroundColor: colors.backgroundMuted },
-  statusPill: {
-    position: 'absolute',
-    top: spacing.xxs,
-    left: spacing.xxs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-    ...shadows.sm,
-  },
-  name: { marginTop: spacing.xxs },
-  metaRow: { flexDirection: 'row', marginTop: 2 },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    card: { marginRight: spacing.sm },
+    imageWrap: { position: 'relative', marginBottom: spacing.xxs },
+    image: { width: '100%', height: 120, borderRadius: radius.md },
+    imageFallback: { backgroundColor: colors.backgroundMuted },
+    statusPill: {
+      position: 'absolute',
+      top: spacing.xxs,
+      left: spacing.xxs,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+      borderRadius: radius.pill,
+      ...shadows.sm,
+    },
+    name: { marginTop: spacing.xxs },
+    metaRow: { flexDirection: 'row', marginTop: 2 },
+  });

@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { ThemedText } from './ThemedText';
 
@@ -23,6 +23,8 @@ interface ScreenHeaderProps {
  * screen by screen.
  */
 export function ScreenHeader({ title, subtitle, onBack, right }: ScreenHeaderProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.row}>
       <Pressable onPress={onBack ?? (() => router.back())} style={styles.backButton} hitSlop={8}>
@@ -43,22 +45,23 @@ export function ScreenHeader({ title, subtitle, onBack, right }: ScreenHeaderPro
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textCol: { flex: 1, minWidth: 0 },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.pill,
+      backgroundColor: colors.brandTint,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    textCol: { flex: 1, minWidth: 0 },
+  });

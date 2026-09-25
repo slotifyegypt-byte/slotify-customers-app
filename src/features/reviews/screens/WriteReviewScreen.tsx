@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { StarRating } from '../components/StarRating';
 import { useCreateReview } from '../hooks/useReviewMutations';
@@ -25,6 +25,8 @@ import { useCreateReview } from '../hooks/useReviewMutations';
 // treats it as optional and never requires it. `serviceName`/`date` remain
 // optional, display-only params — never sent in the create payload.
 export function WriteReviewScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { storeId, bookingId, serviceName, date } = useLocalSearchParams<{
     storeId: string;
@@ -113,22 +115,23 @@ export function WriteReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
-  storeName: { marginTop: spacing.xxs },
-  meta: { marginTop: spacing.xxs },
-  starsWrap: { alignItems: 'center', marginVertical: spacing.lg },
-  label: { marginBottom: spacing.xxs },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    color: colors.textPrimary,
-    minHeight: 120,
-    textAlignVertical: 'top',
-  },
-  submitButton: { marginTop: spacing.xl },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1 },
+    content: { padding: spacing.md, paddingBottom: spacing.xl },
+    storeName: { marginTop: spacing.xxs },
+    meta: { marginTop: spacing.xxs },
+    starsWrap: { alignItems: 'center', marginVertical: spacing.lg },
+    label: { marginBottom: spacing.xxs },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      color: colors.textPrimary,
+      minHeight: 120,
+      textAlignVertical: 'top',
+    },
+    submitButton: { marginTop: spacing.xl },
+  });

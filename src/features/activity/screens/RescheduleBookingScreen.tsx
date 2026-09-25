@@ -17,7 +17,7 @@ import { useAvailability } from '@/features/booking/hooks/useAvailability';
 import { useBookingDetail, useRescheduleBooking } from '@/features/booking/hooks/useBookingDetail';
 import { getBookingErrorMessage, isCapacityConflict } from '@/features/booking/utils/apiError';
 import { toBookingTimestamp } from '@/features/booking/utils/time';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 /**
  * New endpoint — VERIFIED against live /openapi.json + response shapes
@@ -32,6 +32,8 @@ import { colors, radius, spacing } from '@/theme';
  * booking_service's own integer id (not the parent booking's UUID).
  */
 export function RescheduleBookingScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { bookingId, bookingServiceId } = useLocalSearchParams<{ bookingId: string; bookingServiceId: string }>();
   const booking = useBookingDetail(bookingId);
@@ -148,7 +150,8 @@ export function RescheduleBookingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1, padding: spacing.md },
@@ -166,4 +169,4 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.background,
   },
-});
+  });

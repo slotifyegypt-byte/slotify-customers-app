@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { BookingRead, Service } from '../api/schemas';
 import { BookingFlow } from '../components/BookingFlow';
@@ -19,6 +19,8 @@ import { useDraftEntries } from '../state/bookingDraftStore';
 // Overlay" — pick a service (if not already chosen from the venue's services
 // tab), then specialist (specialist-mode only) -> date -> time -> confirm.
 export function ServiceBookingConfigScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { storeId, serviceId: serviceIdParam } = useLocalSearchParams<{ storeId: string; serviceId?: string }>();
   const [pickedServiceId, setPickedServiceId] = useState<string | null>(null);
@@ -131,6 +133,8 @@ export function ServiceBookingConfigScreen() {
 // have no title/subtitle to show yet — still needs to replace the native
 // header's back affordance now that this route renders `headerShown: false`.
 function BackOnlyHeader() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.header}>
       <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
@@ -140,7 +144,8 @@ function BackOnlyHeader() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {

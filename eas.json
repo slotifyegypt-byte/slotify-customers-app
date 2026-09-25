@@ -11,6 +11,7 @@
       "android": {
         "buildType": "apk"
       },
+      "environment": "development",
       "env": {
         "APP_ENV": "development",
         "EXPO_PUBLIC_API_BASE_URL": "https://api.slotify-eg.com/api/v1"
@@ -19,6 +20,7 @@
     "staging": {
       "distribution": "internal",
       "channel": "staging",
+      "environment": "preview",
       "env": {
         "APP_ENV": "staging",
         "EXPO_PUBLIC_API_BASE_URL": "https://api.slotify-eg.com/api/v1"
@@ -27,6 +29,7 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
+      "environment": "production",
       "env": {
         "APP_ENV": "production",
         "EXPO_PUBLIC_API_BASE_URL": "https://api.slotify-eg.com/api/v1"

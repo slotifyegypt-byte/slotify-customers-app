@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useBookingDetail } from '@/features/booking/hooks/useBookingDetail';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { BookingMessage } from '../api/schemas';
 import { useBookingChat } from '../hooks/useBookingChat';
@@ -30,6 +30,7 @@ function formatTime(iso: string) {
 }
 
 function MessageBubble({ item }: { item: BookingMessage }) {
+  const styles = createStyles(useColors());
   const isCustomer = item.sender_type === 'customer';
   return (
     <View style={[styles.bubbleRow, isCustomer ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
@@ -51,6 +52,8 @@ function MessageBubble({ item }: { item: BookingMessage }) {
 }
 
 function ChatHeader({ bookingId }: { bookingId: string }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const booking = useBookingDetail(bookingId);
   const data = booking.data;
   // The API has no dedicated order/reference-number field (customer-app-api-map.md
@@ -90,6 +93,8 @@ function ChatHeader({ bookingId }: { bookingId: string }) {
 }
 
 export function OrderChatScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const {
     messages,
@@ -195,7 +200,8 @@ export function OrderChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   flex: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
@@ -268,4 +274,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendButtonDisabled: { backgroundColor: colors.disabled },
-});
+  });

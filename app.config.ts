@@ -24,7 +24,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  userInterfaceStyle: 'automatic',
+  // The app has no dark theme (src/theme/colors.ts is a single static
+  // palette) — 'automatic' still resolves Android's native day/night theme
+  // from the system setting, and Google Maps' SDK auto-selects dark basemap
+  // tiles from that native resolution independently of our (always-light)
+  // RN UI, producing a dark map on an otherwise light screen.
+  userInterfaceStyle: 'light',
   ios: {
     supportsTablet: true,
     bundleIdentifier: `com.slotify.customers${ENV_SUFFIX[APP_ENV]}`,

@@ -17,7 +17,7 @@ import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { useFavouriteCheck, useToggleFavourite } from '@/features/favourites/hooks/useToggleFavourite';
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
-import { colors, spacing } from '@/theme';
+import { spacing, useColors, type Colors } from '@/theme';
 
 import { AboutTab } from '../components/AboutTab';
 import { ReviewsTab } from '../components/ReviewsTab';
@@ -32,6 +32,8 @@ import { useVenueServiceCategories } from '../hooks/useVenueServiceCategories';
 import { useVenueTeam } from '../hooks/useVenueTeam';
 
 export function VenueDetailScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
   const [activeTab, setActiveTab] = useState<VenueTab>('services');
 
@@ -237,7 +239,8 @@ export function VenueDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   screen: { padding: 0 },
   centered: { alignItems: 'center', justifyContent: 'center' },
   bottomSpacer: { height: 32 },

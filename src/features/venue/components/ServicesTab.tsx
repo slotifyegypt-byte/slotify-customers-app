@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { ThemedText } from '@/components/ThemedText';
 import type { Service } from '@/features/booking/api/schemas';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { VenueServiceCategory } from '../api/schemas';
 
@@ -33,6 +33,8 @@ export function ServicesTab({
   onBook,
   draftSummaryByServiceId = {},
 }: ServicesTabProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const groups = useMemo<Group[]>(() => {
     const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
     const byCategory = new Map<string | null, Service[]>();
@@ -159,7 +161,8 @@ export function ServicesTab({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
   centered: { paddingVertical: spacing.xl, alignItems: 'center' },
   group: { marginBottom: spacing.lg },

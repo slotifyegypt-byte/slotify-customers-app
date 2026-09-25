@@ -6,7 +6,7 @@ import { ActivityIndicator } from 'react-native';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
-import { colors, spacing } from '@/theme';
+import { spacing, useColors } from '@/theme';
 
 import { exchangeGoogleCode } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
@@ -17,6 +17,7 @@ import { useAuthStore } from '../store/authStore';
  * completes Google sign-in (confirmed via live Android testing 2026-09-19).
  */
 export function AuthCallbackScreen() {
+  const colors = useColors();
   const { t } = useTranslation();
   const { code, error: oauthError } = useLocalSearchParams<{ code?: string; error?: string }>();
   const setTokens = useAuthStore((s) => s.setTokens);

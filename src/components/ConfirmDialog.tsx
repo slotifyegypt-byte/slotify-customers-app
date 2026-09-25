@@ -1,6 +1,6 @@
 import { Modal, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { Button } from './Button';
 import { ThemedText } from './ThemedText';
@@ -38,6 +38,8 @@ export function ConfirmDialog({
   secondaryLoading,
   onRequestClose,
 }: ConfirmDialogProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onRequestClose ?? onPrimary}>
       <View style={styles.overlay}>
@@ -64,23 +66,24 @@ export function ConfirmDialog({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.overlay,
-    padding: spacing.lg,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-  },
-  title: { textAlign: 'center' },
-  body: { textAlign: 'center', marginTop: spacing.xs },
-  primaryButton: { marginTop: spacing.lg },
-  secondaryButton: { marginTop: spacing.sm },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.overlay,
+      padding: spacing.lg,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: colors.surface,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+    },
+    title: { textAlign: 'center' },
+    body: { textAlign: 'center', marginTop: spacing.xs },
+    primaryButton: { marginTop: spacing.lg },
+    secondaryButton: { marginTop: spacing.sm },
+  });

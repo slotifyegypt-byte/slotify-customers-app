@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { useStoreEmployeesForService } from '../hooks/useStoreServices';
 
@@ -19,20 +19,23 @@ interface SpecialistPickerProps {
 // deterministically from the name so a given specialist always gets the same
 // color, matching the mockups' per-avatar tint variety (Design ref
 // 24-booking-configure.png: purple avatar for "Yara", pink for "Hana").
-const AVATAR_PALETTE = [
-  { bg: colors.brandTint, fg: colors.brandAccent },
-  { bg: 'rgba(226, 74, 74, 0.14)', fg: colors.danger },
-  { bg: colors.successTint, fg: colors.success },
-  { bg: 'rgba(224, 167, 45, 0.16)', fg: colors.warning },
-  { bg: 'rgba(0, 159, 208, 0.14)', fg: colors.accentSecondary },
-] as const;
+function buildAvatarPalette(colors: Colors) {
+  return [
+    { bg: colors.brandTint, fg: colors.brandAccent },
+    { bg: 'rgba(226, 74, 74, 0.14)', fg: colors.danger },
+    { bg: colors.successTint, fg: colors.success },
+    { bg: 'rgba(224, 167, 45, 0.16)', fg: colors.warning },
+    { bg: 'rgba(0, 159, 208, 0.14)', fg: colors.accentSecondary },
+  ] as const;
+}
 
-function avatarPaletteFor(seed: string) {
+function avatarPaletteFor(seed: string, colors: Colors) {
   let hash = 0;
   for (let i = 0; i < seed.length; i += 1) {
     hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   }
-  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+  const palette = buildAvatarPalette(colors);
+  return palette[hash % palette.length];
 }
 
 // customer-app-api-map.md §0.1: specialist-mode services let the customer pick
@@ -44,6 +47,8 @@ function avatarPaletteFor(seed: string) {
 // name + star rating. The selected item gets a rounded-rect purple border
 // around the whole cell — not a filled background swap like a plain chip.
 export function SpecialistPicker({ storeId, serviceId, selectedEmployeeId, onSelect }: SpecialistPickerProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const employees = useStoreEmployeesForService(storeId, serviceId);
 
   if (employees.isLoading) {
@@ -79,7 +84,7 @@ export function SpecialistPicker({ storeId, serviceId, selectedEmployeeId, onSel
         const isSelected = selectedEmployeeId === employee.id;
         const name = [employee.first_name, employee.last_name].filter(Boolean).join(' ');
         const initial = employee.first_name.charAt(0).toUpperCase();
-        const palette = avatarPaletteFor(employee.id || name);
+        const palette = avatarPaletteFor(employee.id || name, colors);
         return (
           <Pressable
             key={employee.id}
@@ -115,7 +120,8 @@ export function SpecialistPicker({ storeId, serviceId, selectedEmployeeId, onSel
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   spinner: { marginVertical: spacing.md },
   row: { paddingVertical: spacing.xs },
   cell: {

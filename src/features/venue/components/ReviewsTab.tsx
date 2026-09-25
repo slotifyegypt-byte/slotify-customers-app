@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { ThemedText } from '@/components/ThemedText';
 import { StarRating } from '@/features/reviews/components/StarRating';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { VenueReview, VenueReviewStats } from '../api/schemas';
 
@@ -31,6 +31,8 @@ export function ReviewsTab({
   canReview,
   onWriteReview,
 }: ReviewsTabProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const [sort, setSort] = useState<SortKey>('recent');
   const [showGateHint, setShowGateHint] = useState(false);
 
@@ -172,7 +174,8 @@ export function ReviewsTab({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
   centered: { paddingVertical: spacing.xl, alignItems: 'center' },
   statsRow: { flexDirection: 'row', marginBottom: spacing.lg },

@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors } from '@/theme';
 
 import type { TeamMember } from '../api/schemas';
 
@@ -14,24 +14,18 @@ interface TeamSectionProps {
 // each avatar fallback gets a stable-but-distinct color instead of every
 // member rendering the same brand tint (matches the design's lavender/pink
 // per-person avatars).
-const AVATAR_PALETTE = [
-  colors.brand,
-  colors.accentSecondary,
-  colors.brandAccent,
-  colors.success,
-  colors.warning,
-  colors.danger,
-] as const;
-
-function avatarColorFor(id: string) {
+function avatarColorFor(id: string, palette: readonly string[]) {
   let hash = 0;
   for (let i = 0; i < id.length; i += 1) {
     hash = (hash * 31 + id.charCodeAt(i)) | 0;
   }
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  return palette[Math.abs(hash) % palette.length];
 }
 
 export function TeamSection({ members }: TeamSectionProps) {
+  const colors = useColors();
+  const avatarPalette = [colors.brand, colors.accentSecondary, colors.brandAccent, colors.success, colors.warning, colors.danger];
+
   if (members.length === 0) return null;
 
   return (
@@ -47,7 +41,7 @@ export function TeamSection({ members }: TeamSectionProps) {
               {member.profile_picture ? (
                 <Image source={{ uri: member.profile_picture }} style={styles.avatar} contentFit="cover" />
               ) : (
-                <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: avatarColorFor(member.id) }]}>
+                <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: avatarColorFor(member.id, avatarPalette) }]}>
                   <ThemedText variant="h3" color="textInverse">
                     {member.first_name.charAt(0).toUpperCase()}
                   </ThemedText>

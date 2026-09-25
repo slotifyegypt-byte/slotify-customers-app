@@ -1,7 +1,7 @@
 import type { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
-import { colors } from '@/theme';
+import type { Colors } from '@/theme';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -99,12 +99,17 @@ export function imageForCategory(name: string): { source: number; scale: number 
   return rule?.image ? { source: rule.image, scale: rule.imageScale ?? 1 } : null;
 }
 
-export function pinColorForCategory(name: string): string {
+// Only the two rule-less fallbacks depend on the theme (every seeded
+// category's own `pinColor`/`tint` is a fixed brand color, unrelated to
+// light/dark) — `colors` is passed in by the caller (via `useColors()`)
+// rather than read from a module-level import, so this plain function still
+// reacts to theme changes.
+export function pinColorForCategory(name: string, colors: Colors): string {
   const rule = RULES.find((r) => r.match.test(name));
   return rule?.pinColor ?? colors.brandAccent;
 }
 
-export function tintForCategory(name: string): string {
+export function tintForCategory(name: string, colors: Colors): string {
   const rule = RULES.find((r) => r.match.test(name));
   return rule?.tint ?? colors.backgroundMuted;
 }

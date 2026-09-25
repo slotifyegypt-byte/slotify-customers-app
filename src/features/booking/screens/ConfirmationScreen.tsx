@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreTeam } from '@/features/activity/hooks/useStoreTeam';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { useBookingDetail } from '../hooks/useBookingDetail';
 import { formatBookingDateTitle, formatBookingHourStr } from '../utils/time';
@@ -30,6 +30,8 @@ function toGoogleCalendarStamp(iso: string): string {
 // calendar" button with a plain "Back to home" link underneath (not another
 // button).
 export function ConfirmationScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const booking = useBookingDetail(bookingId);
@@ -187,7 +189,8 @@ export function ConfirmationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.md, paddingBottom: spacing.xl, alignItems: 'stretch' },

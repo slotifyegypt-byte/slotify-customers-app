@@ -8,7 +8,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { setAppLocale, type SupportedLocale } from '@/lib/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors } from '@/theme';
 
 const LANGUAGES: { value: SupportedLocale; label: string }[] = [
   { value: 'en', label: 'English' },
@@ -16,6 +16,8 @@ const LANGUAGES: { value: SupportedLocale; label: string }[] = [
 ];
 
 export function LanguageScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { i18n } = useTranslation();
   const [pending, setPending] = useState<SupportedLocale | null>(null);
   const current = (i18n.language as SupportedLocale) ?? 'en';
@@ -79,44 +81,45 @@ export function LanguageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  padded: { padding: spacing.lg },
-  title: { marginBottom: spacing.lg },
-  section: {
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.divider,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  rowLast: { borderBottomWidth: 0 },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: radius.pill,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOuterSelected: { borderColor: colors.brandAccent },
-  radioInner: { width: 10, height: 10, borderRadius: radius.pill, backgroundColor: colors.brandAccent },
-  hint: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    backgroundColor: colors.brandTint,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginTop: spacing.md,
-  },
-  hintText: { flex: 1 },
-});
+const createStyles = (colors: ReturnType<typeof useColors>) =>
+  StyleSheet.create({
+    padded: { padding: spacing.lg },
+    title: { marginBottom: spacing.lg },
+    section: {
+      borderRadius: radius.lg,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.divider,
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+    },
+    rowLast: { borderBottomWidth: 0 },
+    radioOuter: {
+      width: 20,
+      height: 20,
+      borderRadius: radius.pill,
+      borderWidth: 2,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioOuterSelected: { borderColor: colors.brandAccent },
+    radioInner: { width: 10, height: 10, borderRadius: radius.pill, backgroundColor: colors.brandAccent },
+    hint: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      backgroundColor: colors.brandTint,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      marginTop: spacing.md,
+    },
+    hintText: { flex: 1 },
+  });

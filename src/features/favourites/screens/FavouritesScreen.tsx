@@ -6,13 +6,15 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { StoreCard } from '@/components/StoreCard';
-import { colors, radius, shadows, spacing } from '@/theme';
+import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { type Favourite } from '../api/schemas';
 import { useFavourites } from '../hooks/useFavourites';
 import { useToggleFavourite } from '../hooks/useToggleFavourite';
 
 export function FavouritesScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const favourites = useFavourites();
 
   return (
@@ -49,6 +51,8 @@ export function FavouritesScreen() {
 }
 
 function FavouriteRow({ favourite }: { favourite: Favourite }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   // customer-app-api-map.md §11 — VERIFIED live (2026-09-20): GET
   // /favourites/ now embeds the full store per row, so there's no more
   // per-row fetch (and no per-row failure mode to guard against) here.
@@ -78,7 +82,8 @@ function FavouriteRow({ favourite }: { favourite: Favourite }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   screen: { padding: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.md },
@@ -93,4 +98,4 @@ const styles = StyleSheet.create({
     padding: spacing.xxs,
     ...shadows.sm,
   },
-});
+  });

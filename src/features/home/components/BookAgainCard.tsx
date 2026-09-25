@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, shadows, spacing } from '@/theme';
+import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 interface BookAgainCardProps {
   name: string;
@@ -14,6 +14,8 @@ interface BookAgainCardProps {
 }
 
 export function BookAgainCard({ name, logo, serviceLabel, ctaLabel, onPress, onCtaPress }: BookAgainCardProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.card}>
       <Pressable onPress={onPress}>
@@ -40,23 +42,24 @@ export function BookAgainCard({ name, logo, serviceLabel, ctaLabel, onPress, onC
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    width: 132,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.xs,
-    gap: spacing.xs,
-    marginRight: spacing.xs,
-    ...shadows.sm,
-  },
-  image: { width: '100%', height: 78, borderRadius: radius.sm },
-  imageFallback: { backgroundColor: colors.backgroundMuted },
-  textWrap: { marginTop: spacing.xxs, gap: 2 },
-  cta: {
-    backgroundColor: colors.brandTint,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-  },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    card: {
+      width: 132,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.xs,
+      gap: spacing.xs,
+      marginRight: spacing.xs,
+      ...shadows.sm,
+    },
+    image: { width: '100%', height: 78, borderRadius: radius.sm },
+    imageFallback: { backgroundColor: colors.backgroundMuted },
+    textWrap: { marginTop: spacing.xxs, gap: 2 },
+    cta: {
+      backgroundColor: colors.brandTint,
+      paddingVertical: 6,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+    },
+  });

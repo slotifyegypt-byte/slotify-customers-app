@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { iconForCategory, imageForCategory, pinColorForCategory, tintForCategory } from '../utils/categoryIcon';
 
@@ -16,23 +16,25 @@ interface CategoryChipProps {
 }
 
 export function CategoryChip({ name, selected, muted, onPress }: CategoryChipProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const image = imageForCategory(name);
   // Fixed reference so the Image's style array doesn't get a new object
   // identity every render (was causing expo-image to re-transition on every
   // sibling selection change).
   const imageStyle = useMemo(
     () => [styles.image, image ? { transform: [{ scale: image.scale }] } : null],
-    [image],
+    [image, styles.image],
   );
 
   return (
     <Pressable onPress={onPress} style={[styles.wrap, muted && styles.muted]}>
       <View style={styles.circleOuter}>
-        <View style={[styles.circle, !image && { backgroundColor: tintForCategory(name) }]}>
+        <View style={[styles.circle, !image && { backgroundColor: tintForCategory(name, colors) }]}>
           {image ? (
             <Image source={image.source} style={imageStyle} contentFit="cover" />
           ) : (
-            <Ionicons name={iconForCategory(name)} size={26} color={pinColorForCategory(name)} />
+            <Ionicons name={iconForCategory(name)} size={26} color={pinColorForCategory(name, colors)} />
           )}
         </View>
         {/* Separate, non-clipping overlay so the selection ring never resizes
@@ -51,29 +53,30 @@ export function CategoryChip({ name, selected, muted, onPress }: CategoryChipPro
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: spacing.xxs, width: 66, marginRight: spacing.xs },
-  muted: { opacity: 0.4 },
-  circleOuter: { width: 60, height: 60 },
-  circle: {
-    width: 60,
-    height: 60,
-    borderRadius: radius.pill,
-    backgroundColor: colors.backgroundMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  selectionRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 60,
-    height: 60,
-    borderRadius: radius.pill,
-    borderWidth: 2.5,
-    borderColor: colors.brandAccent,
-  },
-  image: { width: '100%', height: '100%' },
-  label: { textAlign: 'center' },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    wrap: { alignItems: 'center', gap: spacing.xxs, width: 66, marginRight: spacing.xs },
+    muted: { opacity: 0.4 },
+    circleOuter: { width: 60, height: 60 },
+    circle: {
+      width: 60,
+      height: 60,
+      borderRadius: radius.pill,
+      backgroundColor: colors.backgroundMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    selectionRing: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: 60,
+      height: 60,
+      borderRadius: radius.pill,
+      borderWidth: 2.5,
+      borderColor: colors.brandAccent,
+    },
+    image: { width: '100%', height: '100%' },
+    label: { textAlign: 'center' },
+  });

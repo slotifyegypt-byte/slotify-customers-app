@@ -21,7 +21,7 @@ import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
 import { formatBookingDateStr } from '@/features/booking/utils/time';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { useMyProfile } from '@/features/profile/hooks/useProfile';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { Review } from '../api/schemas';
 import { StarRating } from '../components/StarRating';
@@ -36,6 +36,8 @@ import { useDeleteReview, useUpdateReview } from '../hooks/useReviewMutations';
 // resolves `booking_id` against the customer's already-cheap-to-fetch full
 // booking list (one extra request for the whole screen, not one per row).
 export function MyReviewsScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const profile = useMyProfile();
   const customerId = profile.data?.id;
@@ -99,6 +101,8 @@ function ReviewRow({
   customerId: string | undefined;
   linkedBooking: BookingRead | undefined;
 }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const store = useStoreDetail(review.store_id);
   const updateReview = useUpdateReview(customerId);
@@ -221,39 +225,40 @@ function ReviewRow({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { padding: 0 },
-  header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.md },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
-  card: {
-    backgroundColor: colors.backgroundMuted,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  linkedVisit: { marginTop: spacing.xxs },
-  comment: { marginTop: spacing.xs },
-  replyBox: {
-    marginTop: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-  },
-  date: { marginTop: spacing.xs },
-  rowActions: { flexDirection: 'row', marginTop: spacing.sm },
-  deleteAction: { marginLeft: spacing.md },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    color: colors.textPrimary,
-    marginTop: spacing.xs,
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  editActions: { flexDirection: 'row', marginTop: spacing.sm },
-  editActionSpacing: { marginLeft: spacing.sm },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    screen: { padding: 0 },
+    header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.md },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
+    card: {
+      backgroundColor: colors.backgroundMuted,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    linkedVisit: { marginTop: spacing.xxs },
+    comment: { marginTop: spacing.xs },
+    replyBox: {
+      marginTop: spacing.sm,
+      padding: spacing.sm,
+      borderRadius: radius.md,
+      backgroundColor: colors.surface,
+    },
+    date: { marginTop: spacing.xs },
+    rowActions: { flexDirection: 'row', marginTop: spacing.sm },
+    deleteAction: { marginLeft: spacing.md },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      color: colors.textPrimary,
+      marginTop: spacing.xs,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    editActions: { flexDirection: 'row', marginTop: spacing.sm },
+    editActionSpacing: { marginLeft: spacing.sm },
+  });

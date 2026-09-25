@@ -5,7 +5,7 @@ import { Alert, Pressable, StyleSheet } from 'react-native';
 import { Button } from '@/components/Button';
 import { ThemedText } from '@/components/ThemedText';
 import { useBookingDetail, useCancelBooking } from '@/features/booking/hooks/useBookingDetail';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 // customer-app-api-map.md §9 — POST /bookings/{booking_id}/cancel, body
 // `{ reason }` is optional, but 30-cancel-modal.png shows no reason field at
@@ -32,6 +32,8 @@ function withinCancelFeeWindow(bookingDateIso: string): boolean {
 // a transparent modal route (see app/(modal)/_layout.tsx) rather than a
 // full-screen sheet with a native header.
 export function CancelBookingScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const booking = useBookingDetail(bookingId);
@@ -94,7 +96,8 @@ export function CancelBookingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     alignItems: 'center',
@@ -113,4 +116,4 @@ const styles = StyleSheet.create({
   body: { textAlign: 'center', marginTop: spacing.xs },
   primaryButton: { marginTop: spacing.lg },
   secondaryButton: { marginTop: spacing.sm },
-});
+  });

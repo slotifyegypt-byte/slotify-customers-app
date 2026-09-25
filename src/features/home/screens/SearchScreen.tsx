@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { type SearchStore } from '@/features/explore-search/api/schemas';
 import { useSearchStores } from '@/features/explore-search/hooks/useSearchStores';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
-import { colors, fontFamily, radius, spacing } from '@/theme';
+import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
 
 // customer-app-api-map.md §4 — no search-history or trending-terms endpoint
 // exists. "Recent" is kept in local component state for this session only,
@@ -28,6 +28,8 @@ const MAX_RECENT_SEARCHES = 8;
 const CARD_WIDTH = Dimensions.get('window').width - spacing.md * 2;
 
 export function SearchScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const location = useCustomerLocation();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -176,61 +178,62 @@ export function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { padding: 0 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-  },
-  searchBarFocused: { borderColor: colors.brandAccent },
-  input: { flex: 1, paddingVertical: spacing.sm, fontSize: 15, color: colors.textPrimary },
-  cancelText: { fontFamily: fontFamily.bodySemiBold },
-  content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.lg },
-  filterPill: {
-    backgroundColor: colors.backgroundMuted,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.pill,
-  },
-  filterPillText: { fontFamily: fontFamily.bodySemiBold },
-  section: { marginBottom: spacing.lg },
-  sectionTitle: { marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.6 },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  recentChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.backgroundMuted,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    marginRight: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  trendingChip: {
-    backgroundColor: colors.brandTintStrong,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    marginRight: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  trendingChipText: { fontFamily: fontFamily.bodySemiBold },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    screen: { padding: 0 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      marginTop: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    searchBar: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+    },
+    searchBarFocused: { borderColor: colors.brandAccent },
+    input: { flex: 1, paddingVertical: spacing.sm, fontSize: 15, color: colors.textPrimary },
+    cancelText: { fontFamily: fontFamily.bodySemiBold },
+    content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
+    filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.lg },
+    filterPill: {
+      backgroundColor: colors.backgroundMuted,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+      borderRadius: radius.pill,
+    },
+    filterPillText: { fontFamily: fontFamily.bodySemiBold },
+    section: { marginBottom: spacing.lg },
+    sectionTitle: { marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.6 },
+    chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
+    recentChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.backgroundMuted,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.pill,
+      marginRight: spacing.xs,
+      marginBottom: spacing.xs,
+    },
+    trendingChip: {
+      backgroundColor: colors.brandTintStrong,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.pill,
+      marginRight: spacing.xs,
+      marginBottom: spacing.xs,
+    },
+    trendingChipText: { fontFamily: fontFamily.bodySemiBold },
+  });

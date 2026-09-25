@@ -16,13 +16,15 @@ import { useBookingDetail } from '@/features/booking/hooks/useBookingDetail';
 import { formatBookingDateStr, formatBookingDateTitle, formatBookingHourStr } from '@/features/booking/utils/time';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { formatCountdown } from '@/features/home/utils/countdown';
-import { colors, fontFamily, radius, spacing } from '@/theme';
+import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
 
 import { useStoreTeam } from '../hooks/useStoreTeam';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 export function BookingDetailScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const booking = useBookingDetail(bookingId);
@@ -185,6 +187,8 @@ function AppointmentDetail({
   onCancel: () => void;
   onWriteReview: () => void;
 }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const countdown = appointmentCountdown(data.booking_date, data.booking_status);
   const specialistService = data.booking_services.find((s) => s.employee_id);
   const employeeLabel = specialistService?.employee_id
@@ -307,6 +311,8 @@ function AppointmentDetail({
 }
 
 function InfoRow({ icon, label, value }: { icon: IoniconName; label: string; value: string }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.infoRow}>
       <View style={styles.infoRowLeft}>
@@ -363,6 +369,8 @@ function OrderDetail({
   store: { phone_country_code: string | null; phone_number: string | null } | undefined;
   onWriteReview: (() => void) | undefined;
 }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const currentIndex = orderStepIndex(data.booking_status);
   const isCancelled = data.booking_status === 'cancelled';
   const statusLabel = isCancelled
@@ -521,6 +529,8 @@ function StepCircle({
   step: { icon: IoniconName };
   state: 'done' | 'current' | 'future';
 }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   if (state === 'done') {
     return (
       <View style={[styles.stepCircle, styles.stepCircleDone]}>
@@ -542,7 +552,8 @@ function StepCircle({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
@@ -705,4 +716,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   helpIconButtonSpacing: { marginLeft: spacing.xs },
-});
+  });

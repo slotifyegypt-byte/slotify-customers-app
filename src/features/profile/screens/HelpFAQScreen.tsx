@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 // TODO i18n — every string below. Headers match the design's copy verbatim;
 // answers are written to reflect what Slotify actually supports today (see
@@ -40,6 +40,8 @@ const FAQ_ITEMS = [
 ];
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const [expanded, setExpanded] = useState(false);
   return (
     <Pressable style={styles.item} onPress={() => setExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded }}>
@@ -59,6 +61,8 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export function HelpFAQScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const [query, setQuery] = useState('');
 
   const visibleItems = useMemo(() => {
@@ -96,30 +100,31 @@ export function HelpFAQScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  padded: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  title: { marginBottom: spacing.lg },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.backgroundMuted,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  searchInput: { flex: 1, paddingVertical: spacing.sm, color: colors.textPrimary },
-  item: {
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.divider,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  question: { flex: 1 },
-  answer: { marginTop: spacing.xs },
-  empty: { textAlign: 'center', marginTop: spacing.lg },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    padded: { padding: spacing.lg, paddingBottom: spacing.xxl },
+    title: { marginBottom: spacing.lg },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.backgroundMuted,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    searchInput: { flex: 1, paddingVertical: spacing.sm, color: colors.textPrimary },
+    item: {
+      borderRadius: radius.lg,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.divider,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+    question: { flex: 1 },
+    answer: { marginTop: spacing.xs },
+    empty: { textAlign: 'center', marginTop: spacing.lg },
+  });

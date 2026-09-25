@@ -4,8 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
 import { ThemedText } from '@/components/ThemedText';
-import { ANDROID_MAP_STYLE, MAP_PROVIDER } from '@/lib/maps';
-import { colors, radius, shadows, spacing } from '@/theme';
+import { ANDROID_MAP_STYLE_DARK, ANDROID_MAP_STYLE_LIGHT, MAP_PROVIDER } from '@/lib/maps';
+import { radius, shadows, spacing, useColors, useTheme, type Colors } from '@/theme';
 
 import { pinColorForCategory } from '../utils/categoryIcon';
 
@@ -27,6 +27,9 @@ interface NearbyMapPreviewProps {
 
 export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProps) {
   const { t } = useTranslation();
+  const colors = useColors();
+  const { scheme } = useTheme();
+  const styles = createStyles(colors);
 
   return (
     <Pressable onPress={onPress} style={styles.card}>
@@ -38,7 +41,8 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
           // of staying stuck on whatever region it first rendered with.
           key={`${region.latitude.toFixed(2)},${region.longitude.toFixed(2)}`}
           provider={MAP_PROVIDER}
-          customMapStyle={ANDROID_MAP_STYLE}
+          userInterfaceStyle={scheme}
+          customMapStyle={scheme === 'dark' ? ANDROID_MAP_STYLE_DARK : ANDROID_MAP_STYLE_LIGHT}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
           scrollEnabled={false}
@@ -54,7 +58,7 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
         >
           {pins.map((pin) => (
             <Marker key={pin.id} coordinate={{ latitude: pin.latitude, longitude: pin.longitude }} anchor={{ x: 0.5, y: 0.5 }}>
-              <MapPin categoryName={pin.categoryName} color={pinColorForCategory(pin.categoryName)} isOpen={pin.isOpen} size={26} />
+              <MapPin categoryName={pin.categoryName} color={pinColorForCategory(pin.categoryName, colors)} isOpen={pin.isOpen} size={26} />
             </Marker>
           ))}
         </MapView>
@@ -75,37 +79,42 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    height: 140,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    position: 'relative',
-    ...shadows.md,
-  },
-  fallback: { backgroundColor: colors.backgroundMuted, alignItems: 'center', justifyContent: 'center' },
-  labelPill: {
-    position: 'absolute',
-    left: spacing.xs + 2,
-    top: spacing.xs + 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    paddingHorizontal: spacing.sm - 2,
-    paddingVertical: spacing.xxs + 2,
-    borderRadius: radius.pill,
-  },
-  expandButton: {
-    position: 'absolute',
-    right: spacing.xs + 2,
-    bottom: spacing.xs + 2,
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.sm,
-  },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    card: {
+      height: 140,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      position: 'relative',
+      ...shadows.md,
+    },
+    fallback: { backgroundColor: colors.backgroundMuted, alignItems: 'center', justifyContent: 'center' },
+    labelPill: {
+      position: 'absolute',
+      left: spacing.xs + 2,
+      top: spacing.xs + 2,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      // Translucent `surface`-toned background (not hardcoded white) — a
+      // solid-white pill would make dark-mode's near-white default text
+      // illegible on it. `opacity` isn't used here since it would also fade
+      // the icon/text inside, not just the backdrop.
+      backgroundColor: colors.surfaceTranslucent,
+      paddingHorizontal: spacing.sm - 2,
+      paddingVertical: spacing.xxs + 2,
+      borderRadius: radius.pill,
+    },
+    expandButton: {
+      position: 'absolute',
+      right: spacing.xs + 2,
+      bottom: spacing.xs + 2,
+      width: 34,
+      height: 34,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.sm,
+    },
+  });

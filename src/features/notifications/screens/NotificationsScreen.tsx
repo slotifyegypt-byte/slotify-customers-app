@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { getStoreDetail } from '@/features/explore-search/api/exploreApi';
 import { exploreKeys } from '@/features/explore-search/api/queryKeys';
 import { formatRelativeTime } from '@/lib/formatRelativeTime';
-import { colors, fontFamily, radius, spacing } from '@/theme';
+import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
 
 import { notificationKeys } from '../api/queryKeys';
 import type { Notification } from '../api/schemas';
@@ -51,6 +51,8 @@ function groupByDay(notifications: Notification[]): Section[] {
 }
 
 export function NotificationsScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { data: notifications, isLoading, isError, refetch } = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
@@ -114,7 +116,7 @@ export function NotificationsScreen() {
 
   const renderItem = useCallback(
     ({ item }: SectionListRenderItemInfo<Notification, Section>) => {
-      const visual = notificationVisual(item.notification_type);
+      const visual = notificationVisual(item.notification_type, colors);
       return (
         <Swipeable
           renderRightActions={() => (
@@ -168,7 +170,7 @@ export function NotificationsScreen() {
         </Swipeable>
       );
     },
-    [handleDelete, handleGetDirections, handlePress],
+    [colors, handleDelete, handleGetDirections, handlePress, styles],
   );
 
   if (isError) {
@@ -232,7 +234,8 @@ export function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   padded: { padding: spacing.lg },
   header: {
     paddingHorizontal: spacing.lg,
@@ -304,4 +307,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginBottom: spacing.xs,
   },
-});
+  });

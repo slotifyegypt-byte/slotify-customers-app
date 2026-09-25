@@ -7,12 +7,14 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { CustomerProfile } from '../api/schemas';
 import { useMyProfile, useUpdateMyProfile } from '../hooks/useProfile';
 
 export function EditProfileScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { data: profile, isLoading } = useMyProfile();
 
   if (isLoading || !profile) {
@@ -44,6 +46,8 @@ function splitFullName(fullName: string): { first_name: string; last_name: strin
 }
 
 function EditProfileForm({ profile }: { profile: CustomerProfile }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const updateProfile = useUpdateMyProfile();
 
   const initialFullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
@@ -151,20 +155,21 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
   );
 }
 
-const styles = StyleSheet.create({
-  padded: { padding: spacing.lg },
-  title: { marginBottom: spacing.lg },
-  avatarRow: { alignItems: 'center', marginBottom: spacing.lg },
-  label: { marginBottom: spacing.xxs, marginTop: spacing.md },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    color: colors.textPrimary,
-  },
-  inputDisabled: { color: colors.textSecondary, backgroundColor: colors.backgroundMuted },
-  note: { marginTop: spacing.sm },
-  saveButton: { marginTop: spacing.xl },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    padded: { padding: spacing.lg },
+    title: { marginBottom: spacing.lg },
+    avatarRow: { alignItems: 'center', marginBottom: spacing.lg },
+    label: { marginBottom: spacing.xxs, marginTop: spacing.md },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      color: colors.textPrimary,
+    },
+    inputDisabled: { color: colors.textSecondary, backgroundColor: colors.backgroundMuted },
+    note: { marginTop: spacing.sm },
+    saveButton: { marginTop: spacing.xl },
+  });

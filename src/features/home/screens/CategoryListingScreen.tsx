@@ -10,7 +10,7 @@ import { type NearbyStore } from '@/features/explore-search/api/schemas';
 import { useNearbyStores } from '@/features/explore-search/hooks/useNearbyStores';
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
-import { colors, spacing } from '@/theme';
+import { spacing, useColors } from '@/theme';
 
 // Home's category chips (src/features/home/screens/HomeScreen.tsx) link here
 // with the real numeric `category.id` from GET /store-categories (LIVE-
@@ -30,6 +30,7 @@ const FALLBACK_CATEGORY_LABELS: Record<number, string> = {
 const CARD_WIDTH = Dimensions.get('window').width - spacing.md * 2;
 
 export function CategoryListingScreen() {
+  const colors = useColors();
   const { categoryKey } = useLocalSearchParams<{ categoryKey: string }>();
   const location = useCustomerLocation();
   const categories = useCategories();

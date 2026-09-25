@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { ThemedText } from './ThemedText';
 
@@ -21,6 +21,8 @@ interface ComingSoonProps {
  */
 export function ComingSoon({ feature, note, compact }: ComingSoonProps) {
   const { t } = useTranslation();
+  const colors = useColors();
+  const styles = createStyles(colors);
 
   return (
     <View style={[styles.container, compact && styles.compact]}>
@@ -39,15 +41,16 @@ export function ComingSoon({ feature, note, compact }: ComingSoonProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-    backgroundColor: colors.backgroundMuted,
-    borderRadius: radius.lg,
-  },
-  compact: { padding: spacing.md },
-  center: { textAlign: 'center' },
-  spaced: { marginTop: spacing.xxs },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.xl,
+      backgroundColor: colors.backgroundMuted,
+      borderRadius: radius.lg,
+    },
+    compact: { padding: spacing.md },
+    center: { textAlign: 'center' },
+    spaced: { marginTop: spacing.xxs },
+  });

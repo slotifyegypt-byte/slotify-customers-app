@@ -14,7 +14,7 @@ import { useNearbyStores } from '@/features/explore-search/hooks/useNearbyStores
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useNotifications';
 import { useMyProfile } from '@/features/profile/hooks/useProfile';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
-import { colors, fontFamily, radius, shadows, spacing } from '@/theme';
+import { fontFamily, radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { BookAgainCard } from '../components/BookAgainCard';
 import { CategoryChip } from '../components/CategoryChip';
@@ -29,6 +29,8 @@ import { greetingKeyForHour } from '../utils/greeting';
 
 export function HomeScreen() {
   const { t } = useTranslation();
+  const colors = useColors();
+  const styles = createStyles(colors);
   const location = useCustomerLocation();
   const profile = useMyProfile();
   const unread = useUnreadNotificationCount();
@@ -262,79 +264,80 @@ export function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  greetingBlock: { gap: spacing.xxs },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxs },
-  bellButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.sm,
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: 8,
-    right: 9,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.danger,
-    borderWidth: 1.5,
-    borderColor: colors.surface,
-  },
-  content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, gap: 20 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 1,
-    gap: spacing.xs,
-    ...shadows.sm,
-  },
-  searchPlaceholder: { marginLeft: 0 },
-  section: { gap: spacing.sm },
-  categoriesRow: { paddingVertical: 2 },
-  // Horizontal ScrollViews auto-size to exactly the card height, so without
-  // this the card shadows get hard-clipped flush at the edges instead of
-  // fading out. Negative margin on the wrap keeps the row's own vertical
-  // rhythm unchanged.
-  hscrollWrap: { position: 'relative', marginVertical: -10, marginHorizontal: -2 },
-  hscrollContent: { paddingVertical: 10, paddingHorizontal: 2 },
-  activeCategoryChip: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    // Design shows this pill as a dark navy surface, distinct from the
-    // brightPurple used for the selected chip ring / Next Up card — `brand`
-    // (deepPurple) is the closest existing token for that dark family.
-    backgroundColor: colors.brand,
-    paddingLeft: spacing.sm + 2,
-    paddingRight: spacing.xxs + 2,
-    paddingVertical: spacing.xxs + 3,
-    borderRadius: radius.pill,
-    marginTop: -spacing.xxs,
-  },
-  activeCategoryLabel: { fontFamily: fontFamily.bodySemiBold },
-  activeCategoryClose: {
-    width: 18,
-    height: 18,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
+    },
+    greetingBlock: { gap: spacing.xxs },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxs },
+    bellButton: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.sm,
+    },
+    unreadDot: {
+      position: 'absolute',
+      top: 8,
+      right: 9,
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: colors.danger,
+      borderWidth: 1.5,
+      borderColor: colors.surface,
+    },
+    content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, gap: 20 },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 1,
+      gap: spacing.xs,
+      ...shadows.sm,
+    },
+    searchPlaceholder: { marginLeft: 0 },
+    section: { gap: spacing.sm },
+    categoriesRow: { paddingVertical: 2 },
+    // Horizontal ScrollViews auto-size to exactly the card height, so without
+    // this the card shadows get hard-clipped flush at the edges instead of
+    // fading out. Negative margin on the wrap keeps the row's own vertical
+    // rhythm unchanged.
+    hscrollWrap: { position: 'relative', marginVertical: -10, marginHorizontal: -2 },
+    hscrollContent: { paddingVertical: 10, paddingHorizontal: 2 },
+    activeCategoryChip: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      // Design shows this pill as a dark navy surface, distinct from the
+      // brightPurple used for the selected chip ring / Next Up card — `brand`
+      // (deepPurple) is the closest existing token for that dark family.
+      backgroundColor: colors.brand,
+      paddingLeft: spacing.sm + 2,
+      paddingRight: spacing.xxs + 2,
+      paddingVertical: spacing.xxs + 3,
+      borderRadius: radius.pill,
+      marginTop: -spacing.xxs,
+    },
+    activeCategoryLabel: { fontFamily: fontFamily.bodySemiBold },
+    activeCategoryClose: {
+      width: 18,
+      height: 18,
+      borderRadius: radius.pill,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

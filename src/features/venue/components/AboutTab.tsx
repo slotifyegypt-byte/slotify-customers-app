@@ -5,7 +5,7 @@ import { ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-n
 import { EmptyState } from '@/components/EmptyState';
 import { ThemedText } from '@/components/ThemedText';
 import type { StoreDetail } from '@/features/explore-search/api/schemas';
-import { colors, spacing } from '@/theme';
+import { spacing, useColors, type Colors } from '@/theme';
 
 import type { CalendarDay, GalleryItem, SpecialDay } from '../api/schemas';
 
@@ -31,6 +31,9 @@ interface AboutTabProps {
 }
 
 export function AboutTab({ store, calendarDays, specialDays, photos, isLoading, isError }: AboutTabProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
+
   // Sorted defensively even though the backend already returns all 7 —
   // guards against a future response that's out of order or missing a day,
   // rather than silently truncating the list.
@@ -164,7 +167,8 @@ export function AboutTab({ store, calendarDays, specialDays, photos, isLoading, 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
   centered: { paddingVertical: spacing.xl, alignItems: 'center' },
   description: { marginBottom: spacing.lg },

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
-import { colors } from '@/theme';
+import { useColors, type Colors } from '@/theme';
 
 import { ThemedText } from './ThemedText';
 
@@ -21,6 +21,8 @@ interface AvatarProps {
  * same visual pattern instead of two separate implementations.
  */
 export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const badgeSize = Math.max(22, Math.round(size * 0.34));
 
   return (
@@ -63,14 +65,15 @@ export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarP
   );
 }
 
-const styles = StyleSheet.create({
-  fallback: { backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
-  badge: {
-    position: 'absolute',
-    backgroundColor: colors.brandAccent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    fallback: { backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
+    badge: {
+      position: 'absolute',
+      backgroundColor: colors.brandAccent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.surface,
+    },
+  });

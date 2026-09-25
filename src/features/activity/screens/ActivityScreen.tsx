@@ -13,7 +13,7 @@ import type { BookingRead } from '@/features/booking/api/schemas';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
 import { formatBookingDateStr, formatBookingDateTitle, formatBookingHourStr } from '@/features/booking/utils/time';
 import { iconForCategory, pinColorForCategory } from '@/features/home/utils/categoryIcon';
-import { colors, fontFamily, radius, shadows, spacing, type ColorToken } from '@/theme';
+import { fontFamily, radius, shadows, spacing, useColors, type ColorToken, type Colors } from '@/theme';
 
 // customer-app-api-map.md §8 — Active = confirmed + pending, merged
 // client-side (no combined-status query param exists); Past = completed +
@@ -58,6 +58,8 @@ function activeSubtitle(booking: BookingRead): string {
 }
 
 export function ActivityScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('active');
 
@@ -148,6 +150,8 @@ export function ActivityScreen() {
 // 03-activity.png. Status color always comes from `colors.success` /
 // `colors.warning`, never a hardcoded hex.
 function ActiveBookingCard({ booking }: { booking: BookingRead }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const meta = activeStatusMeta(booking);
   const badgeIcon = booking.booking_status === 'confirmed' ? 'checkmark' : 'time';
 
@@ -186,8 +190,10 @@ function ActiveBookingCard({ booking }: { booking: BookingRead }) {
 // carries no structured category field) instead of a photo, per
 // 11-activity-past.png.
 function PastBookingRow({ booking }: { booking: BookingRead }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const icon = iconForCategory(booking.store_name);
-  const tint = pinColorForCategory(booking.store_name);
+  const tint = pinColorForCategory(booking.store_name, colors);
 
   return (
     <Pressable style={styles.pastRow} onPress={() => router.push(`/(tabs)/activity/${booking.id}`)}>
@@ -206,7 +212,8 @@ function PastBookingRow({ booking }: { booking: BookingRead }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   screen: { padding: 0 },
   header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.sm },
   segmentRow: { marginHorizontal: spacing.md, marginBottom: spacing.sm },
@@ -258,4 +265,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rowInfo: { flex: 1, marginLeft: spacing.sm, marginRight: spacing.xs },
-});
+  });

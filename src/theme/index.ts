@@ -1,5 +1,7 @@
-export { colors, palette } from './colors';
-export type { ColorToken } from './colors';
+export { colors, colorSchemes, palette } from './colors';
+export type { ColorToken, Colors } from './colors';
+export { ThemeProvider, useColors, useTheme } from './ThemeProvider';
+export type { ResolvedScheme } from './ThemeProvider';
 export { spacing } from './spacing';
 export type { SpacingToken } from './spacing';
 export { radius } from './radius';

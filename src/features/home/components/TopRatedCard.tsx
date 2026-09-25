@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, shadows, spacing } from '@/theme';
+import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 interface TopRatedCardProps {
   name: string;
@@ -16,6 +16,8 @@ interface TopRatedCardProps {
 }
 
 export function TopRatedCard({ name, logo, rating, distanceKm, badge, onPress }: TopRatedCardProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <Pressable onPress={onPress} style={styles.card}>
       <View style={styles.imageWrap}>
@@ -52,29 +54,30 @@ export function TopRatedCard({ name, logo, rating, distanceKm, badge, onPress }:
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    width: 150,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    marginRight: spacing.xs,
-    ...shadows.sm,
-  },
-  imageWrap: { height: 96, position: 'relative' },
-  image: { width: '100%', height: '100%' },
-  imageFallback: { backgroundColor: colors.backgroundMuted },
-  badge: {
-    position: 'absolute',
-    top: spacing.xxs,
-    left: spacing.xxs,
-    backgroundColor: colors.brandAccent,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-  },
-  badgeText: { letterSpacing: 0.3, textTransform: 'uppercase' },
-  content: { padding: spacing.xs + 2, gap: 4 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    card: {
+      width: 150,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      overflow: 'hidden',
+      marginRight: spacing.xs,
+      ...shadows.sm,
+    },
+    imageWrap: { height: 96, position: 'relative' },
+    image: { width: '100%', height: '100%' },
+    imageFallback: { backgroundColor: colors.backgroundMuted },
+    badge: {
+      position: 'absolute',
+      top: spacing.xxs,
+      left: spacing.xxs,
+      backgroundColor: colors.brandAccent,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 3,
+      borderRadius: radius.pill,
+    },
+    badgeText: { letterSpacing: 0.3, textTransform: 'uppercase' },
+    content: { padding: spacing.xs + 2, gap: 4 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  });

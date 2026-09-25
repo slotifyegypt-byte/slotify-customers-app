@@ -1,7 +1,7 @@
 import type { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
-import { colors } from '@/theme';
+import type { Colors } from '@/theme';
 
 import type { NotificationType } from '../api/schemas';
 
@@ -19,7 +19,10 @@ interface NotificationVisual {
 // `notification_type` field, so the icon/tint/"Get Directions" gating are
 // derived directly from it instead of the previous title-text regex
 // matching (there was no type field to key off before).
-export function notificationVisual(type: NotificationType): NotificationVisual {
+// `colors` is passed in by the caller (via `useColors()`) rather than read
+// from a module-level import, so this plain (non-hook) function still
+// reacts to theme changes.
+export function notificationVisual(type: NotificationType, colors: Colors): NotificationVisual {
   switch (type) {
     case 'booking_confirmed':
     case 'booking_cancelled':

@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { Button } from '@/components/Button';
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { draftEntryToPayload, type AvailabilityParams, type CreateBookingServicePayload } from '../api/bookingApi';
 import type { AvailabilitySlot, BookingRead, Service } from '../api/schemas';
@@ -54,6 +54,8 @@ export function BookingFlow({
   initialSlot = null,
   onBooked,
 }: BookingFlowProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const [employeeId, setEmployeeId] = useState<string | null>(initialEmployeeId);
   const [selectedDate, setSelectedDate] = useState(() => initialDate ?? format(new Date(), 'yyyy-MM-dd'));
@@ -306,7 +308,8 @@ export function BookingFlow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',

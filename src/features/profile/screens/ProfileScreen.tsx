@@ -12,7 +12,7 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useFavourites } from '@/features/favourites/hooks/useFavourites';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { deleteMe } from '../api/profileApi';
 import { useMyProfile } from '../hooks/useProfile';
@@ -28,7 +28,7 @@ interface ProfileRowConfig {
 }
 
 // TODO i18n — every label below
-function buildRowGroups(favouritesCount: number | undefined): ProfileRowConfig[][] {
+function buildRowGroups(favouritesCount: number | undefined, colors: Colors): ProfileRowConfig[][] {
   return [
   [
     {
@@ -66,6 +66,14 @@ function buildRowGroups(favouritesCount: number | undefined): ProfileRowConfig[]
       iconColor: colors.brandAccent,
       onPress: () => router.push('/(tabs)/profile/language'),
     },
+    {
+      key: 'appearance',
+      label: 'Appearance',
+      icon: 'contrast',
+      iconBg: 'rgba(58, 36, 107, 0.12)',
+      iconColor: colors.brand,
+      onPress: () => router.push('/(tabs)/profile/appearance'),
+    },
   ],
   [
     {
@@ -97,6 +105,8 @@ function ProfileRow({
   trailingText,
   isLast,
 }: Omit<ProfileRowConfig, 'key'> & { isLast: boolean }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <Pressable style={[styles.row, isLast && styles.rowLast]} onPress={onPress} accessibilityRole="button">
       <View style={[styles.iconWell, { backgroundColor: iconBg }]}>
@@ -116,13 +126,15 @@ function ProfileRow({
 }
 
 export function ProfileScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { data: profile } = useMyProfile();
   const favourites = useFavourites();
   const logout = useLogout();
   const queryClient = useQueryClient();
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const rowGroups = buildRowGroups(favourites.data?.length);
+  const rowGroups = buildRowGroups(favourites.data?.length, colors);
 
   const displayName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
   const initials = (displayName || profile?.email || '?').trim().charAt(0).toUpperCase();
@@ -216,37 +228,38 @@ export function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xxl },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg, paddingHorizontal: spacing.xs },
-  headerText: { marginLeft: spacing.md, flexShrink: 1 },
-  section: {
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-    marginBottom: spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-    gap: spacing.sm,
-  },
-  rowLast: { borderBottomWidth: 0 },
-  iconWell: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowLabel: { flex: 1 },
-  trailingText: { marginRight: spacing.xxs },
-  logOut: { marginTop: spacing.sm },
-  deleteAccount: { alignSelf: 'center', marginTop: spacing.md, padding: spacing.xxs },
-  deleteAccountText: { textDecorationLine: 'underline' },
-  version: { alignSelf: 'center', marginTop: spacing.sm },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    content: { padding: spacing.md, paddingBottom: spacing.xxl },
+    header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg, paddingHorizontal: spacing.xs },
+    headerText: { marginLeft: spacing.md, flexShrink: 1 },
+    section: {
+      borderRadius: radius.lg,
+      backgroundColor: colors.surface,
+      overflow: 'hidden',
+      marginBottom: spacing.md,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+      gap: spacing.sm,
+    },
+    rowLast: { borderBottomWidth: 0 },
+    iconWell: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    rowLabel: { flex: 1 },
+    trailingText: { marginRight: spacing.xxs },
+    logOut: { marginTop: spacing.sm },
+    deleteAccount: { alignSelf: 'center', marginTop: spacing.md, padding: spacing.xxs },
+    deleteAccountText: { textDecorationLine: 'underline' },
+    version: { alignSelf: 'center', marginTop: spacing.sm },
+  });

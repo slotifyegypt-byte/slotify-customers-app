@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, shadows, spacing } from '@/theme';
+import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 interface NextUpCardProps {
   storeName: string;
@@ -17,6 +17,8 @@ interface NextUpCardProps {
 
 export function NextUpCard({ storeName, logo, dateLabel, timeLabel, servicesLabel, onPress }: NextUpCardProps) {
   const { t } = useTranslation();
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <Pressable onPress={onPress} style={styles.card}>
       <View style={styles.avatarWrap}>
@@ -54,6 +56,8 @@ export function NextUpCard({ storeName, logo, dateLabel, timeLabel, servicesLabe
 
 export function NoNextUpCard({ onExplore }: { onExplore: () => void }) {
   const { t } = useTranslation();
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.emptyCard}>
       <View style={styles.emptyIconWrap}>
@@ -72,47 +76,48 @@ export function NoNextUpCard({ onExplore }: { onExplore: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.brandAccent,
-    borderRadius: radius.lg,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm + 2,
-    ...shadows.md,
-  },
-  avatarWrap: { flexShrink: 0 },
-  avatar: { width: 52, height: 52, borderRadius: radius.pill },
-  avatarFallback: { backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
-  body: { flex: 1, minWidth: 0, gap: 3 },
-  eyebrow: { textTransform: 'uppercase', letterSpacing: 1.1 },
-  datePill: {
-    flexShrink: 0,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-  },
-  emptyCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm + 2,
-    ...shadows.sm,
-  },
-  emptyIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  exploreLink: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.brandAccent,
+      borderRadius: radius.lg,
+      paddingHorizontal: 20,
+      paddingVertical: 18,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm + 2,
+      ...shadows.md,
+    },
+    avatarWrap: { flexShrink: 0 },
+    avatar: { width: 52, height: 52, borderRadius: radius.pill },
+    avatarFallback: { backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
+    body: { flex: 1, minWidth: 0, gap: 3 },
+    eyebrow: { textTransform: 'uppercase', letterSpacing: 1.1 },
+    datePill: {
+      flexShrink: 0,
+      backgroundColor: 'rgba(255,255,255,0.14)',
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: radius.pill,
+    },
+    emptyCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      paddingHorizontal: 20,
+      paddingVertical: 18,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm + 2,
+      ...shadows.sm,
+    },
+    emptyIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.pill,
+      backgroundColor: colors.brandTint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    exploreLink: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  });

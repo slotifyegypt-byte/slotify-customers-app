@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/EmptyState';
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { AvailabilityResponse, AvailabilitySlot } from '../api/schemas';
 import { getBookingErrorMessage } from '../utils/apiError';
@@ -52,6 +52,8 @@ function flattenSpecialistSlots(employees: AvailabilityResponse['employees']): A
 // visual cues together, not just one — and a tapped slot gets an obvious
 // filled/selected treatment distinct from both.
 export function SlotGrid({ availability, isLoading, isError, error, selectedSlot, onSelectSlot }: SlotGridProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const specialistSlots = useMemo(
     () => (availability?.booking_mode === 'specialist' ? flattenSpecialistSlots(availability.employees) : []),
     [availability],
@@ -144,7 +146,8 @@ export function SlotGrid({ availability, isLoading, isError, error, selectedSlot
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   spinner: { marginVertical: spacing.lg },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   slot: {

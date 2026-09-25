@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { BookingRead } from '../api/schemas';
 import { BookingFlow } from '../components/BookingFlow';
@@ -19,6 +19,8 @@ import { useStoreServices } from '../hooks/useStoreServices';
 // now that this route renders `headerShown: false` (BookingFlow itself owns
 // the real header once a service is resolved).
 function BackOnlyHeader() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   return (
     <View style={styles.header}>
       <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
@@ -34,6 +36,8 @@ function BackOnlyHeader() {
 // case, and the only shape the doc's samples show); a banner below warns the
 // customer if the original booking had more than one.
 export function RebookSheetScreen() {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const original = useBookingDetail(bookingId);
@@ -72,6 +76,8 @@ export function RebookSheetScreen() {
 }
 
 function RebookFlow({ originalBooking, onBooked }: { originalBooking: BookingRead; onBooked: (booking: BookingRead) => void }) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   // Guard: only mount useStoreServices once we have a real storeId, avoiding
   // a wasted request with an empty id while `original` above is loading.
@@ -129,7 +135,8 @@ function RebookFlow({ originalBooking, onBooked }: { originalBooking: BookingRea
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notice: { padding: spacing.md, paddingBottom: 0 },

@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useColors, type Colors } from '@/theme';
 
 interface DateStripProps {
   /** yyyy-MM-dd */
@@ -14,6 +14,8 @@ interface DateStripProps {
 
 /** Simple horizontal date strip for the next N days — no calendar library needed (per spec). */
 export function DateStrip({ selectedDate, onSelectDate, daysAhead = 14 }: DateStripProps) {
+  const colors = useColors();
+  const styles = createStyles(colors);
   const days = useMemo(() => {
     const today = new Date();
     return Array.from({ length: daysAhead }, (_, i) => addDays(today, i));
@@ -50,7 +52,8 @@ export function DateStrip({ selectedDate, onSelectDate, daysAhead = 14 }: DateSt
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   // Without an explicit style, an unconstrained ScrollView placed inside a
   // `flex: 1` ancestor (RescheduleBookingScreen) stretches to fill that
   // ambiguous main-axis space on iOS instead of sizing to its content —
