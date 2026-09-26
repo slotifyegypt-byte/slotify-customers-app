@@ -1,49 +1,34 @@
-import * as SecureStore from 'expo-secure-store';
+import type { Session } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
 
-const secureStorage = createJSONStorage(() => ({
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-}));
+import { supabase } from '@/lib/supabase';
 
 interface AuthState {
   accessToken: string | null;
-  refreshToken: string | null;
   _hasHydrated: boolean;
-
-  setTokens: (access: string, refresh: string) => void;
-  clearAuth: () => void;
-  setHasHydrated: (value: boolean) => void;
 }
 
+// A read-only mirror of the Supabase session, which owns persistence and
+// token refresh (see lib/supabase.ts). Kept as a zustand store so the route
+// guards, the chat socket and query `enabled` flags can subscribe to it.
 // Server-derived data (the customer profile) is never stored here — React
-// Query owns it (see features/profile/api/queries.ts). This store only ever
-// holds the session token pair plus small client-only UI state added later.
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      accessToken: null,
-      refreshToken: null,
-      _hasHydrated: false,
+// Query owns it (see features/profile/api/queries.ts).
+export const useAuthStore = create<AuthState>()(() => ({
+  accessToken: null,
+  _hasHydrated: false,
+}));
 
-      setTokens: (access, refresh) => set({ accessToken: access, refreshToken: refresh }),
-      clearAuth: () => set({ accessToken: null, refreshToken: null }),
-      setHasHydrated: (value) => set({ _hasHydrated: value }),
-    }),
-    {
-      name: 'slotify-auth',
-      storage: secureStorage,
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
-      }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
-    },
-  ),
+function applySession(session: Session | null) {
+  useAuthStore.setState({ accessToken: session?.access_token ?? null, _hasHydrated: true });
+}
+
+supabase.auth.getSession().then(
+  ({ data }) => applySession(data.session),
+  () => applySession(null),
 );
+
+// Fires on sign-in, sign-out and every token refresh, so the mirrored access
+// token never goes stale.
+supabase.auth.onAuthStateChange((_event, session) => applySession(session));
 
 export const isAuthenticated = () => Boolean(useAuthStore.getState().accessToken);

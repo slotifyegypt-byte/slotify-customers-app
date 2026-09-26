@@ -33,6 +33,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: `com.slotify.customers${ENV_SUFFIX[APP_ENV]}`,
+    // Native "Sign in with Apple" (src/features/auth/hooks/useAppleSignIn.ts).
+    usesAppleSignIn: true,
     infoPlist: {
       // Required for Linking.canOpenURL('comgooglemaps://') in the Explore
       // screen's "Directions" action (src/features/explore-search/screens/ExploreScreen.tsx)
@@ -63,6 +65,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    'expo-apple-authentication',
     [
       'expo-splash-screen',
       {
@@ -97,6 +100,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     appEnv: APP_ENV,
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.slotify-eg.com/api/v1',
+    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+    supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     eas: {
       // Created via `eas build` under the @slotify-eg.com account (2026-09-19)
       // — dynamic app.config.ts can't be auto-written by the EAS CLI, so this

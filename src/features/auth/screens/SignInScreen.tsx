@@ -1,12 +1,14 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useTranslation } from 'react-i18next';
-import { Image } from 'react-native';
+import { Image, Platform } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
-import { spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 
-import { useGoogleSignIn } from '../hooks/useGoogleSignIn';
+import { useAppleSignIn } from '../hooks/useAppleSignIn';
+import { useOAuthSignIn } from '../hooks/useOAuthSignIn';
 
 // Brand guide (App UI Reference: Splash/Welcome screen) — centered icon above
 // a dark-purple wordmark on a white background. `icon.png` is the calendar/
@@ -14,7 +16,10 @@ import { useGoogleSignIn } from '../hooks/useGoogleSignIn';
 // with no wrapper needed).
 export function SignInScreen() {
   const { t } = useTranslation();
-  const { signIn, isLoading, error } = useGoogleSignIn();
+  const { scheme } = useTheme();
+  const google = useOAuthSignIn('google');
+  const apple = useAppleSignIn();
+  const error = google.error ?? apple.error;
 
   return (
     <Screen style={{ padding: spacing.lg, justifyContent: 'center' }}>
@@ -47,18 +52,35 @@ export function SignInScreen() {
 
       <Button
         label={t('auth.continueWithGoogle')}
-        onPress={signIn}
-        loading={isLoading}
+        onPress={google.signIn}
+        loading={google.isLoading}
+        disabled={apple.isLoading}
         style={{ marginBottom: spacing.sm }}
       />
-      {/* No backend support yet (customer-app-api-map.md §1) — shown per design, disabled. */}
-      <Button
-        label={t('auth.continueWithApple')}
-        variant="ghost"
-        disabled
-        style={{ marginBottom: spacing.sm }}
-      />
-      <Button label={t('auth.continueWithPhone')} variant="ghost" disabled />
+      {Platform.OS === 'ios' ? (
+        // Apple's own button, as App Store review requires for the native flow.
+        <AppleAuthentication.AppleAuthenticationButton
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+          buttonStyle={
+            scheme === 'dark'
+              ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+          }
+          cornerRadius={radius.pill}
+          style={{ height: 48, alignSelf: 'stretch' }}
+          onPress={() => {
+            if (!apple.isLoading && !google.isLoading) apple.signIn();
+          }}
+        />
+      ) : (
+        <Button
+          label={t('auth.continueWithApple')}
+          variant="ghost"
+          onPress={apple.signIn}
+          loading={apple.isLoading}
+          disabled={google.isLoading}
+        />
+      )}
     </Screen>
   );
 }

@@ -79,10 +79,9 @@
     "subtitle": "نقدّر وقتك",
     "continueWithGoogle": "المتابعة باستخدام جوجل",
     "continueWithApple": "المتابعة باستخدام آبل",
-    "continueWithPhone": "المتابعة برقم الهاتف",
     "completingSignIn": "جارٍ إكمال تسجيل الدخول…",
     "signInFailedTitle": "فشل تسجيل الدخول",
-    "noAuthCode": "لم يتم إرجاع رمز تفويض من جوجل.",
+    "noAuthCode": "لم يتم إرجاع رمز تفويض.",
     "signInFailedGeneric": "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.",
     "backToSignIn": "العودة لتسجيل الدخول"
   }

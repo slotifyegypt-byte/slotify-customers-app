@@ -1,17 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-import { useAuthStore } from '@/features/auth/store/authStore';
-
-import { logoutRemote } from '../api/authApi';
+import { supabase } from '@/lib/supabase';
 
 export function useLogout() {
-  const clearAuth = useAuthStore((s) => s.clearAuth);
   const queryClient = useQueryClient();
 
   return useCallback(async () => {
-    await logoutRemote();
-    clearAuth();
+    // Revokes the refresh token server-side. If that fails (offline, or the
+    // account was just deleted) still clear the local session.
+    const { error } = await supabase.auth.signOut();
+    if (error) await supabase.auth.signOut({ scope: 'local' });
     queryClient.clear(); // drop every cached server response — next sign-in starts clean
-  }, [clearAuth, queryClient]);
+  }, [queryClient]);
 }

@@ -8,40 +8,40 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { spacing, useColors } from '@/theme';
 
-import { exchangeGoogleCode } from '../api/authApi';
-import { useAuthStore } from '../store/authStore';
+import { exchangeCode } from '../api/oauth';
 
 /**
- * Real screen for `slotify://auth/callback?code=...` — see useGoogleSignIn.ts
- * for why this, not a resolved WebBrowser promise, is what actually
- * completes Google sign-in (confirmed via live Android testing 2026-09-19).
+ * Real screen for `slotify://auth/callback?code=...` — see signInWithBrowser
+ * in api/oauth.ts for why this, not a resolved WebBrowser promise, is what
+ * completes browser sign-in on Android (confirmed via live testing 2026-09-19).
  */
 export function AuthCallbackScreen() {
   const colors = useColors();
   const { t } = useTranslation();
-  const { code, error: oauthError } = useLocalSearchParams<{ code?: string; error?: string }>();
-  const setTokens = useAuthStore((s) => s.setTokens);
+  const {
+    code,
+    error: oauthError,
+    error_description: oauthErrorDescription,
+  } = useLocalSearchParams<{ code?: string; error?: string; error_description?: string }>();
   const [exchangeError, setExchangeError] = useState<string | null>(null);
   const startedRef = useRef(false); // guard against double-exchange (an auth code is single-use)
 
   // Derived at render time (not via setState-in-effect) since it depends only
   // on the route params themselves, not on any async work.
-  const missingCodeError = !code ? (oauthError ?? t('auth.noAuthCode')) : null;
+  const missingCodeError = !code ? (oauthErrorDescription ?? oauthError ?? t('auth.noAuthCode')) : null;
   const error = missingCodeError ?? exchangeError;
 
   useEffect(() => {
     if (startedRef.current || !code) return;
     startedRef.current = true;
 
-    exchangeGoogleCode(code)
-      .then((tokens) => {
-        setTokens(tokens.access_token, tokens.refresh_token);
-        router.replace('/');
-      })
+    // Signing in updates the auth store via Supabase's auth listener.
+    exchangeCode(code)
+      .then(() => router.replace('/'))
       .catch((err) => {
         setExchangeError(err instanceof Error ? err.message : t('auth.signInFailedGeneric'));
       });
-  }, [code, setTokens, t]);
+  }, [code, t]);
 
   return (
     <Screen style={{ alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>

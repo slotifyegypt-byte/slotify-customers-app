@@ -79,10 +79,9 @@
     "subtitle": "We appreciate your time",
     "continueWithGoogle": "Continue with Google",
     "continueWithApple": "Continue with Apple",
-    "continueWithPhone": "Continue with phone number",
     "completingSignIn": "Completing sign-in…",
     "signInFailedTitle": "Sign-in failed",
-    "noAuthCode": "No authorization code was returned by Google.",
+    "noAuthCode": "No authorization code was returned.",
     "signInFailedGeneric": "Sign-in failed. Please try again.",
     "backToSignIn": "Back to sign in"
   }
