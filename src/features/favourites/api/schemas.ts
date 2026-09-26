@@ -16,6 +16,17 @@ export const favouriteSchema = z.object({
 });
 export type Favourite = z.infer<typeof favouriteSchema>;
 
+// §5 — the create response is the bare new row, with no joined `store`
+// (that join only happens on the list endpoint above). Reusing
+// `favouriteSchema` here made every POST /favourites/ throw an "API
+// contract drift" error in dev, since `store` was never actually present.
+export const favouriteCreateSchema = z.object({
+  id: z.number(),
+  customer_id: z.string(),
+  store_id: z.string(),
+  created_at: z.string(),
+});
+
 // §5 — VERIFIED against the backend source (2026-09-18): raw `{is_favourite: bool}`, nothing else.
 export const favouriteCheckSchema = z.object({
   is_favourite: z.boolean(),

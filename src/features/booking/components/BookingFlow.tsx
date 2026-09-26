@@ -170,7 +170,7 @@ export function BookingFlow({
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.infoCard}>
           <View style={styles.infoItem}>
             <View style={styles.infoIcon}>
@@ -274,15 +274,15 @@ export function BookingFlow({
             {/* TODO i18n */}+ Add Service
           </ThemedText>
         </Pressable>
-
-        {formError ? (
-          <View style={styles.errorBanner}>
-            <ThemedText variant="caption" color="danger">
-              {formError}
-            </ThemedText>
-          </View>
-        ) : null}
       </ScrollView>
+
+      {formError ? (
+        <View style={styles.errorBanner}>
+          <ThemedText variant="caption" color="danger">
+            {formError}
+          </ThemedText>
+        </View>
+      ) : null}
 
       <View style={styles.footer}>
         <View>
@@ -378,6 +378,7 @@ const createStyles = (colors: Colors) =>
     backgroundColor: colors.backgroundMuted,
     borderRadius: radius.md,
     padding: spacing.sm,
+    marginHorizontal: spacing.md,
     marginTop: spacing.xs,
   },
   footer: {

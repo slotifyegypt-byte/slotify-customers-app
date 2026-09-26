@@ -2,7 +2,7 @@ import 'react-native-url-polyfill/auto';
 
 import { createClient, processLock } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
 
@@ -41,11 +41,27 @@ const chunkedSecureStorage = {
   },
 };
 
+// expo-secure-store has no web implementation (its `getValueWithKeyAsync`
+// binding is native-only), and Expo Router also runs this module during SSR
+// where `window` doesn't exist yet — so the web storage falls back to a
+// no-op until `window.localStorage` is actually available.
+const webStorage = {
+  async getItem(key: string): Promise<string | null> {
+    return typeof window === 'undefined' ? null : window.localStorage.getItem(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    if (typeof window !== 'undefined') window.localStorage.setItem(key, value);
+  },
+  async removeItem(key: string): Promise<void> {
+    if (typeof window !== 'undefined') window.localStorage.removeItem(key);
+  },
+};
+
 // Supabase Auth owns sign-in, token storage and refresh. The backend only
 // verifies the access token this client hands out.
 export const supabase = createClient(appConfig.supabaseUrl, appConfig.supabasePublishableKey, {
   auth: {
-    storage: chunkedSecureStorage,
+    storage: Platform.OS === 'web' ? webStorage : chunkedSecureStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

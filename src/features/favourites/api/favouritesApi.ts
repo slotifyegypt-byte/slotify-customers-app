@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { apiClient } from '@/lib/api/client';
 import { validateResponse } from '@/lib/api/zodFetch';
 
-import { favouriteCheckSchema, favouriteSchema } from './schemas';
+import { favouriteCheckSchema, favouriteCreateSchema, favouriteSchema } from './schemas';
 
 // customer-app-api-map.md §11
 // Trailing slash is load-bearing on both calls below: the backend
@@ -19,7 +19,7 @@ export async function getFavourites(params?: { limit?: number; offset?: number }
 // §5
 export async function addFavourite(storeId: string) {
   const response = await apiClient.post('/favourites/', { store_id: storeId });
-  return validateResponse(favouriteSchema, response, 'POST /favourites/');
+  return validateResponse(favouriteCreateSchema, response, 'POST /favourites/');
 }
 
 export async function removeFavourite(storeId: string) {
