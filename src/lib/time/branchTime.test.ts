@@ -1,4 +1,3 @@
-import { formatBookingDateStr } from '@/features/booking/utils/time';
 
 import {
   branchLocalDate,
@@ -61,11 +60,10 @@ describe('formatDate', () => {
     expect(formatDate('2026-11-02T22:30:00Z', 'UTC')).toBe('02 Nov. 2026');
   });
 
-  it('matches the legacy formatBookingDateStr output format', () => {
-    // The legacy helper hard-codes +02:00, so compare in winter time where
-    // Cairo really is UTC+2.
-    const winter = '2026-12-25T08:00:00+00:00';
-    expect(formatDate(winter, CAIRO)).toBe(formatBookingDateStr(winter));
+  it('keeps the legacy "DD Mon. YYYY" output format', () => {
+    // Same string the removed fixed-+02:00 helper produced for this instant
+    // (winter, when Cairo really is UTC+2).
+    expect(formatDate('2026-12-25T08:00:00+00:00', CAIRO)).toBe('25 Dec. 2026');
   });
 });
 

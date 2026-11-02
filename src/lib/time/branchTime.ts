@@ -1,7 +1,7 @@
 // Booking times are shown in the BRANCH's wall-clock time, never the device's.
 //
 // This replaces the old fixed "+02:00" Cairo hack in
-// src/features/booking/utils/time.ts. That hack existed because the FastAPI
+// the (now deleted) booking/utils/time.ts. That hack existed because the FastAPI
 // backend and the app disagreed about Cairo's DST; the Supabase backend stores
 // true UTC (`timestamptz`) and publishes each branch's IANA timezone
 // (e.g. "Africa/Cairo", "Europe/Warsaw"), so we can convert correctly for any
