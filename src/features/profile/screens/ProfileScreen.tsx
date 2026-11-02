@@ -182,11 +182,11 @@ export function ProfileScreen() {
           accessibilityRole="button"
           accessibilityLabel="Edit profile" // TODO i18n
         >
-          <Avatar uri={profile?.profile_picture} label={initials} size={64} />
+          <Avatar uri={profile?.avatar_url} label={initials} size={64} />
           <View style={styles.headerText}>
             <ThemedText variant="h3">{displayName || 'Add your name'}</ThemedText>
             <ThemedText variant="body" color="textSecondary">
-              {profile?.email ?? profile?.phone_number ?? ''}
+              {profile?.email ?? profile?.phone ?? ''}
             </ThemedText>
           </View>
         </Pressable>

@@ -19,7 +19,7 @@ export async function callFunction<T>(path: string, init: CallInit = {}): Promis
   const token = data.session?.access_token;
   if (!token) throw new ApiError('not_signed_in', 401);
 
-  const res = await fetch(functionUrl(path), {
+  const res = await send(functionUrl(path), {
     method: init.method ?? 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -36,10 +36,20 @@ export async function callPublicFunction<T>(
   path: string,
   query: Record<string, string>,
 ): Promise<T> {
-  const res = await fetch(`${functionUrl(path)}?${new URLSearchParams(query).toString()}`, {
+  const res = await send(`${functionUrl(path)}?${new URLSearchParams(query).toString()}`, {
     headers: { apikey: appConfig.supabasePublishableKey },
   });
   return parse<T>(res);
+}
+
+// fetch only rejects on a network failure (offline, DNS, timeout) — surface
+// it as an ApiError so callers handle one error type.
+async function send(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new ApiError('network_error', 0);
+  }
 }
 
 async function parse<T>(res: Response): Promise<T> {

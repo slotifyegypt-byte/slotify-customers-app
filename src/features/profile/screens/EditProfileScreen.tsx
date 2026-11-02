@@ -7,8 +7,10 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
+import { isApiError } from '@/lib/api/errors';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
+import { isE164 } from '../api/profileApi';
 import type { CustomerProfile } from '../api/schemas';
 import { useMyProfile, useUpdateMyProfile } from '../hooks/useProfile';
 
@@ -51,10 +53,11 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
   const updateProfile = useUpdateMyProfile();
 
   const initialFullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
-  const initialPhone = [profile.phone_country_code, profile.phone_number].filter(Boolean).join(' ').trim();
+  const initialPhone = profile.phone ?? '';
 
   const [fullName, setFullName] = useState(initialFullName);
   const [phone, setPhone] = useState(initialPhone);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const isDirty = useMemo(
     () => fullName.trim() !== initialFullName.trim() || phone.trim() !== initialPhone.trim(),
@@ -69,24 +72,27 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
       return;
     }
 
-    // A leading "+<country code>" followed by the rest of the number is the
-    // only shape this splits — anything else is sent as-is in phone_number
-    // so we never silently drop digits the user typed.
-    const phoneMatch = phone.trim().match(/^(\+\d{1,4})\s*(.*)$/);
-    const phonePayload = phone.trim()
-      ? phoneMatch
-        ? { phone_country_code: phoneMatch[1], phone_number: phoneMatch[2].replace(/\s+/g, '') }
-        : { phone_number: phone.trim().replace(/\s+/g, '') }
-      : { phone_country_code: null, phone_number: null };
+    // One E.164 number (+201001234567); empty clears it. Spaces and dashes
+    // typed for readability are stripped before validating.
+    const phoneValue = phone.replace(/[\s-]+/g, '');
+    if (phoneValue && !isE164(phoneValue)) {
+      setPhoneError('Enter your number with the country code, e.g. +201001234567.'); // TODO i18n
+      return;
+    }
+    setPhoneError(null);
 
     try {
       await updateProfile.mutateAsync({
         first_name,
         last_name,
-        ...phonePayload,
+        phone: phoneValue || null,
       });
       router.back();
-    } catch {
+    } catch (err) {
+      if (isApiError(err, 'invalid_field')) {
+        setPhoneError('That phone number isn\'t valid. Use the format +201001234567.'); // TODO i18n
+        return;
+      }
       Alert.alert('Could not save changes', 'Please check your details and try again.'); // TODO i18n
     }
   };
@@ -97,7 +103,7 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
       <ScrollView contentContainerStyle={styles.padded}>
         <View style={styles.avatarRow}>
           <Avatar
-            uri={profile.profile_picture}
+            uri={profile.avatar_url}
             label={(initialFullName || profile.email || '?').trim().charAt(0).toUpperCase()}
             size={96}
             editable
@@ -122,7 +128,7 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
           EMAIL
         </ThemedText>
         <TextInput
-          value={profile.email}
+          value={profile.email ?? ''}
           editable={false}
           style={[styles.input, styles.inputDisabled]}
         />
@@ -132,14 +138,22 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
         </ThemedText>
         <TextInput
           value={phone}
-          onChangeText={setPhone}
-          placeholder="+20 10 0234567" // TODO i18n
+          onChangeText={(text) => {
+            setPhone(text);
+            if (phoneError) setPhoneError(null);
+          }}
+          placeholder="+201001234567" // TODO i18n
           placeholderTextColor={colors.textSecondary}
-          style={styles.input}
+          style={[styles.input, phoneError ? styles.inputError : null]}
           keyboardType="phone-pad"
         />
+        {phoneError ? (
+          <ThemedText variant="caption" color="danger" style={styles.note}>
+            {phoneError}
+          </ThemedText>
+        ) : null}
         <ThemedText variant="caption" color="textSecondary" style={styles.note}>
-          {/* §11: PUT /customers/me overwrites the phone number directly, no OTP/verification step on this backend. */}
+          {/* The phone number is overwritten directly, no OTP/verification step on this backend. */}
           Changes to your phone number are saved immediately and are not verified.
         </ThemedText>
 
@@ -169,6 +183,7 @@ const createStyles = (colors: Colors) =>
       paddingVertical: spacing.sm,
       color: colors.textPrimary,
     },
+    inputError: { borderColor: colors.danger },
     inputDisabled: { color: colors.textSecondary, backgroundColor: colors.backgroundMuted },
     note: { marginTop: spacing.sm },
     saveButton: { marginTop: spacing.xl },

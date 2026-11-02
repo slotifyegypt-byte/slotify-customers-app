@@ -77,3 +77,19 @@ describe('callPublicFunction', () => {
     expect(init.headers.Authorization).toBeUndefined();
   });
 });
+
+describe('network failures', () => {
+  it('callFunction wraps a fetch rejection in ApiError(network_error, 0)', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+    const failure: unknown = await callFunction('account/me', { method: 'DELETE' }).catch((e) => e);
+    expect(isApiError(failure, 'network_error')).toBe(true);
+    expect((failure as ApiError).status).toBe(0);
+  });
+
+  it('callPublicFunction wraps a fetch rejection in ApiError(network_error, 0)', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+    const failure: unknown = await callPublicFunction('availability', { a: 'b' }).catch((e) => e);
+    expect(isApiError(failure, 'network_error')).toBe(true);
+    expect((failure as ApiError).status).toBe(0);
+  });
+});
