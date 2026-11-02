@@ -18,9 +18,9 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import type { BookingRead } from '@/features/booking/api/schemas';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
-import { formatBookingDateStr } from '@/features/booking/utils/time';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { useMyProfile } from '@/features/profile/hooks/useProfile';
+import { formatDate } from '@/lib/time/branchTime';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { Review } from '../api/schemas';
@@ -156,7 +156,7 @@ function ReviewRow({
           numberOfLines={1}
         >
           {t('reviews.linkedVisit')}: {linkedBooking.booking_services_str} ·{' '}
-          {formatBookingDateStr(linkedBooking.booking_date)}
+          {formatDate(linkedBooking.booking_date, linkedBooking.timezone)}
         </ThemedText>
       ) : null}
 

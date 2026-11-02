@@ -13,9 +13,10 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import type { BookingRead, BookingStatus } from '@/features/booking/api/schemas';
 import { useBookingDetail } from '@/features/booking/hooks/useBookingDetail';
-import { formatBookingDateStr, formatBookingDateTitle, formatBookingHourStr } from '@/features/booking/utils/time';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { formatCountdown } from '@/features/home/utils/countdown';
+import { formatMoney } from '@/lib/money';
+import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
 import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
 
 import { useStoreTeam } from '../hooks/useStoreTeam';
@@ -75,12 +76,14 @@ export function BookingDetailScreen() {
   // "appointment" = specialist mode (barber/salon/spa).
   const isOrder = data.booking_type === 'drop_off';
   const canCancel = data.booking_status === 'pending' || data.booking_status === 'confirmed';
-  const canReview = data.booking_status === 'completed';
+  // One review per booking: once reviewed, the button goes away.
+  const canReview = data.booking_status === 'completed' && !data.has_review;
 
   const employeeName = (employeeId: string) => {
     const member = team.data?.find((m) => m.id === employeeId);
-    if (!member) return null;
-    return [member.first_name, member.last_name].filter(Boolean).join(' ');
+    if (member) return [member.first_name, member.last_name].filter(Boolean).join(' ');
+    // Team lookup missing/failed — fall back to the name snapshotted on the booking.
+    return data.booking_services.find((s) => s.employee_id === employeeId)?.employee_name ?? null;
   };
 
   const handleDirections = () => {
@@ -116,7 +119,7 @@ export function BookingDetailScreen() {
         // is always a valid value to forward here.
         bookingId: data.id,
         serviceName: data.booking_services.map((s) => s.service_name).join(', '),
-        date: formatBookingDateStr(data.booking_date),
+        date: formatDate(data.booking_date, data.timezone),
       },
     });
 
@@ -158,6 +161,12 @@ export function BookingDetailScreen() {
 // time is shown. `formatCountdown` falls back to its second argument once
 // the appointment is more than a few hours out or already started — an
 // empty-string fallback means "hide the pill" here.
+// ALL-CAPS label for the hero card. `no_show` would otherwise read "NO_SHOW".
+function bookingStatusLabel(status: BookingStatus): string {
+  // TODO i18n
+  return status === 'no_show' ? 'NO SHOW' : status.toUpperCase();
+}
+
 function appointmentCountdown(dateIso: string, status: BookingStatus): string | null {
   if (status !== 'confirmed') return null;
   const label = formatCountdown(dateIso, '');
@@ -200,7 +209,7 @@ function AppointmentDetail({
       <View style={styles.heroCard}>
         <ThemedText variant="caption" color="textInverse" style={styles.heroStatusLabel}>
           {/* TODO i18n */}
-          {data.booking_status.toUpperCase()}
+          {bookingStatusLabel(data.booking_status)}
         </ThemedText>
         <ThemedText variant="h2" color="textInverse">
           {data.store_name}
@@ -212,7 +221,7 @@ function AppointmentDetail({
             <View style={[styles.heroAvatar, styles.heroAvatarFallback]} />
           )}
           <ThemedText variant="body" color="textInverse" style={styles.heroSubText}>
-            {formatBookingDateTitle(data.booking_date)} · {formatBookingHourStr(data.booking_date)}
+            {formatDateTitle(data.booking_date, data.timezone)} · {formatHour(data.booking_date, data.timezone)}
             {employeeLabel ? ` · ${employeeLabel}` : ''}
           </ThemedText>
         </View>
@@ -239,9 +248,7 @@ function AppointmentDetail({
         <InfoRow
           icon="pricetag-outline"
           label={/* TODO i18n */ 'Price'}
-          value={
-            `${data.total_price} EGP` /* TODO i18n: currency hardcoded — no price_symbol field on BookingRead */
-          }
+          value={formatMoney(data.total_price, data.currency)}
         />
       </View>
 
@@ -355,6 +362,7 @@ function orderStepIndex(status: BookingStatus): number {
     case 'completed':
       return ORDER_STEPS.length;
     case 'cancelled':
+    case 'no_show':
     default:
       return -1;
   }
@@ -373,9 +381,12 @@ function OrderDetail({
   const styles = createStyles(colors);
   const currentIndex = orderStepIndex(data.booking_status);
   const isCancelled = data.booking_status === 'cancelled';
+  const isNoShow = data.booking_status === 'no_show';
   const statusLabel = isCancelled
     ? 'Cancelled' /* TODO i18n */
-    : ORDER_STEPS[Math.min(currentIndex, ORDER_STEPS.length - 1)].label;
+    : isNoShow
+      ? 'No show' /* TODO i18n */
+      : ORDER_STEPS[Math.min(currentIndex, ORDER_STEPS.length - 1)].label;
   const showHelpRow = data.booking_status === 'pending' || data.booking_status === 'confirmed';
 
   const hasPhone = Boolean(store?.phone);
@@ -444,7 +455,7 @@ function OrderDetail({
 
       <ThemedText
         variant="bodyMedium"
-        color={isCancelled ? 'danger' : 'textPrimary'}
+        color={isCancelled || isNoShow ? 'danger' : 'textPrimary'}
         style={styles.orderStatusLine}
       >
         {/* TODO i18n */}
@@ -458,7 +469,7 @@ function OrderDetail({
               {/* TODO i18n */}
               WHEN
             </ThemedText>
-            <ThemedText variant="bodyMedium">{formatBookingDateTitle(data.booking_date)}</ThemedText>
+            <ThemedText variant="bodyMedium">{formatDateTitle(data.booking_date, data.timezone)}</ThemedText>
           </View>
           <View style={styles.whenWhereCol}>
             <ThemedText variant="caption" color="textSecondary" style={styles.whenWhereLabel}>

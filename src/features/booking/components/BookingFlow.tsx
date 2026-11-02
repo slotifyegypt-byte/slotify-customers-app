@@ -11,7 +11,7 @@ import { formatMoney } from '@/lib/money';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { draftEntryToPayload, type AvailabilityParams, type CreateBookingServicePayload } from '../api/bookingApi';
-import type { AvailabilitySlot, BookingRead, Service } from '../api/schemas';
+import type { AvailabilitySlot, LegacyBookingRead, Service } from '../api/schemas';
 import { useAvailability } from '../hooks/useAvailability';
 import { useCreateBooking } from '../hooks/useCreateBooking';
 import { useBookingDraftStore, useDraftEntries } from '../state/bookingDraftStore';
@@ -31,7 +31,7 @@ interface BookingFlowProps {
   initialEmployeeId?: string | null;
   initialDate?: string;
   initialSlot?: AvailabilitySlot | null;
-  onBooked: (booking: BookingRead) => void;
+  onBooked: (booking: LegacyBookingRead) => void; // legacy shape until Task 6
 }
 
 /**

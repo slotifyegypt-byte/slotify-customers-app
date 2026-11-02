@@ -1,6 +1,7 @@
 import { mockQuery } from '@/test/mockSupabase';
 
-import { getStoreEmployeesForService, getStoreServices } from './bookingApi';
+import { cancelBooking, getBooking, getMyBookings, getStoreEmployeesForService, getStoreServices } from './bookingApi';
+import { BOOKING_SELECT } from './mappers';
 
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
@@ -121,5 +122,140 @@ describe('getStoreEmployeesForService', () => {
         rating: null,
       },
     ]);
+  });
+});
+
+const bookingRow = (overrides: Record<string, unknown> = {}) => ({
+  id: 'bk1',
+  branch_id: 'b1',
+  business_id: 'biz1',
+  customer_id: 'c1',
+  status: 'confirmed',
+  total_price: 100,
+  currency: 'EGP',
+  starts_at: '2026-11-10T08:00:00+00:00',
+  ends_at: '2026-11-10T08:30:00+00:00',
+  created_at: '2026-11-01T10:00:00+00:00',
+  updated_at: '2026-11-01T10:00:00+00:00',
+  items: [
+    {
+      id: 'i1',
+      booking_id: 'bk1',
+      service_id: 's1',
+      service_name: 'Cut',
+      employee_id: 'e1',
+      employee_name: 'Sara',
+      price: 100,
+      starts_at: '2026-11-10T08:00:00+00:00',
+      ends_at: '2026-11-10T08:30:00+00:00',
+      status: 'confirmed',
+      created_at: '2026-11-01T10:00:00+00:00',
+      updated_at: '2026-11-01T10:00:00+00:00',
+    },
+  ],
+  branch: {
+    id: 'b1',
+    business_id: 'biz1',
+    business_name: 'Studio',
+    branch_name: 'Maadi',
+    address: 'Addr',
+    category_slugs: [],
+    logo_path: null,
+    latitude: null,
+    longitude: null,
+    rating_avg: 4.5,
+    rating_count: 3,
+    is_open_now: true,
+    timezone: 'Africa/Cairo',
+    currency: 'EGP',
+  },
+  reviews: [],
+  ...overrides,
+});
+
+describe('getMyBookings', () => {
+  it('selects the guide string verbatim and orders by starts_at descending', async () => {
+    const q = mockQuery({ data: [bookingRow()], error: null });
+    mockFrom.mockReturnValueOnce(q.builder);
+
+    const bookings = await getMyBookings();
+
+    expect(mockFrom).toHaveBeenCalledWith('bookings');
+    expect(q.calls).toContainEqual([
+      'select',
+      ['*, items:booking_items(*), branch:branch_cards(*), reviews:reviews!reviews_booking_id_branch_id_fkey(id, rating)'],
+    ]);
+    expect(BOOKING_SELECT).toBe(
+      '*, items:booking_items(*), branch:branch_cards(*), reviews:reviews!reviews_booking_id_branch_id_fkey(id, rating)',
+    );
+    expect(q.calls).toContainEqual(['order', ['starts_at', { ascending: false }]]);
+    expect(q.calls.some(([method]) => method === 'eq')).toBe(false);
+    expect(bookings.map((b) => b.id)).toEqual(['bk1']);
+  });
+
+  it("adds .eq('status', status) when a status is given", async () => {
+    const q = mockQuery({ data: [], error: null });
+    mockFrom.mockReturnValueOnce(q.builder);
+
+    await getMyBookings('confirmed');
+
+    expect(q.calls).toContainEqual(['eq', ['status', 'confirmed']]);
+    expect(q.calls).toContainEqual(['order', ['starts_at', { ascending: false }]]);
+  });
+
+  it('throws an ApiError on a postgrest error', async () => {
+    mockFrom.mockReturnValueOnce(mockQuery({ data: null, error: { code: '42501', message: 'rls' } }).builder);
+    await expect(getMyBookings()).rejects.toMatchObject({ code: 'forbidden', status: 403 });
+  });
+});
+
+describe('getBooking', () => {
+  it('reads one booking by id with the same select', async () => {
+    const q = mockQuery({ data: bookingRow(), error: null });
+    mockFrom.mockReturnValueOnce(q.builder);
+
+    const booking = await getBooking('bk1');
+
+    expect(q.calls).toContainEqual(['eq', ['id', 'bk1']]);
+    expect(q.calls.some(([method]) => method === 'single')).toBe(true);
+    expect(booking.booking_services_str).toBe('Cut');
+  });
+
+  it('maps a missing row to not_found', async () => {
+    mockFrom.mockReturnValueOnce(mockQuery({ data: null, error: { code: 'PGRST116', message: 'no rows' } }).builder);
+    await expect(getBooking('nope')).rejects.toMatchObject({ code: 'not_found', status: 404 });
+  });
+});
+
+describe('cancelBooking', () => {
+  it('calls transition_booking then refetches and returns the booking', async () => {
+    mockRpc.mockResolvedValue({ data: {}, error: null });
+    mockFrom.mockReturnValueOnce(mockQuery({ data: bookingRow({ status: 'cancelled' }), error: null }).builder);
+
+    const booking = await cancelBooking('bk1', 'changed my mind');
+
+    expect(mockRpc).toHaveBeenCalledWith('transition_booking', {
+      p_booking_id: 'bk1',
+      p_to_status: 'cancelled',
+      p_reason: 'changed my mind',
+    });
+    expect(mockFrom).toHaveBeenCalledWith('bookings');
+    expect(booking.booking_status).toBe('cancelled');
+  });
+
+  it('omits p_reason when none is given', async () => {
+    mockRpc.mockResolvedValue({ data: {}, error: null });
+    mockFrom.mockReturnValueOnce(mockQuery({ data: bookingRow({ status: 'cancelled' }), error: null }).builder);
+
+    await cancelBooking('bk1');
+
+    expect(mockRpc).toHaveBeenCalledWith('transition_booking', { p_booking_id: 'bk1', p_to_status: 'cancelled' });
+  });
+
+  it('surfaces PT409 invalid_transition as ApiError and does not refetch', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: { code: 'PT409', message: 'invalid_transition' } });
+
+    await expect(cancelBooking('bk1')).rejects.toMatchObject({ name: 'ApiError', code: 'invalid_transition', status: 409 });
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 });

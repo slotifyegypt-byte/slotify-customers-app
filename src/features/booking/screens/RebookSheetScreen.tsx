@@ -9,7 +9,7 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
-import type { BookingRead } from '../api/schemas';
+import type { BookingRead, LegacyBookingRead } from '../api/schemas';
 import { BookingFlow } from '../components/BookingFlow';
 import { useBookingDetail } from '../hooks/useBookingDetail';
 import { useStoreServices } from '../hooks/useStoreServices';
@@ -42,7 +42,7 @@ export function RebookSheetScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const original = useBookingDetail(bookingId);
 
-  const handleBooked = (booking: BookingRead) => {
+  const handleBooked = (booking: LegacyBookingRead) => {
     router.replace({ pathname: '/(modal)/confirmation', params: { bookingId: booking.id } });
   };
 
@@ -75,7 +75,7 @@ export function RebookSheetScreen() {
   return <RebookFlow originalBooking={original.data} onBooked={handleBooked} />;
 }
 
-function RebookFlow({ originalBooking, onBooked }: { originalBooking: BookingRead; onBooked: (booking: BookingRead) => void }) {
+function RebookFlow({ originalBooking, onBooked }: { originalBooking: BookingRead; onBooked: (booking: LegacyBookingRead) => void }) {
   const colors = useColors();
   const styles = createStyles(colors);
   const { t } = useTranslation();

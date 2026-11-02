@@ -11,7 +11,7 @@ import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { formatMoney } from '@/lib/money';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
-import type { BookingRead, Service } from '../api/schemas';
+import type { LegacyBookingRead, Service } from '../api/schemas';
 import { BookingFlow } from '../components/BookingFlow';
 import { useStoreServices } from '../hooks/useStoreServices';
 import { useDraftEntries } from '../state/bookingDraftStore';
@@ -41,7 +41,7 @@ export function ServiceBookingConfigScreen() {
   const draftEntries = useDraftEntries(storeId);
   const draftEntry = selectedService ? draftEntries[selectedService.id] : undefined;
 
-  const handleBooked = (booking: BookingRead) => {
+  const handleBooked = (booking: LegacyBookingRead) => {
     router.push({ pathname: '/(modal)/confirmation', params: { bookingId: booking.id } });
   };
 

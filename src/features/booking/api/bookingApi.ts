@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 import { compareBranchServices, toService } from '@/features/venue/api/mappers';
 import { getStoreTeam } from '@/features/venue/api/venueApi';
 import { apiClient } from '@/lib/api/client';
@@ -10,29 +8,42 @@ import { supabase } from '@/lib/supabase';
 import type { BookingDraftEntry } from '../state/bookingDraftStore';
 import { toBookingTimestamp } from '../utils/time';
 
+import { toBooking, BOOKING_SELECT, type BookingRow } from './mappers';
 import {
   availabilityResponseSchema,
-  bookingReadSchema,
+  legacyBookingReadSchema,
   type BookingEmployee,
+  type BookingRead,
   type BookingStatus,
   type Service,
 } from './schemas';
 
-// customer-app-api-map.md §8
-export async function getMyBookings(status?: BookingStatus) {
-  const response = await apiClient.get('/bookings/my-bookings', { params: status ? { status } : undefined });
-  return validateResponse(z.array(bookingReadSchema), response, 'GET /bookings/my-bookings');
+// developer-guide.md §5 "My bookings" — RLS limits `bookings` to the signed-in
+// customer's own rows. `reviews` is embedded so `has_review` needs no second call.
+export async function getMyBookings(status?: BookingStatus): Promise<BookingRead[]> {
+  let query = supabase.from('bookings').select(BOOKING_SELECT);
+  if (status) query = query.eq('status', status);
+  const { data, error } = await query.order('starts_at', { ascending: false });
+  if (error) throw fromPostgrest(error);
+  return ((data ?? []) as unknown as BookingRow[]).map((row) => toBooking(row));
 }
 
-// §9
-export async function getBooking(bookingId: string) {
-  const response = await apiClient.get(`/bookings/${bookingId}`);
-  return validateResponse(bookingReadSchema, response, `GET /bookings/${bookingId}`);
+export async function getBooking(bookingId: string): Promise<BookingRead> {
+  const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT).eq('id', bookingId).single();
+  if (error) throw fromPostgrest(error);
+  return toBooking(data as unknown as BookingRow);
 }
 
-export async function cancelBooking(bookingId: string, reason?: string) {
-  const response = await apiClient.post(`/bookings/${bookingId}/cancel`, { reason });
-  return validateResponse(bookingReadSchema, response, `POST /bookings/${bookingId}/cancel`);
+// developer-guide.md §5 "Cancel" — `transition_booking` raises PT409
+// `invalid_transition` when the booking is already completed/cancelled/etc.
+export async function cancelBooking(bookingId: string, reason?: string): Promise<BookingRead> {
+  const { error } = await supabase.rpc('transition_booking', {
+    p_booking_id: bookingId,
+    p_to_status: 'cancelled',
+    ...(reason ? { p_reason: reason } : {}),
+  });
+  if (error) throw fromPostgrest(error);
+  return getBooking(bookingId);
 }
 
 // developer-guide.md §5 — services the branch offers. The branch currency
@@ -111,6 +122,7 @@ export function draftEntryToPayload(entry: BookingDraftEntry): CreateBookingServ
   };
 }
 
+// LEGACY (FastAPI) — migrated in Task 6; returns the legacy booking shape.
 // §6/§7 — same call for a fresh booking or a "rebook" (rebook just prefills
 // this from a past booking; there is no dedicated rebook endpoint).
 export async function createBooking(storeId: string, bookingServices: CreateBookingServicePayload[]) {
@@ -123,7 +135,7 @@ export async function createBooking(storeId: string, bookingServices: CreateBook
     store_id: storeId,
     booking_services: bookingServices,
   });
-  return validateResponse(bookingReadSchema, response, 'POST /bookings/');
+  return validateResponse(legacyBookingReadSchema, response, 'POST /bookings/');
 }
 
 export interface RescheduleBookingServiceParams {
@@ -140,10 +152,10 @@ export interface RescheduleBookingServiceParams {
 // RebookSheetScreen), not a reschedule. The path already ends in the static
 // `/my-booking` segment, so unlike `POST /bookings/` there's no slash-less
 // redirect to dodge here (same as the `PUT /reviews/{id}` precedent).
-export async function rescheduleBookingService(bookingServiceId: number, params: RescheduleBookingServiceParams) {
+export async function rescheduleBookingService(bookingServiceId: string, params: RescheduleBookingServiceParams) {
   const response = await apiClient.put(`/bookings/services/${bookingServiceId}/reschedule/my-booking`, params);
   return validateResponse(
-    bookingReadSchema,
+    legacyBookingReadSchema,
     response,
     `PUT /bookings/services/${bookingServiceId}/reschedule/my-booking`,
   );

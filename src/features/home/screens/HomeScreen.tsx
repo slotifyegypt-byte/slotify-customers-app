@@ -9,12 +9,12 @@ import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
-import { formatBookingDateTitle, formatBookingHourStr } from '@/features/booking/utils/time';
 import { isMappable } from '@/features/explore-search/api/mappers';
 import { useNearbyStores } from '@/features/explore-search/hooks/useNearbyStores';
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useNotifications';
 import { useMyProfile } from '@/features/profile/hooks/useProfile';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
+import { formatDateTitle, formatHour } from '@/lib/time/branchTime';
 import { fontFamily, radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { BookAgainCard } from '../components/BookAgainCard';
@@ -174,8 +174,8 @@ export function HomeScreen() {
               <NextUpCard
                 storeName={nextUp.store_name}
                 logo={nextUp.store_logo}
-                dateLabel={formatCountdown(nextUp.booking_date, formatBookingDateTitle(nextUp.booking_date))}
-                timeLabel={formatBookingHourStr(nextUp.booking_date)}
+                dateLabel={formatCountdown(nextUp.booking_date, formatDateTitle(nextUp.booking_date, nextUp.timezone))}
+                timeLabel={formatHour(nextUp.booking_date, nextUp.timezone)}
                 servicesLabel={nextUp.booking_services_str}
                 onPress={() => router.push(`/(tabs)/activity/${nextUp.id}`)}
               />

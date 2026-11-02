@@ -1,15 +1,67 @@
 import { z } from 'zod';
 
-// customer-app-api-map.md §8/§9 — statuses actually queried/displayed by the app.
-export const bookingStatusSchema = z.enum(['pending', 'confirmed', 'completed', 'cancelled']);
+// Mirrors the `booking_status` enum (database.types.ts). `no_show` is set by
+// staff after a missed appointment; the customer app only ever displays it.
+export const bookingStatusSchema = z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'no_show']);
 export type BookingStatus = z.infer<typeof bookingStatusSchema>;
 
-// §6 "Sample — create booking" response shapes (both specialist and capacity mode
-// share this — capacity mode simply has `employee_id: null` throughout).
-// `note` — VERIFIED against live /openapi.json + response shapes (2026-09-20):
-// BookingServiceRead now returns the note back too, nullable rather than
-// always a string.
-export const bookingServiceReadSchema = z.object({
+// One `booking_items` row. `id` is the item's uuid (what reschedule targets).
+export interface BookingServiceRead {
+  id: string;
+  booking_id: string;
+  service_id: string;
+  employee_id: string | null;
+  /** Snapshot of the specialist's name taken when the booking was made. */
+  employee_name: string | null;
+  /** UTC ISO instants — format with the booking's `timezone`. */
+  booking_start_time: string;
+  booking_end_time: string;
+  booking_status: BookingStatus;
+  total_price: number;
+  service_name: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+// A customer's booking (developer-guide.md §5 "My bookings"), built by
+// `toBooking` in ./mappers. The `*_title/_str/_hour_str` fields are computed
+// client-side in the branch's timezone.
+export interface BookingRead {
+  id: string;
+  customer_id: string;
+  store_id: string;
+  store_name: string;
+  store_logo: string | null;
+  store_address: string;
+  store_rating: number;
+  booking_status: BookingStatus;
+  /** 'drop_off' when no item has a specialist (capacity mode), else 'appointment'. */
+  booking_type: 'appointment' | 'drop_off';
+  total_price: number;
+  /** ISO 4217 code — format with `formatMoney(total_price, currency)`. */
+  currency: string;
+  /** Branch IANA timezone, e.g. "Africa/Cairo". */
+  timezone: string;
+  /** `starts_at`, UTC ISO. */
+  booking_date: string;
+  booking_date_title: string;
+  booking_date_str: string;
+  booking_hour_str: string;
+  booking_services_str: string;
+  /** Whether the customer has already reviewed this booking. */
+  has_review: boolean;
+  /** The existing review's id (for edit flows), else null. */
+  review_id: string | null;
+  created_at: string;
+  updated_at: string | null;
+  booking_services: BookingServiceRead[];
+}
+
+// ─── Legacy FastAPI booking shape — removed in Task 6 ───────────────────────
+// Still returned by `createBooking` / `rescheduleBookingService`, which keep
+// talking to the old axios API until Task 6 migrates them. Nothing that reads
+// bookings (`getMyBookings` / `getBooking`) may use these.
+export const legacyBookingServiceReadSchema = z.object({
   id: z.number(),
   booking_id: z.string(),
   service_id: z.string(),
@@ -24,14 +76,8 @@ export const bookingServiceReadSchema = z.object({
   created_at: z.string(),
   updated_at: z.string().nullable(),
 });
-export type BookingServiceRead = z.infer<typeof bookingServiceReadSchema>;
 
-// `booking_type` — VERIFIED against live /openapi.json + response shapes
-// (2026-09-20): BookingRead now returns a server-computed
-// "appointment" | "drop_off" field, replacing the client's old
-// every-service-has-no-employee_id inference (see git blame on
-// isOrderBooking/isCapacityBooking) with real data.
-export const bookingReadSchema = z.object({
+export const legacyBookingReadSchema = z.object({
   id: z.string(),
   customer_id: z.string(),
   store_id: z.string(),
@@ -49,9 +95,9 @@ export const bookingReadSchema = z.object({
   booking_services_str: z.string(),
   created_at: z.string(),
   updated_at: z.string().nullable(),
-  booking_services: z.array(bookingServiceReadSchema),
+  booking_services: z.array(legacyBookingServiceReadSchema),
 });
-export type BookingRead = z.infer<typeof bookingReadSchema>;
+export type LegacyBookingRead = z.infer<typeof legacyBookingReadSchema>;
 
 // Services offered by one branch (developer-guide.md §5), built by
 // `toService` in features/venue/api/mappers. Mixed specialist/capacity per

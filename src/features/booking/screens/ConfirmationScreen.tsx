@@ -8,13 +8,13 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreTeam } from '@/features/activity/hooks/useStoreTeam';
+import { formatMoney } from '@/lib/money';
+import { formatDateTitle, formatHour } from '@/lib/time/branchTime';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { useBookingDetail } from '../hooks/useBookingDetail';
-import { formatBookingDateTitle, formatBookingHourStr } from '../utils/time';
 
-// Converts an offset-qualified ISO timestamp (see utils/time.ts —
-// booking_start_time/end_time always carry Cairo's +02:00) into the
+// Converts an ISO timestamp (booking_start_time/end_time are UTC) into the
 // YYYYMMDDTHHMMSSZ shape Google Calendar's "render" template URL expects.
 function toGoogleCalendarStamp(iso: string): string {
   return new Date(iso).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -139,7 +139,7 @@ export function ConfirmationScreen() {
           <View style={styles.metaRow}>
             <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
             <ThemedText variant="caption" color="textSecondary">
-              {formatBookingDateTitle(data.booking_date)} · {formatBookingHourStr(data.booking_date)}
+              {formatDateTitle(data.booking_date, data.timezone)} · {formatHour(data.booking_date, data.timezone)}
             </ThemedText>
           </View>
         </View>
@@ -150,20 +150,19 @@ export function ConfirmationScreen() {
             Total
           </ThemedText>
           <ThemedText variant="h3" color="textInverse">
-            {/* TODO i18n: currency hardcoded — BookingRead has no price_symbol field */}
-            {data.total_price} EGP
+            {formatMoney(data.total_price, data.currency)}
           </ThemedText>
         </View>
 
         {/* BookingRead carries no store lat/lng, so this is a static, non-
             interactive preview rather than a real map — the pin + time
-            callout are still real booking data (formatBookingHourStr). */}
+            callout are still real booking data (formatHour). */}
         <View style={styles.mapPreview}>
           <Ionicons name="map-outline" size={28} color={colors.textSecondary} style={styles.mapFallbackIcon} />
           <View style={styles.pinColumn} pointerEvents="none">
             <View style={styles.timeCallout}>
               <ThemedText variant="caption" color="textInverse">
-                {formatBookingHourStr(data.booking_date)}
+                {formatHour(data.booking_date, data.timezone)}
               </ThemedText>
             </View>
             <Ionicons name="caret-down" size={12} color={colors.brand} style={styles.calloutArrow} />

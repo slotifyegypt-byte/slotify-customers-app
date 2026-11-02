@@ -5,10 +5,11 @@ import { Alert, Pressable, StyleSheet } from 'react-native';
 import { Button } from '@/components/Button';
 import { ThemedText } from '@/components/ThemedText';
 import { useBookingDetail, useCancelBooking } from '@/features/booking/hooks/useBookingDetail';
+import { isApiError } from '@/lib/api/errors';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
-// customer-app-api-map.md §9 — POST /bookings/{booking_id}/cancel, body
-// `{ reason }` is optional, but 30-cancel-modal.png shows no reason field at
+// developer-guide.md §5 "Cancel" — `transition_booking` with an optional
+// `reason`, but 30-cancel-modal.png shows no reason field at
 // all — just a title, one line of contextual body copy, and the two
 // buttons. Matching that literally: no text input here.
 //
@@ -52,7 +53,18 @@ export function CancelBookingScreen() {
     try {
       await cancelBooking.mutateAsync(undefined);
       router.back();
-    } catch {
+    } catch (error) {
+      if (isApiError(error, 'invalid_transition')) {
+        // The booking moved on (already cancelled, completed or marked no-show)
+        // since this screen loaded — say so and close; the hook has already
+        // refetched, so the detail screen behind shows the real status.
+        Alert.alert(
+          /* TODO i18n */ "This booking can't be cancelled",
+          /* TODO i18n */ 'It has already been completed or cancelled.',
+          [{ text: 'OK', onPress: dismiss }],
+        );
+        return;
+      }
       Alert.alert(t('common.errorGeneric')); // TODO i18n
     }
   };

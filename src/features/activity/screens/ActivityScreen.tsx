@@ -11,13 +11,13 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { ThemedText } from '@/components/ThemedText';
 import type { BookingRead } from '@/features/booking/api/schemas';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
-import { formatBookingDateStr, formatBookingDateTitle, formatBookingHourStr } from '@/features/booking/utils/time';
 import { iconForCategory, pinColorForCategory } from '@/features/home/utils/categoryIcon';
+import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
 import { fontFamily, radius, shadows, spacing, useColors, type ColorToken, type Colors } from '@/theme';
 
 // customer-app-api-map.md §8 — Active = confirmed + pending, merged
 // client-side (no combined-status query param exists); Past = completed +
-// cancelled. A simple local-state segmented control stands in for a nested
+// cancelled + no_show. A simple local-state segmented control stands in for a nested
 // navigator since there's no independent state to preserve per tab.
 type Tab = 'active' | 'past';
 
@@ -25,7 +25,7 @@ type Tab = 'active' | 'past';
 // status ("IN QUEUE") beyond CONFIRMED/IN PROGRESS, driven by a live queue
 // position. Per customer-app-api-map.md §0.3, Live Queue is explicitly
 // dropped from scope ("do not build"), and there is no backend field for it
-// anyway — bookings only ever come back as pending/confirmed here. So every
+// anyway — active bookings are only ever pending/confirmed. So every
 // non-confirmed active booking reads as "IN PROGRESS" (capacity/order-type
 // bookings, e.g. tailoring drop-off) or "PENDING" (specialist bookings
 // awaiting store confirmation) instead of a fabricated queue position.
@@ -47,14 +47,23 @@ function activeStatusMeta(booking: BookingRead): { label: string; color: Extract
     : { label: 'PENDING', color: 'warning' };
 }
 
+// Past rows stay unbadged when completed; the two unsuccessful outcomes get
+// the same ALL-CAPS label style as the active cards.
+function pastStatusLabel(status: BookingRead['booking_status']): string | null {
+  // TODO i18n
+  if (status === 'cancelled') return 'CANCELLED';
+  if (status === 'no_show') return 'NO SHOW';
+  return null;
+}
+
 function activeSubtitle(booking: BookingRead): string {
-  const hourStr = formatBookingHourStr(booking.booking_date);
+  const hourStr = formatHour(booking.booking_date, booking.timezone);
   if (isCapacityBooking(booking)) {
     const count = booking.booking_services.length;
     // TODO i18n
     return `${count} item${count === 1 ? '' : 's'} · since ${hourStr}`;
   }
-  return `${formatBookingDateTitle(booking.booking_date)} · ${hourStr}`;
+  return `${formatDateTitle(booking.booking_date, booking.timezone)} · ${hourStr}`;
 }
 
 export function ActivityScreen() {
@@ -67,6 +76,7 @@ export function ActivityScreen() {
   const pending = useMyBookings('pending');
   const completed = useMyBookings('completed');
   const cancelled = useMyBookings('cancelled');
+  const noShow = useMyBookings('no_show');
 
   const activeBookings = useMemo(() => {
     const merged = [...(confirmed.data ?? []), ...(pending.data ?? [])];
@@ -74,13 +84,17 @@ export function ActivityScreen() {
   }, [confirmed.data, pending.data]);
 
   const pastBookings = useMemo(() => {
-    const merged = [...(completed.data ?? []), ...(cancelled.data ?? [])];
+    const merged = [...(completed.data ?? []), ...(cancelled.data ?? []), ...(noShow.data ?? [])];
     return merged.sort((a, b) => b.booking_date.localeCompare(a.booking_date));
-  }, [completed.data, cancelled.data]);
+  }, [completed.data, cancelled.data, noShow.data]);
 
   const isActive = tab === 'active';
-  const isLoading = isActive ? confirmed.isLoading || pending.isLoading : completed.isLoading || cancelled.isLoading;
-  const isError = isActive ? confirmed.isError || pending.isError : completed.isError || cancelled.isError;
+  const isLoading = isActive
+    ? confirmed.isLoading || pending.isLoading
+    : completed.isLoading || cancelled.isLoading || noShow.isLoading;
+  const isError = isActive
+    ? confirmed.isError || pending.isError
+    : completed.isError || cancelled.isError || noShow.isError;
   const data = isActive ? activeBookings : pastBookings;
   const refetch = () => {
     if (isActive) {
@@ -89,6 +103,7 @@ export function ActivityScreen() {
     } else {
       completed.refetch();
       cancelled.refetch();
+      noShow.refetch();
     }
   };
 
@@ -194,6 +209,7 @@ function PastBookingRow({ booking }: { booking: BookingRead }) {
   const styles = createStyles(colors);
   const icon = iconForCategory(booking.store_name);
   const tint = pinColorForCategory(booking.store_name, colors);
+  const statusLabel = pastStatusLabel(booking.booking_status);
 
   return (
     <Pressable style={styles.pastRow} onPress={() => router.push(`/(tabs)/activity/${booking.id}`)}>
@@ -201,11 +217,16 @@ function PastBookingRow({ booking }: { booking: BookingRead }) {
         <Ionicons name={icon} size={20} color={tint} />
       </View>
       <View style={styles.rowInfo}>
+        {statusLabel ? (
+          <ThemedText variant="caption" color="danger" style={styles.statusLabel} numberOfLines={1}>
+            {statusLabel}
+          </ThemedText>
+        ) : null}
         <ThemedText variant="h3" numberOfLines={1}>
           {booking.store_name}
         </ThemedText>
         <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
-          {booking.booking_services_str} · {formatBookingDateStr(booking.booking_date)}
+          {booking.booking_services_str} · {formatDate(booking.booking_date, booking.timezone)}
         </ThemedText>
       </View>
     </Pressable>
