@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getStoreTeam } from '../api/teamApi';
+import { getStoreTeam } from '@/features/venue/api/venueApi';
 
 export function useStoreTeam(storeId: string | undefined) {
   return useQuery({

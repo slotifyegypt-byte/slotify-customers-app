@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { Button } from '@/components/Button';
 import { ThemedText } from '@/components/ThemedText';
+import { formatMoney } from '@/lib/money';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { draftEntryToPayload, type AvailabilityParams, type CreateBookingServicePayload } from '../api/bookingApi';
@@ -182,7 +183,7 @@ export function BookingFlow({
                 Price
               </ThemedText>
               <ThemedText variant="bodyMedium">
-                {service.price} {service.price_symbol}
+                {formatMoney(service.price, service.currency)}
               </ThemedText>
             </View>
           </View>
@@ -291,7 +292,7 @@ export function BookingFlow({
             Total
           </ThemedText>
           <ThemedText variant="h3">
-            {totalPrice} {service.price_symbol}
+            {formatMoney(totalPrice, service.currency)}
           </ThemedText>
         </View>
         <Button

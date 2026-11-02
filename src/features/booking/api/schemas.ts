@@ -53,24 +53,31 @@ export const bookingReadSchema = z.object({
 });
 export type BookingRead = z.infer<typeof bookingReadSchema>;
 
-// §5 — services list, mixed specialist/capacity per Service.requires_specialist (§0).
-export const serviceSchema = z.object({
-  id: z.string(),
-  store_id: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  category_id: z.string().nullable(),
-  service_image: z.string().nullable(),
-  duration_minutes: z.number(),
-  price: z.number(),
-  price_currency: z.string(),
-  price_symbol: z.string(),
-  requires_specialist: z.boolean(),
-  max_concurrent_bookings: z.number().nullable(),
-  created_at: z.string(),
-  updated_at: z.string().nullable(),
-});
-export type Service = z.infer<typeof serviceSchema>;
+// Services offered by one branch (developer-guide.md §5), built by
+// `toService` in features/venue/api/mappers. Mixed specialist/capacity per
+// `requires_specialist`. `id` is the service uuid.
+export interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  /** Built public URL, not a storage path. */
+  image: string | null;
+  duration_minutes: number;
+  /** The branch's price override when set (0 counts), else the service's own price. */
+  price: number;
+  /** ISO 4217 code of the business — format with `formatMoney(price, currency)`. */
+  currency: string;
+  requires_specialist: boolean;
+  /** Capacity-mode services only: how many guests can be booked at once. */
+  max_concurrent_bookings: number | null;
+  category: ServiceCategory | null;
+}
+
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  sort_order: number;
+}
 
 // §6 — GET /availability. `booking_mode` decides which of employees/slots is populated.
 export const availabilitySlotSchema = z.object({
@@ -104,27 +111,13 @@ export const availabilityResponseSchema = z.object({
 });
 export type AvailabilityResponse = z.infer<typeof availabilityResponseSchema>;
 
-// §6 — specialist picker. `rating` is optional/nullable: the mockups show a
-// star rating per specialist, but not every backend deploy of this endpoint
-// populates it — treat it as absent rather than failing validation.
-export const bookingEmployeeSchema = z.object({
-  id: z.string(),
-  first_name: z.string(),
-  last_name: z.string().nullable(),
-  profile_picture: z.string().nullable(),
-  role_name: z.string().nullable(),
-  rating: z.number().nullable().optional(),
-});
-export type BookingEmployee = z.infer<typeof bookingEmployeeSchema>;
-
-// GET /stores/{store_id}/services/{service_id}/employees — VERIFIED against
-// a live response (2026-09-20): unlike the doc's assumed shape (an array of
-// full employee objects, which `bookingEmployeeSchema` above was modeled on
-// with no real sample to check against), this endpoint actually returns just
-// bare employee ids. Display info (name/photo/role) comes from the store's
-// team roster instead — see getStoreEmployeesForService in bookingApi.ts,
-// which cross-references the two.
-export const serviceEmployeeIdsSchema = z.object({
-  service_id: z.string(),
-  employee_ids: z.array(z.string()),
-});
+// §6 — specialist picker, built from a `get_branch_team` row. `rating` is
+// absent: the team rpc carries no per-specialist rating.
+export interface BookingEmployee {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  profile_picture: string | null;
+  role_name: string | null;
+  rating?: number | null;
+}

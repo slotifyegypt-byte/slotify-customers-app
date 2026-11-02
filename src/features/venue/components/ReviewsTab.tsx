@@ -6,12 +6,15 @@ import { EmptyState } from '@/components/EmptyState';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { ThemedText } from '@/components/ThemedText';
 import { StarRating } from '@/features/reviews/components/StarRating';
+import { formatDate } from '@/lib/time/branchTime';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { VenueReview, VenueReviewStats } from '../api/schemas';
 
 interface ReviewsTabProps {
   stats: VenueReviewStats | undefined;
+  /** The branch's IANA timezone — review dates show in branch time. */
+  timezone: string;
   reviews: VenueReview[];
   isLoading: boolean;
   isError: boolean;
@@ -25,6 +28,7 @@ const STAR_VALUES = [5, 4, 3, 2, 1] as const;
 
 export function ReviewsTab({
   stats,
+  timezone,
   reviews,
   isLoading,
   isError,
@@ -43,11 +47,8 @@ export function ReviewsTab({
       : copy.sort((a, b) => b.created_at.localeCompare(a.created_at));
   }, [reviews, sort]);
 
-  // VERIFIED against a live GET /reviews/store/{store_id}/stats response
-  // (2026-09-20): the stats endpoint now returns `rating_distribution`, the
-  // true full 1★–5★ breakdown across every review for the store — not just
-  // whatever page of reviews this screen happens to have loaded. This
-  // replaces the previous client-side tally derived from `reviews`.
+  // `rating_distribution` is the full 1-5 star breakdown across every review
+  // for the branch, not just the page of reviews loaded here.
   const distribution = useMemo(() => {
     const counts = stats?.rating_distribution ?? { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
     const max = Math.max(1, ...Object.values(counts));
@@ -147,11 +148,9 @@ export function ReviewsTab({
           <View key={review.id} style={styles.reviewCard}>
             <View style={styles.reviewHeader}>
               <ThemedText variant="bodyMedium">{review.customer_name ?? 'Customer'}</ThemedText>
-              {review.review_date_str ? (
-                <ThemedText variant="caption" color="textSecondary">
-                  {review.review_date_str}
-                </ThemedText>
-              ) : null}
+              <ThemedText variant="caption" color="textSecondary">
+                {formatDate(review.created_at, timezone)}
+              </ThemedText>
             </View>
             <StarRating rating={review.rating} size={14} />
             {review.comment ? (

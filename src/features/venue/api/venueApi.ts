@@ -1,75 +1,104 @@
-import { z } from 'zod';
-
-import { apiClient } from '@/lib/api/client';
-import { validateResponse } from '@/lib/api/zodFetch';
+import { fromPostgrest } from '@/lib/api/errors';
+import { supabase } from '@/lib/supabase';
+import { branchToday } from '@/lib/time/branchTime';
 
 import {
-  calendarDaySchema,
-  galleryItemSchema,
-  reviewSchema,
-  reviewStatsSchema,
-  serviceCategorySchema,
-  specialDaySchema,
-  teamMemberSchema,
-} from './schemas';
+  toGalleryItem,
+  toHoursWeek,
+  toReview,
+  toReviewStats,
+  toSpecialDay,
+  toTeamMember,
+} from './mappers';
+import type { GalleryItem, HoursDay, SpecialDay, TeamMember, VenueReview, VenueReviewStats } from './schemas';
 
-// customer-app-api-map.md §5 — the doc calls this `/galleries`; that 404s
-// live. Confirmed via openapi.json that the real, public route is singular
-// `/gallery` (returns `[]`, not 404, for a store with no photos yet).
-export async function getStoreGallery(storeId: string) {
-  const response = await apiClient.get(`/stores/${storeId}/gallery`);
-  return validateResponse(z.array(galleryItemSchema), response, `GET /stores/${storeId}/gallery`);
+// developer-guide.md §5 — `branchId` is the branch uuid.
+
+// Weekly opening hours; every day 1..7 is present, empty `intervals` = closed.
+export async function getStoreCalendar(branchId: string): Promise<HoursDay[]> {
+  const { data, error } = await supabase
+    .from('branch_hours')
+    .select('day_of_week, opens_at, closes_at')
+    .eq('branch_id', branchId);
+  if (error) throw fromPostgrest(error);
+  return toHoursWeek(data ?? []);
 }
 
-// §5 — requires auth (customer or same-store-employee token); apiClient
-// already attaches the bearer token transparently.
-export async function getStoreTeam(storeId: string) {
-  const response = await apiClient.get(`/stores/${storeId}/team`);
-  return validateResponse(z.array(teamMemberSchema), response, `GET /stores/${storeId}/team`);
+// One-off exceptions from today (in the BRANCH's timezone) onwards. Callers
+// that already hold the branch detail pass its `timezone`; otherwise it is
+// looked up from `branch_cards` with one small query.
+export async function getStoreSpecialDays(branchId: string, timezone?: string): Promise<SpecialDay[]> {
+  const zone = timezone ?? (await getBranchTimezone(branchId));
+  const { data, error } = await supabase
+    .from('branch_special_days')
+    .select('date, is_closed, opens_at, closes_at, reason')
+    .eq('branch_id', branchId)
+    .gte('date', branchToday(zone))
+    .order('date');
+  if (error) throw fromPostgrest(error);
+  return (data ?? []).map(toSpecialDay);
 }
 
-// §5 — category names for grouping the services tab.
-export async function getStoreServiceCategories(storeId: string) {
-  const response = await apiClient.get(`/stores/${storeId}/service-categories`);
-  return validateResponse(
-    z.array(serviceCategorySchema),
-    response,
-    `GET /stores/${storeId}/service-categories`,
-  );
+async function getBranchTimezone(branchId: string): Promise<string> {
+  const { data, error } = await supabase.from('branch_cards').select('timezone').eq('id', branchId).single();
+  if (error) throw fromPostgrest(error);
+  return data.timezone;
 }
 
-// §5 — weekly hours.
-export async function getStoreCalendar(storeId: string) {
-  const response = await apiClient.get(`/stores/${storeId}/calendar`);
-  return validateResponse(z.array(calendarDaySchema), response, `GET /stores/${storeId}/calendar`);
+export async function getStoreGallery(branchId: string): Promise<GalleryItem[]> {
+  const { data, error } = await supabase
+    .from('branch_photos')
+    .select('id, image_path, caption, sort_order')
+    .eq('branch_id', branchId)
+    .order('sort_order');
+  if (error) throw fromPostgrest(error);
+  return (data ?? []).map(toGalleryItem).filter((item): item is GalleryItem => item !== null);
 }
 
-// §5 — one-off exceptions to the weekly calendar (holidays, early closes, ...).
-export async function getStoreSpecialDays(storeId: string) {
-  const response = await apiClient.get(`/stores/${storeId}/special-days`);
-  return validateResponse(
-    z.array(specialDaySchema),
-    response,
-    `GET /stores/${storeId}/special-days`,
-  );
+export async function getStoreTeam(branchId: string): Promise<TeamMember[]> {
+  const { data, error } = await supabase.rpc('get_branch_team', { p_branch_id: branchId });
+  if (error) throw fromPostgrest(error);
+  return (data ?? []).map(toTeamMember);
 }
 
-// §5 — VERIFIED against a live response (2026-09-20): now also returns
-// `rating_distribution`, the true full 1★–5★ breakdown across every review
-// for the store (see schemas.ts).
-export async function getStoreReviewStats(storeId: string) {
-  const response = await apiClient.get(`/reviews/store/${storeId}/stats`);
-  return validateResponse(reviewStatsSchema, response, `GET /reviews/store/${storeId}/stats`);
-}
+const DEFAULT_REVIEWS_LIMIT = 20;
 
 export interface ReviewListParams {
   limit?: number;
   offset?: number;
 }
 
-// §5 — paginated via `limit`/`offset` query params; the response itself is
-// a bare array (no `total_count` envelope), verified live.
-export async function getStoreReviews(storeId: string, params?: ReviewListParams) {
-  const response = await apiClient.get(`/reviews/store/${storeId}`, { params });
-  return validateResponse(z.array(reviewSchema), response, `GET /reviews/store/${storeId}`);
+export async function getStoreReviews(branchId: string, params: ReviewListParams = {}): Promise<VenueReview[]> {
+  const limit = params.limit ?? DEFAULT_REVIEWS_LIMIT;
+  const offset = params.offset ?? 0;
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('id, rating, comment, reply, replied_at, reviewer_name, created_at')
+    .eq('branch_id', branchId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw fromPostgrest(error);
+  return (data ?? []).map(toReview);
+}
+
+const STAR_VALUES = [1, 2, 3, 4, 5] as const;
+
+// There is no stats rpc: average and total come precomputed on `branch_cards`
+// and the 1-5 star breakdown is five parallel head-only count queries.
+export async function getStoreReviewStats(branchId: string): Promise<VenueReviewStats> {
+  const [card, ...counts] = await Promise.all([
+    supabase.from('branch_cards').select('rating_avg, rating_count').eq('id', branchId).single(),
+    ...STAR_VALUES.map((rating) =>
+      supabase
+        .from('reviews')
+        .select('id', { count: 'exact', head: true })
+        .eq('branch_id', branchId)
+        .eq('rating', rating),
+    ),
+  ]);
+  if (card.error) throw fromPostgrest(card.error);
+  for (const result of counts) {
+    if (result.error) throw fromPostgrest(result.error);
+  }
+  return toReviewStats(card.data, counts.map((result) => result.count ?? 0) as [number, number, number, number, number]);
 }

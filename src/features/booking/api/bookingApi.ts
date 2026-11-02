@@ -1,8 +1,11 @@
 import { z } from 'zod';
 
+import { compareBranchServices, toService } from '@/features/venue/api/mappers';
 import { getStoreTeam } from '@/features/venue/api/venueApi';
 import { apiClient } from '@/lib/api/client';
+import { fromPostgrest } from '@/lib/api/errors';
 import { validateResponse } from '@/lib/api/zodFetch';
+import { supabase } from '@/lib/supabase';
 
 import type { BookingDraftEntry } from '../state/bookingDraftStore';
 import { toBookingTimestamp } from '../utils/time';
@@ -10,10 +13,9 @@ import { toBookingTimestamp } from '../utils/time';
 import {
   availabilityResponseSchema,
   bookingReadSchema,
-  serviceEmployeeIdsSchema,
-  serviceSchema,
   type BookingEmployee,
   type BookingStatus,
+  type Service,
 } from './schemas';
 
 // customer-app-api-map.md §8
@@ -33,36 +35,41 @@ export async function cancelBooking(bookingId: string, reason?: string) {
   return validateResponse(bookingReadSchema, response, `POST /bookings/${bookingId}/cancel`);
 }
 
-// §5
-export async function getStoreServices(storeId: string) {
-  const response = await apiClient.get(`/stores/${storeId}/services`);
-  return validateResponse(z.array(serviceSchema), response, `GET /stores/${storeId}/services`);
+// developer-guide.md §5 — services the branch offers. The branch currency
+// comes from `branch_cards` (services carry only a bare amount), fetched in
+// parallel with the services themselves.
+export async function getStoreServices(branchId: string): Promise<Service[]> {
+  const [card, rows] = await Promise.all([
+    supabase.from('branch_cards').select('currency').eq('id', branchId).single(),
+    supabase
+      .from('branch_services')
+      .select(
+        'price, is_active, service:services(id, name, description, image_path, duration_minutes, booking_mode, capacity, price, sort_order, archived_at, category:service_categories(id, name, sort_order))',
+      )
+      .eq('branch_id', branchId)
+      .eq('is_active', true),
+  ]);
+  if (card.error) throw fromPostgrest(card.error);
+  if (rows.error) throw fromPostgrest(rows.error);
+
+  return [...(rows.data ?? [])]
+    .sort(compareBranchServices)
+    .map((row) => toService(row, card.data.currency))
+    .filter((service): service is Service => service !== null);
 }
 
-// §6 — the endpoint itself only returns which employee ids can perform this
-// service, not their display info, so this cross-references the store's
-// team roster (already used by "Meet the team") to get name/photo/role for
-// just those ids. See serviceEmployeeIdsSchema in schemas.ts for why.
-export async function getStoreEmployeesForService(storeId: string, serviceId: string): Promise<BookingEmployee[]> {
-  const [employeeIdsResponse, team] = await Promise.all([
-    apiClient.get(`/stores/${storeId}/services/${serviceId}/employees`),
-    getStoreTeam(storeId),
-  ]);
-  const { employee_ids: employeeIds } = validateResponse(
-    serviceEmployeeIdsSchema,
-    employeeIdsResponse,
-    `GET /stores/${storeId}/services/${serviceId}/employees`,
-  );
-  const teamById = new Map(team.map((member) => [member.id, member]));
-  return employeeIds
-    .map((id) => teamById.get(id))
-    .filter((member): member is NonNullable<typeof member> => member != null)
+// developer-guide.md §5 — one `get_branch_team` call, narrowed to the members
+// who perform this service.
+export async function getStoreEmployeesForService(branchId: string, serviceId: string): Promise<BookingEmployee[]> {
+  const team = await getStoreTeam(branchId);
+  return team
+    .filter((member) => member.service_ids.includes(serviceId))
     .map((member) => ({
       id: member.id,
       first_name: member.first_name,
-      last_name: member.last_name ?? null,
-      profile_picture: member.profile_picture ?? null,
-      role_name: member.role_name ?? null,
+      last_name: member.last_name,
+      profile_picture: member.profile_picture,
+      role_name: member.role_name,
       rating: null,
     }));
 }

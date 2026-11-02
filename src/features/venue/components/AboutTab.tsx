@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo } from 'react';
 import { ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/EmptyState';
@@ -7,23 +6,23 @@ import { ThemedText } from '@/components/ThemedText';
 import type { StoreDetail } from '@/features/explore-search/api/schemas';
 import { spacing, useColors, type Colors } from '@/theme';
 
-import type { CalendarDay, GalleryItem, SpecialDay } from '../api/schemas';
+import type { GalleryItem, HoursDay, SpecialDay } from '../api/schemas';
+import { formatInterval, WEEKDAY_NAMES } from '../utils/hours';
 
 import { GallerySection } from './GallerySection';
 
-const WEEK_DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-// customer-app-api-map.md §5 — `amenities` is a real backend enum
-// (VERIFIED live, 2026-09-20); this is the full set of values it can send.
+// `amenity` enum (developer-guide.md §10).
 const AMENITY_LABELS: Record<string, string> = {
   parking: 'Parking available', // TODO i18n
   card_payments: 'Card payments', // TODO i18n
   wheelchair_accessible: 'Wheelchair accessible', // TODO i18n
+  wifi: 'Wi-Fi', // TODO i18n
+  kids_friendly: 'Kids friendly', // TODO i18n
 };
 
 interface AboutTabProps {
   store: StoreDetail;
-  calendarDays: CalendarDay[];
+  calendarDays: HoursDay[];
   specialDays: SpecialDay[];
   photos: GalleryItem[];
   isLoading: boolean;
@@ -33,17 +32,6 @@ interface AboutTabProps {
 export function AboutTab({ store, calendarDays, specialDays, photos, isLoading, isError }: AboutTabProps) {
   const colors = useColors();
   const styles = createStyles(colors);
-
-  // Sorted defensively even though the backend already returns all 7 —
-  // guards against a future response that's out of order or missing a day,
-  // rather than silently truncating the list.
-  const sortedDays = useMemo(
-    () =>
-      [...calendarDays].sort(
-        (a, b) => WEEK_DAY_ORDER.indexOf(a.week_day) - WEEK_DAY_ORDER.indexOf(b.week_day),
-      ),
-    [calendarDays],
-  );
 
   const hasPhone = Boolean(store.phone);
   const call = () => {
@@ -77,17 +65,28 @@ export function AboutTab({ store, calendarDays, specialDays, photos, isLoading, 
       <ThemedText variant="h3" style={styles.title}>
         Hours {/* TODO i18n */}
       </ThemedText>
-      {sortedDays.length === 0 ? (
+      {calendarDays.every((day) => day.intervals.length === 0) ? (
         <ThemedText variant="body" color="textSecondary">
           Opening hours aren&apos;t set up yet. {/* TODO i18n */}
         </ThemedText>
       ) : (
-        sortedDays.map((day) => (
-          <View key={day.id} style={styles.row}>
-            <ThemedText variant="body">{day.week_day}</ThemedText>
-            <ThemedText variant="body" color={day.status === 'open' ? 'textPrimary' : 'textSecondary'}>
-              {day.status === 'open' ? day.hours_str ?? `${day.opening_hour} - ${day.closing_hour}` : 'Closed' /* TODO i18n */}
-            </ThemedText>
+        calendarDays.map((day) => (
+          <View key={day.day_of_week} style={styles.row}>
+            <ThemedText variant="body">{WEEKDAY_NAMES[day.day_of_week - 1]}</ThemedText>
+            {/* One line per shift: split days stack, past-midnight closings say "(next day)". */}
+            <View style={styles.hoursColumn}>
+              {day.intervals.length === 0 ? (
+                <ThemedText variant="body" color="textSecondary">
+                  Closed {/* TODO i18n */}
+                </ThemedText>
+              ) : (
+                day.intervals.map((interval) => (
+                  <ThemedText key={interval.opens_at} variant="body">
+                    {formatInterval(interval.opens_at, interval.closes_at)}
+                  </ThemedText>
+                ))
+              )}
+            </View>
           </View>
         ))
       )}
@@ -98,14 +97,21 @@ export function AboutTab({ store, calendarDays, specialDays, photos, isLoading, 
             Upcoming exceptions {/* TODO i18n */}
           </ThemedText>
           {specialDays.map((day) => (
-            <View key={day.id} style={styles.row}>
-              <ThemedText variant="body">{day.date}</ThemedText>
-              <ThemedText variant="body" color={day.status === 'open' ? 'textPrimary' : 'textSecondary'}>
-                {day.status === 'open'
-                  ? day.opening_hour && day.closing_hour
-                    ? `${day.opening_hour} - ${day.closing_hour}`
-                    : 'Open' /* TODO i18n */
-                  : 'Closed' /* TODO i18n */}
+            <View key={day.date} style={styles.row}>
+              <View>
+                <ThemedText variant="body">{day.date}</ThemedText>
+                {day.reason ? (
+                  <ThemedText variant="caption" color="textSecondary">
+                    {day.reason}
+                  </ThemedText>
+                ) : null}
+              </View>
+              <ThemedText variant="body" color={day.is_closed ? 'textSecondary' : 'textPrimary'}>
+                {day.is_closed
+                  ? 'Closed' /* TODO i18n */
+                  : day.opens_at && day.closes_at
+                    ? formatInterval(day.opens_at, day.closes_at)
+                    : 'Open' /* TODO i18n */}
               </ThemedText>
             </View>
           ))}
@@ -181,6 +187,7 @@ const createStyles = (colors: Colors) =>
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
   },
+  hoursColumn: { alignItems: 'flex-end' },
   specialSection: { marginTop: spacing.lg },
   galleryBleed: { marginHorizontal: -spacing.md },
   linkRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },

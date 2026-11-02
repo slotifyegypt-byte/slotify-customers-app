@@ -17,6 +17,7 @@ import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { useFavouriteCheck, useToggleFavourite } from '@/features/favourites/hooks/useToggleFavourite';
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
+import { formatMoney } from '@/lib/money';
 import { spacing, useColors, type Colors } from '@/theme';
 
 import { AboutTab } from '../components/AboutTab';
@@ -28,7 +29,6 @@ import { VenueTabBar, type VenueTab } from '../components/VenueTabBar';
 import { useVenueGallery } from '../hooks/useVenueGallery';
 import { useVenueHours } from '../hooks/useVenueHours';
 import { useVenueReviewStats, useVenueReviews } from '../hooks/useVenueReviews';
-import { useVenueServiceCategories } from '../hooks/useVenueServiceCategories';
 import { useVenueTeam } from '../hooks/useVenueTeam';
 
 export function VenueDetailScreen() {
@@ -55,9 +55,8 @@ export function VenueDetailScreen() {
   const team = useVenueTeam(storeId);
 
   const services = useStoreServices(storeId);
-  const serviceCategories = useVenueServiceCategories(storeId);
 
-  const { calendar, specialDays } = useVenueHours(storeId);
+  const { calendar, specialDays } = useVenueHours(storeId, storeDetail.data?.timezone);
 
   const reviewStats = useVenueReviewStats(storeId);
   const reviews = useVenueReviews(storeId, { limit: 20, offset: 0 });
@@ -174,7 +173,6 @@ export function VenueDetailScreen() {
         {activeTab === 'services' ? (
           <ServicesTab
             services={services.data ?? []}
-            categories={serviceCategories.data ?? []}
             isLoading={services.isLoading}
             isError={services.isError}
             onBook={handleBook}
@@ -196,6 +194,7 @@ export function VenueDetailScreen() {
         {activeTab === 'reviews' ? (
           <ReviewsTab
             stats={reviewStats.data}
+            timezone={store.timezone}
             reviews={reviews.data ?? []}
             isLoading={reviewStats.isLoading || reviews.isLoading}
             isError={reviewStats.isError || reviews.isError}
@@ -221,8 +220,7 @@ export function VenueDetailScreen() {
                 {draftEntryList.length} service{draftEntryList.length > 1 ? 's' : ''} configured
               </ThemedText>
               <ThemedText variant="h3">
-                {draftEntryList[0].service.price_symbol}
-                {draftTotal.toFixed(0)}
+                {formatMoney(draftTotal, draftEntryList[0].service.currency)}
               </ThemedText>
             </View>
             <Button

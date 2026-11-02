@@ -30,7 +30,7 @@ export function BookingDetailScreen() {
   const booking = useBookingDetail(bookingId);
 
   // Only fetched when at least one service is specialist-mode, to resolve
-  // `employee_id` -> a display name (§9; see api/teamApi.ts for why this
+  // `employee_id` -> a display name (§9; see venue/api/venueApi.ts getStoreTeam for why this
   // lookup is needed instead of a field already on the booking).
   const hasSpecialistService = booking.data?.booking_services.some((s) => s.employee_id) ?? false;
   const team = useStoreTeam(hasSpecialistService ? booking.data?.store_id : undefined);

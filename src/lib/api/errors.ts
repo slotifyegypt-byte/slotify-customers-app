@@ -21,6 +21,9 @@ export function fromPostgrest(e: { code?: string; message: string; details?: str
   if (pt) return new ApiError(e.message, Number(pt[1]), e.details ?? e.message);
 
   switch (e.code) {
+    // PostgREST: `.single()` matched no rows (or more than one).
+    case 'PGRST116':
+      return new ApiError('not_found', 404, e.message);
     case '23505':
       return new ApiError('duplicate', 409, e.message);
     case '42501':

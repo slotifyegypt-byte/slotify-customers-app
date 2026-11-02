@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
+import { formatMoney } from '@/lib/money';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { BookingRead, Service } from '../api/schemas';
@@ -102,8 +103,7 @@ export function ServiceBookingConfigScreen() {
                 </ThemedText>
               </View>
               <ThemedText variant="bodyMedium">
-                {item.price_symbol}
-                {item.price}
+                {formatMoney(item.price, item.currency)}
               </ThemedText>
             </Pressable>
           )}

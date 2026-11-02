@@ -5,13 +5,11 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { ThemedText } from '@/components/ThemedText';
 import type { Service } from '@/features/booking/api/schemas';
+import { formatMoney } from '@/lib/money';
 import { radius, spacing, useColors, type Colors } from '@/theme';
-
-import type { VenueServiceCategory } from '../api/schemas';
 
 interface ServicesTabProps {
   services: Service[];
-  categories: VenueServiceCategory[];
   isLoading: boolean;
   isError: boolean;
   onBook: (service: Service) => void;
@@ -27,7 +25,6 @@ interface Group {
 
 export function ServicesTab({
   services,
-  categories,
   isLoading,
   isError,
   onBook,
@@ -35,23 +32,24 @@ export function ServicesTab({
 }: ServicesTabProps) {
   const colors = useColors();
   const styles = createStyles(colors);
+  // Services arrive already ordered by category, uncategorised last, so a
+  // Map keeps that order; the category comes embedded on each service.
   const groups = useMemo<Group[]>(() => {
-    const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
-    const byCategory = new Map<string | null, Service[]>();
+    const byCategory = new Map<string | null, Group>();
 
     services.forEach((service) => {
-      const key = service.category_id;
-      const list = byCategory.get(key) ?? [];
-      list.push(service);
-      byCategory.set(key, list);
+      const categoryId = service.category?.id ?? null;
+      const group = byCategory.get(categoryId) ?? {
+        categoryId,
+        label: service.category?.name ?? 'Other services' /* TODO i18n */,
+        services: [],
+      };
+      group.services.push(service);
+      byCategory.set(categoryId, group);
     });
 
-    return Array.from(byCategory.entries()).map(([categoryId, list]) => ({
-      categoryId,
-      label: categoryId ? categoryNameById.get(categoryId) ?? 'Other services' /* TODO i18n */ : 'Other services' /* TODO i18n */,
-      services: list,
-    }));
-  }, [services, categories]);
+    return Array.from(byCategory.values());
+  }, [services]);
 
   // Every group starts expanded — collapsing is purely a display
   // preference, not something that should hide services by default.
@@ -140,8 +138,7 @@ export function ServicesTab({
                       </View>
                       <View style={styles.priceCol}>
                         <ThemedText variant="bodyMedium" style={styles.price}>
-                          {service.price_symbol}
-                          {service.price.toFixed(0)}
+                          {formatMoney(service.price, service.currency)}
                         </ThemedText>
                         {isSelected ? (
                           <View style={styles.selectedBadge}>

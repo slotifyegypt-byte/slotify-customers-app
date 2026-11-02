@@ -23,6 +23,11 @@ describe('fromPostgrest', () => {
     expect([error.code, error.status]).toEqual(['invalid_field', 400]);
   });
 
+  it('maps PGRST116 (no rows for .single()) to not_found/404', () => {
+    const error = fromPostgrest({ code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' });
+    expect([error.code, error.status]).toEqual(['not_found', 404]);
+  });
+
   it('falls back to unknown/500', () => {
     expect([
       fromPostgrest({ message: 'boom' }).code,
