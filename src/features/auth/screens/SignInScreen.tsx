@@ -5,8 +5,10 @@ import { Image, Platform } from 'react-native';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
+import { appConfig } from '@/lib/config';
 import { radius, spacing, useTheme } from '@/theme';
 
+import { DevPasswordSignIn } from '../components/DevPasswordSignIn';
 import { useAppleSignIn } from '../hooks/useAppleSignIn';
 import { useOAuthSignIn } from '../hooks/useOAuthSignIn';
 
@@ -81,6 +83,9 @@ export function SignInScreen() {
           disabled={google.isLoading}
         />
       )}
+
+      {/* Demo accounts are email/password; production only offers Google/Apple. */}
+      {appConfig.env !== 'production' ? <DevPasswordSignIn /> : null}
     </Screen>
   );
 }

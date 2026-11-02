@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import { AppState, Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
+import type { Database } from '@/lib/database.types';
 
 // SecureStore caps each value at ~2 KB, and a Supabase session (access +
 // refresh token + user) is larger than that — so values are split across
@@ -58,17 +59,22 @@ const webStorage = {
 };
 
 // Supabase Auth owns sign-in, token storage and refresh. The backend only
-// verifies the access token this client hands out.
-export const supabase = createClient(appConfig.supabaseUrl, appConfig.supabasePublishableKey, {
-  auth: {
-    storage: Platform.OS === 'web' ? webStorage : chunkedSecureStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce',
-    lock: processLock,
+// verifies the access token this client hands out. `Database` (synced from the
+// backend with `npm run types:sync`) types tables, RPC names and RPC params.
+export const supabase = createClient<Database>(
+  appConfig.supabaseUrl,
+  appConfig.supabasePublishableKey,
+  {
+    auth: {
+      storage: Platform.OS === 'web' ? webStorage : chunkedSecureStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+      lock: processLock,
+    },
   },
-});
+);
 
 // Only refresh tokens in the background while the app is in the foreground.
 AppState.addEventListener('change', (state) => {
