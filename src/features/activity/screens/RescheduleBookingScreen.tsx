@@ -16,6 +16,7 @@ import { DateStrip } from '@/features/booking/components/DateStrip';
 import { SlotGrid } from '@/features/booking/components/SlotGrid';
 import { useAvailability } from '@/features/booking/hooks/useAvailability';
 import { useBookingDetail, useRescheduleBooking } from '@/features/booking/hooks/useBookingDetail';
+import { useSingleFlight } from '@/features/booking/hooks/useSingleFlight';
 import { getBookingErrorMessage, isSlotConflict, slotConflictMessage } from '@/features/booking/utils/bookingErrors';
 import { isApiError } from '@/lib/api/errors';
 import { branchToday } from '@/lib/time/branchTime';
@@ -41,6 +42,8 @@ export function RescheduleBookingScreen() {
   const { bookingId, bookingServiceId } = useLocalSearchParams<{ bookingId: string; bookingServiceId: string }>();
   const booking = useBookingDetail(bookingId);
   const reschedule = useRescheduleBooking();
+  // A second tap before the button disables must not send a second PATCH.
+  const runOnce = useSingleFlight();
 
   // null until the customer picks a day: defaults to the branch's today,
   // which needs the booking (its timezone) to have loaded.
@@ -70,28 +73,29 @@ export function RescheduleBookingScreen() {
     setFormError(null);
   };
 
-  const handleConfirm = async () => {
-    if (!selectedSlot || !bookingService) return;
-    setFormError(null);
-    try {
-      // The slot's UTC instant goes up as-is; the server derives the end.
-      await reschedule.mutateAsync({ itemId: bookingService.id, starts_at: selectedSlot.start_time });
-      router.back();
-    } catch (error) {
-      // slot_taken / slot_unavailable: someone got there first; time_in_past:
-      // the slot expired while the screen was open. Either way re-read the
-      // grid and ask for another time.
-      if (isSlotConflict(error) || isApiError(error, 'time_in_past')) {
-        setSelectedSlot(null);
-        setFormError(slotConflictMessage(error, []));
-        if (availabilityParams) {
-          queryClient.invalidateQueries({ queryKey: bookingKeys.availability(availabilityParams) });
+  const handleConfirm = () =>
+    runOnce(async () => {
+      if (!selectedSlot || !bookingService) return;
+      setFormError(null);
+      try {
+        // The slot's UTC instant goes up as-is; the server derives the end.
+        await reschedule.mutateAsync({ itemId: bookingService.id, starts_at: selectedSlot.start_time });
+        router.back();
+      } catch (error) {
+        // slot_taken / slot_unavailable: someone got there first; time_in_past:
+        // the slot expired while the screen was open. Either way re-read the
+        // grid and ask for another time.
+        if (isSlotConflict(error) || isApiError(error, 'time_in_past')) {
+          setSelectedSlot(null);
+          setFormError(slotConflictMessage(error, []));
+          if (availabilityParams) {
+            queryClient.invalidateQueries({ queryKey: bookingKeys.availability(availabilityParams) });
+          }
+          return;
         }
-        return;
+        setFormError(getBookingErrorMessage(error, t('common.errorGeneric')));
       }
-      setFormError(getBookingErrorMessage(error, t('common.errorGeneric')));
-    }
-  };
+    });
 
   if (booking.isLoading) {
     return (

@@ -8,6 +8,7 @@ import { useBookingDraftStore, type BookingDraftEntry } from '../state/bookingDr
 import { getBookingErrorMessage, isSlotConflict, slotConflictMessage } from '../utils/bookingErrors';
 
 import { useCreateBooking } from './useCreateBooking';
+import { useSingleFlight } from './useSingleFlight';
 import { useSlotConflictRecovery } from './useSlotConflictRecovery';
 
 // developer-guide.md §6: at most 10 items per booking.
@@ -15,6 +16,8 @@ const MAX_ITEMS = 10;
 
 export type ConfirmOutcome =
   | { status: 'booked'; id: string }
+  /** A confirm was already running (double tap) — this call did nothing; ignore it. */
+  | { status: 'busy' }
   | {
       status: 'failed';
       message: string;
@@ -38,14 +41,17 @@ export type ConfirmOutcome =
  *   service_not_offered, network…): the server's message, else `fallback`.
  * `isPending` covers the create call AND the recovery refetch, and both are
  * always settled before `confirm` resolves — a spinner can't get stuck.
+ * A second `confirm` while one is running (submit or recovery) returns
+ * `{ status: 'busy' }` at once without a request (useSingleFlight).
  */
 export function useConfirmBooking(storeId: string) {
   const createBooking = useCreateBooking();
   const recoverFromSlotConflict = useSlotConflictRecovery(storeId);
   const clearDraft = useBookingDraftStore((state) => state.clear);
   const [recovering, setRecovering] = useState(false);
+  const runOnce = useSingleFlight();
 
-  const confirm = async (entries: BookingDraftEntry[], fallback: string): Promise<ConfirmOutcome> => {
+  const submit = async (entries: BookingDraftEntry[], fallback: string): Promise<ConfirmOutcome> => {
     if (entries.length > MAX_ITEMS) {
       // TODO i18n
       return { status: 'failed', message: `You can book up to ${MAX_ITEMS} services at once.`, conflicting: null };
@@ -73,6 +79,9 @@ export function useConfirmBooking(storeId: string) {
       return { status: 'failed', message: getBookingErrorMessage(error, fallback), conflicting: null };
     }
   };
+
+  const confirm = async (entries: BookingDraftEntry[], fallback: string): Promise<ConfirmOutcome> =>
+    (await runOnce(() => submit(entries, fallback))) ?? { status: 'busy' };
 
   return { confirm, isPending: createBooking.isPending || recovering };
 }

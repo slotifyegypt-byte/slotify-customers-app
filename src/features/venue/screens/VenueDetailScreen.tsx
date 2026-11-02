@@ -91,7 +91,7 @@ export function VenueDetailScreen() {
     const outcome = await confirmDraft(draftEntryList, 'Something went wrong. Please try again.'); // TODO i18n
     if (outcome.status === 'booked') {
       router.push({ pathname: '/(modal)/confirmation', params: { bookingId: outcome.id } });
-    } else {
+    } else if (outcome.status === 'failed') {
       setDraftError(outcome.message);
     }
   };

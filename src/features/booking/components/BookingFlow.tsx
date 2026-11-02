@@ -140,6 +140,7 @@ export function BookingFlow({
     if (!selectedSlot) return;
     setFormError(null);
     const outcome = await confirm([currentEntry(selectedSlot), ...otherEntries], t('common.errorGeneric'));
+    if (outcome.status === 'busy') return; // double tap while the first confirm runs
     if (outcome.status === 'booked') {
       onBooked({ id: outcome.id });
       return;

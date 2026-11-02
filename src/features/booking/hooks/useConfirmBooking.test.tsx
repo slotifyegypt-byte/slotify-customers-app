@@ -173,4 +173,65 @@ describe('useConfirmBooking', () => {
     expect(outcome).toMatchObject({ status: 'failed', conflicting: null });
     expect(mockCreateBooking).not.toHaveBeenCalled();
   });
+
+  it('sends exactly one booking when confirm is called twice synchronously (double tap)', async () => {
+    let finish!: (value: { id: string }) => void;
+    mockCreateBooking.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+    const { result } = await setup();
+
+    let first!: Promise<ConfirmOutcome>;
+    let second!: Promise<ConfirmOutcome>;
+    await act(async () => {
+      first = result.current.confirm([haircut], 'fallback');
+      second = result.current.confirm([haircut], 'fallback'); // before the first resolves
+      // The mutation calls createBooking a few microtasks later; then let it finish.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      finish({ id: 'bk-1' });
+      await Promise.all([first, second]);
+    });
+
+    expect(mockCreateBooking).toHaveBeenCalledTimes(1);
+    await expect(first).resolves.toEqual({ status: 'booked', id: 'bk-1' });
+    await expect(second).resolves.toEqual({ status: 'busy' });
+  });
+
+  it('releases the guard after a success and after a failure, so a later confirm works', async () => {
+    mockCreateBooking
+      .mockResolvedValueOnce({ id: 'bk-1' })
+      .mockRejectedValueOnce(new ApiError('employee_unavailable', 422, 'Nope.'))
+      .mockResolvedValueOnce({ id: 'bk-2' });
+    const { result } = await setup();
+
+    const outcomes: ConfirmOutcome[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      await act(async () => {
+        outcomes.push(await result.current.confirm([haircut], 'fallback'));
+      });
+    }
+
+    expect(mockCreateBooking).toHaveBeenCalledTimes(3);
+    expect(outcomes.map((o) => o.status)).toEqual(['booked', 'failed', 'booked']);
+  });
+
+  it('stays guarded during slot-conflict recovery', async () => {
+    mockCreateBooking.mockRejectedValueOnce(new ApiError('slot_taken', 409, 'Taken.'));
+    let finishRecovery!: (value: AvailabilityResponse) => void;
+    mockGetAvailability.mockImplementationOnce(() => new Promise((resolve) => (finishRecovery = resolve)));
+    const { result } = await setup();
+
+    let first!: Promise<ConfirmOutcome>;
+    let duringRecovery!: Promise<ConfirmOutcome>;
+    await act(async () => {
+      first = result.current.confirm([haircut], 'fallback');
+      // Let the create call fail and recovery start, then tap again.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      duringRecovery = result.current.confirm([haircut], 'fallback');
+      finishRecovery(availability('Haircut', { mona: [] }));
+      await Promise.all([first, duringRecovery]);
+    });
+
+    expect(mockCreateBooking).toHaveBeenCalledTimes(1);
+    await expect(duringRecovery).resolves.toEqual({ status: 'busy' });
+    await expect(first).resolves.toMatchObject({ status: 'failed', conflicting: [haircut] });
+  });
 });
