@@ -19,7 +19,9 @@ jest.mock('@/lib/supabase', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
     storage: {
       from: (bucket: string) => ({
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${path}` } }),
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
       }),
     },
   },
@@ -83,14 +85,23 @@ describe('getStoreCalendar', () => {
   it('throws an ApiError on failure', async () => {
     const { builder } = mockQuery({ data: null, error: { code: '42501', message: 'nope' } });
     mockFrom.mockReturnValue(builder);
-    await expect(getStoreCalendar('branch-1')).rejects.toMatchObject({ name: 'ApiError', code: 'forbidden' });
+    await expect(getStoreCalendar('branch-1')).rejects.toMatchObject({
+      name: 'ApiError',
+      code: 'forbidden',
+    });
   });
 });
 
 describe('getStoreSpecialDays', () => {
   const rows = [
     { date: '2026-11-10', is_closed: true, opens_at: null, closes_at: null, reason: 'Holiday' },
-    { date: '2026-11-12', is_closed: false, opens_at: '10:00:00', closes_at: '14:00:00', reason: null },
+    {
+      date: '2026-11-12',
+      is_closed: false,
+      opens_at: '10:00:00',
+      closes_at: '14:00:00',
+      reason: null,
+    },
   ];
 
   it('filters from the branch-local today when a timezone is given', async () => {
@@ -211,6 +222,7 @@ describe('toService', () => {
     description: 'Cut',
     image_path: 'services/s1/a.jpg',
     duration_minutes: 45,
+    buffer_minutes: 15,
     booking_mode: 'specialist' as const,
     capacity: null,
     price: 300,
@@ -239,6 +251,7 @@ describe('toService', () => {
       description: 'Cut',
       image: 'https://cdn.test/public-media/services/s1/a.jpg',
       duration_minutes: 45,
+      buffer_minutes: 15,
       price: 300,
       currency: 'EGP',
       requires_specialist: true,
@@ -249,7 +262,11 @@ describe('toService', () => {
 
   it('maps capacity mode to requires_specialist=false with max_concurrent_bookings from capacity', () => {
     const result = toService(
-      { price: null, is_active: true, service: { ...service, booking_mode: 'capacity', capacity: 4, category: null } },
+      {
+        price: null,
+        is_active: true,
+        service: { ...service, booking_mode: 'capacity', capacity: 4, category: null },
+      },
       'PLN',
     );
     expect(result).toMatchObject({
@@ -261,7 +278,16 @@ describe('toService', () => {
   });
 
   it('drops archived services, inactive branch services and orphaned rows', () => {
-    expect(toService({ price: null, is_active: true, service: { ...service, archived_at: '2026-10-01T00:00:00Z' } }, 'EGP')).toBeNull();
+    expect(
+      toService(
+        {
+          price: null,
+          is_active: true,
+          service: { ...service, archived_at: '2026-10-01T00:00:00Z' },
+        },
+        'EGP',
+      ),
+    ).toBeNull();
     expect(toService({ price: null, is_active: false, service }, 'EGP')).toBeNull();
     expect(toService({ price: null, is_active: true, service: null }, 'EGP')).toBeNull();
   });
@@ -324,39 +350,65 @@ describe('getStoreReviews', () => {
 });
 
 describe('getStoreReviewStats', () => {
-  it('reads average/total from branch_cards and fills distribution keys 1..5 from five count queries', async () => {
-    const card = mockQuery({ data: { rating_avg: 4.2, rating_count: 15 }, error: null });
-    const countByRating: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 5, 5: 7 };
-    const ratingFilters: unknown[][] = [];
-
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'branch_cards') return card.builder;
-      let rating = 0;
-      const builder: Record<string, unknown> = {
-        select: jest.fn((...args: unknown[]) => {
-          ratingFilters.push(['select', ...args]);
-          return builder;
-        }),
-        eq: (column: string, value: number | string) => {
-          if (column === 'rating') rating = Number(value);
-          return builder;
-        },
-        then: (resolve: (value: unknown) => unknown) =>
-          Promise.resolve({ count: countByRating[rating], error: null }).then(resolve),
-      };
-      return builder;
+  it('calls get_review_stats once with the branch id and maps the single row', async () => {
+    const { builder, calls } = mockQuery({
+      data: {
+        average_rating: 4.17,
+        total_reviews: 15,
+        rating_distribution: { '1': 0, '2': 1, '3': 2, '4': 5, '5': 7 },
+      },
+      error: null,
     });
+    mockRpc.mockReturnValue(builder);
 
     const stats = await getStoreReviewStats('b1');
 
-    expect(card.calls).toContainEqual(['select', ['rating_avg, rating_count']]);
-    expect(card.calls).toContainEqual(['eq', ['id', 'b1']]);
-    expect(ratingFilters).toHaveLength(5);
-    expect(ratingFilters[0]).toEqual(['select', 'id', { count: 'exact', head: true }]);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith('get_review_stats', { p_branch_id: 'b1' });
+    expect(calls.some(([method]) => method === 'single')).toBe(true);
+    expect(mockFrom).not.toHaveBeenCalled();
     expect(stats).toEqual({
-      average_rating: 4.2,
+      average_rating: 4.17,
       total_reviews: 15,
       rating_distribution: { '1': 0, '2': 1, '3': 2, '4': 5, '5': 7 },
+    });
+  });
+
+  it('zero-fills missing distribution keys and ignores non-numeric values', async () => {
+    const { builder } = mockQuery({
+      data: { average_rating: 0, total_reviews: 0, rating_distribution: { '5': 3, '2': 'x' } },
+      error: null,
+    });
+    mockRpc.mockReturnValue(builder);
+
+    const stats = await getStoreReviewStats('b1');
+
+    expect(stats.rating_distribution).toEqual({ '1': 0, '2': 0, '3': 0, '4': 0, '5': 3 });
+  });
+
+  it('copes with a null or malformed distribution', async () => {
+    const { builder } = mockQuery({
+      data: { average_rating: 0, total_reviews: 0, rating_distribution: null },
+      error: null,
+    });
+    mockRpc.mockReturnValue(builder);
+
+    const stats = await getStoreReviewStats('b1');
+
+    expect(stats.rating_distribution).toEqual({ '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 });
+  });
+
+  it('maps PT404 branch_not_found to an ApiError', async () => {
+    const { builder } = mockQuery({
+      data: null,
+      error: { code: 'PT404', message: 'branch_not_found' },
+    });
+    mockRpc.mockReturnValue(builder);
+
+    await expect(getStoreReviewStats('nope')).rejects.toMatchObject({
+      name: 'ApiError',
+      code: 'branch_not_found',
+      status: 404,
     });
   });
 });

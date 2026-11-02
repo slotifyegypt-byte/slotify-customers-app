@@ -29,6 +29,7 @@ const service = (id: string, overrides: Record<string, unknown> = {}) => ({
   description: null,
   image_path: null,
   duration_minutes: 30,
+  buffer_minutes: 10,
   booking_mode: 'specialist',
   capacity: null,
   price: 100,
@@ -60,6 +61,11 @@ describe('getStoreServices', () => {
     expect(mockFrom).toHaveBeenNthCalledWith(2, 'branch_services');
     expect(rows.calls).toContainEqual(['eq', ['branch_id', 'b1']]);
     expect(rows.calls).toContainEqual(['eq', ['is_active', true]]);
+    expect(rows.calls).toContainEqual([
+      'select',
+      [expect.stringContaining('duration_minutes, buffer_minutes, booking_mode')],
+    ]);
+    expect(services.map((s) => s.buffer_minutes)).toEqual([10, 10]);
     expect(services.map((s) => [s.id, s.price, s.currency, s.requires_specialist, s.max_concurrent_bookings])).toEqual([
       ['s1', 80, 'PLN', true, null],
       ['s2', 0, 'PLN', false, 3],

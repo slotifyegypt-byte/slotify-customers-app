@@ -94,8 +94,8 @@ export function BookingFlow({
     [otherEntries, selectedDate],
   );
   const availabilityWithHolds = useMemo(
-    () => withDraftHolds(availability.data, blockedIntervals),
-    [availability.data, blockedIntervals],
+    () => withDraftHolds(availability.data, blockedIntervals, service.buffer_minutes),
+    [availability.data, blockedIntervals, service.buffer_minutes],
   );
 
   // Selecting a new date/employee invalidates whichever slot was picked

@@ -14,6 +14,7 @@ const service = (overrides: Partial<Service> = {}): Service => ({
   description: null,
   image: null,
   duration_minutes: 45,
+  buffer_minutes: 0,
   price: 300,
   currency: 'EGP',
   requires_specialist: true,
@@ -101,6 +102,52 @@ describe('withDraftHolds', () => {
   });
 });
 
+describe('buffer holds', () => {
+  // Haircut with Mona 10:00-10:45 + 15 min buffer blocks Mona until 11:00,
+  // matching the server's [starts_at, ends_at + buffer) exclusion constraint.
+  const haircutWithBuffer: BookingDraftEntry = {
+    service: service({ buffer_minutes: 15 }),
+    employeeId: 'mona',
+    date: '2026-11-04',
+    slot: slot('2026-11-04T10:00:00.000Z', '2026-11-04T10:45:00.000Z', 'mona'),
+  };
+
+  it('extends the held interval by the held service buffer', () => {
+    expect(getDraftBlockedIntervals([haircutWithBuffer], '2026-11-04')).toEqual([
+      { employeeId: 'mona', start: '2026-11-04T10:00:00.000Z', end: '2026-11-04T11:00:00.000Z' },
+    ]);
+  });
+
+  it('does not offer a back-to-back Blow-dry with the same specialist inside the buffer, but offers it after', () => {
+    const availability = specialistAvailability({
+      mona: [
+        slot('2026-11-04T10:45:00.000Z', '2026-11-04T11:15:00.000Z', 'mona'), // inside the buffer
+        slot('2026-11-04T11:00:00.000Z', '2026-11-04T11:30:00.000Z', 'mona'), // first free moment
+      ],
+      sam: [slot('2026-11-04T10:45:00.000Z', '2026-11-04T11:15:00.000Z', 'sam')],
+    });
+
+    const held = withDraftHolds(availability, getDraftBlockedIntervals([haircutWithBuffer], '2026-11-04'));
+
+    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual(['2026-11-04T11:00:00.000Z']);
+    expect(held?.employees[1].available_slots).toHaveLength(1);
+  });
+
+  it("also keeps the candidate service's own buffer clear of an earlier-starting hold", () => {
+    // Blow-dry (30 min + 15 buffer) at 09:30 would block Mona until 10:15 and clash with the 10:00 hold.
+    const availability = specialistAvailability({
+      mona: [
+        slot('2026-11-04T09:15:00.000Z', '2026-11-04T09:45:00.000Z', 'mona'),
+        slot('2026-11-04T09:30:00.000Z', '2026-11-04T10:00:00.000Z', 'mona'),
+      ],
+    });
+
+    const held = withDraftHolds(availability, getDraftBlockedIntervals([haircutWithBuffer], '2026-11-04'), 15);
+
+    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual(['2026-11-04T09:15:00.000Z']);
+  });
+});
+
 describe('availabilityParamsFor', () => {
   it('matches the params BookingFlow queries with, so invalidation hits the same cache entry', () => {
     expect(availabilityParamsFor('branch-1', haircutEntry)).toEqual({
@@ -113,6 +160,12 @@ describe('availabilityParamsFor', () => {
       service_id: 'svc-blowdry',
       date: '2026-11-04',
       employee_id: 'sam',
+    });
+    expect(availabilityParamsFor('branch-1', { ...haircutEntry, excludeItemId: 'item-1' })).toEqual({
+      store_id: 'branch-1',
+      service_id: 'svc-haircut',
+      date: '2026-11-04',
+      exclude_item_id: 'item-1',
     });
     // Capacity services never send employee_id.
     expect(availabilityParamsFor('branch-1', { ...washEntry, employeeId: 'x' })).not.toHaveProperty('employee_id');

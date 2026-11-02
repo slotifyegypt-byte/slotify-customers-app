@@ -33,6 +33,8 @@ const searchRow = (n: number) => ({
   is_open_now: true,
   timezone: 'Africa/Cairo',
   distance_km: 1.2,
+  phone: '+201009998877',
+  description: 'Hair and colour studio',
 });
 
 const cardRow = {
@@ -89,6 +91,26 @@ describe('getNearbyStores', () => {
   it('throws an ApiError when the rpc fails', async () => {
     mockRpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'nope' } });
     await expect(getNearbyStores({ latitude: 1, longitude: 2 })).rejects.toMatchObject({ code: 'forbidden' });
+  });
+});
+
+describe('search_branches contact fields', () => {
+  it('maps phone and description from nearby rows', async () => {
+    mockRpc.mockResolvedValue({ data: [searchRow(1)], error: null });
+    const [store] = await getNearbyStores({ latitude: 29.96, longitude: 31.25 });
+    expect(store).toMatchObject({ phone: '+201009998877', description: 'Hair and colour studio' });
+  });
+
+  it('maps phone and description from search rows', async () => {
+    mockRpc.mockResolvedValue({ data: [searchRow(1)], error: null });
+    const { stores } = await searchStores({ q: 'hair' });
+    expect(stores[0]).toMatchObject({ phone: '+201009998877', description: 'Hair and colour studio' });
+  });
+
+  it('keeps null phone and description when the branch has none', async () => {
+    mockRpc.mockResolvedValue({ data: [{ ...searchRow(1), phone: null, description: null }], error: null });
+    const { stores } = await searchStores({ q: 'hair' });
+    expect(stores[0]).toMatchObject({ phone: null, description: null });
   });
 });
 

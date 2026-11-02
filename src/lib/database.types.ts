@@ -2926,6 +2926,14 @@ export type Database = {
       "get_invite_preview": { Args: { "p_token": string }; Returns: Json };
       "get_invite_status": { Args: { "p_employee_id": string }; Returns: Json };
       "get_my_partner_context": { Args: Record<PropertyKey, never>; Returns: Json };
+      "get_review_stats": {
+        Args: { "p_branch_id": string };
+        Returns: {
+          "average_rating": number;
+          "rating_distribution": Json;
+          "total_reviews": number;
+        }[];
+      };
       "get_segment_members": {
         Args: { "p_segment_id": string };
         Returns: {
@@ -3133,12 +3141,14 @@ export type Database = {
           "business_name": string;
           "category_slugs": (string)[];
           "city": string;
+          "description": string | null;
           "distance_km": number;
           "id": string;
           "is_open_now": boolean;
           "latitude": number;
           "logo_path": string;
           "longitude": number;
+          "phone": string | null;
           "rating_avg": number;
           "rating_count": number;
           "timezone": string;

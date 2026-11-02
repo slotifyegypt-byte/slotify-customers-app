@@ -33,6 +33,7 @@ const service = (overrides: Partial<Service> = {}): Service => ({
   description: null,
   image: null,
   duration_minutes: 45,
+  buffer_minutes: 0,
   price: 300,
   currency: 'EGP',
   requires_specialist: true,

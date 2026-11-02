@@ -40,6 +40,17 @@ describe('slotConflictMessage', () => {
     );
   });
 
+  it("uses the server's text for slot_unavailable when it has one", () => {
+    const outside = new ApiError('slot_unavailable', 409, 'Mona is not working at that time.');
+    expect(slotConflictMessage(outside, [])).toBe('Mona is not working at that time.');
+    expect(slotConflictMessage(outside, [{ service: { name: 'Haircut' } }])).toBe(
+      'Haircut: Mona is not working at that time.',
+    );
+    // A bare machine code carries no text: keep the generic wording.
+    const bare = new ApiError('slot_unavailable', 409);
+    expect(slotConflictMessage(bare, [])).toBe('That time was just taken — pick another');
+  });
+
   it("uses the server's text for time_in_past", () => {
     const past = new ApiError('time_in_past', 422, 'Choose a time in the future.');
     expect(slotConflictMessage(past, [])).toBe('Choose a time in the future.');

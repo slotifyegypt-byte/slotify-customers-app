@@ -102,6 +102,19 @@ describe('getAvailability', () => {
     );
   });
 
+  it('sends exclude_item_id only when set', async () => {
+    const ITEM = 'b1000000-0000-4000-8000-000000000009';
+    fetchMock.mockImplementation(async () => json(specialistDoc()));
+
+    await getAvailability({ ...params, employee_id: MONA, exclude_item_id: ITEM });
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://example.supabase.co/functions/v1/availability?branch_id=${BRANCH}&service_id=${HAIRCUT}&date=2026-11-04&employee_id=${MONA}&exclude_item_id=${ITEM}&stream=0`,
+    );
+
+    await getAvailability({ ...params, exclude_item_id: undefined });
+    expect(fetchMock.mock.calls[1][0]).not.toContain('exclude_item_id');
+  });
+
   it('maps a specialist document to employees[].available_slots with times in the branch zone', async () => {
     fetchMock.mockResolvedValue(json(specialistDoc()));
 

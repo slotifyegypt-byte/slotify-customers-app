@@ -22,6 +22,8 @@ import { isApiError } from '@/lib/api/errors';
 import { branchToday } from '@/lib/time/branchTime';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
+import { rescheduleAvailabilityParams } from '../utils/rescheduleParams';
+
 /**
  * developer-guide.md §6 "Reschedule": `PATCH bookings/items/{item_id}` with
  * `{ starts_at }`. Customers can only move the TIME of an item on their own
@@ -57,12 +59,7 @@ export function RescheduleBookingScreen() {
 
   const availabilityParams: AvailabilityParams | null = useMemo(() => {
     if (!booking.data || !bookingService || !selectedDate) return null;
-    return {
-      store_id: booking.data.store_id,
-      service_id: bookingService.service_id,
-      date: selectedDate,
-      ...(bookingService.employee_id ? { employee_id: bookingService.employee_id } : {}),
-    };
+    return rescheduleAvailabilityParams(booking.data, bookingService, selectedDate);
   }, [booking.data, bookingService, selectedDate]);
 
   const availability = useAvailability(availabilityParams);

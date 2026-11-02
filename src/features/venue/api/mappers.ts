@@ -40,6 +40,7 @@ export interface BranchServiceRow {
     description: string | null;
     image_path: string | null;
     duration_minutes: number;
+    buffer_minutes: number;
     booking_mode: Database['public']['Enums']['booking_mode'];
     capacity: number | null;
     price: number;
@@ -104,7 +105,11 @@ export function toService(row: BranchServiceRow, currency: string): Service | nu
   if (!service || service.archived_at != null || !row.is_active) return null;
 
   const category: ServiceCategory | null = service.category
-    ? { id: service.category.id, name: service.category.name, sort_order: service.category.sort_order }
+    ? {
+        id: service.category.id,
+        name: service.category.name,
+        sort_order: service.category.sort_order,
+      }
     : null;
 
   return {
@@ -113,6 +118,7 @@ export function toService(row: BranchServiceRow, currency: string): Service | nu
     description: service.description,
     image: publicUrl(service.image_path),
     duration_minutes: service.duration_minutes,
+    buffer_minutes: service.buffer_minutes,
     // `??`, not `||`: a branch price of 0 is a real override.
     price: row.price ?? service.price,
     currency,
@@ -146,16 +152,27 @@ export function toReview(row: ReviewRow): VenueReview {
   };
 }
 
-export function toReviewStats(
-  card: { rating_avg: number; rating_count: number },
-  countsByRating: [number, number, number, number, number],
-): VenueReviewStats {
-  const rating_distribution: RatingDistribution = {
-    '1': countsByRating[0],
-    '2': countsByRating[1],
-    '3': countsByRating[2],
-    '4': countsByRating[3],
-    '5': countsByRating[4],
+type ReviewStatsRow = Database['public']['Functions']['get_review_stats']['Returns'][number];
+
+const STAR_KEYS = ['1', '2', '3', '4', '5'] as const;
+
+// `rating_distribution` is jsonb, so it is read defensively and zero-filled.
+export function toReviewStats(row: ReviewStatsRow): VenueReviewStats {
+  const raw =
+    row.rating_distribution != null &&
+    typeof row.rating_distribution === 'object' &&
+    !Array.isArray(row.rating_distribution)
+      ? row.rating_distribution
+      : {};
+  const rating_distribution = Object.fromEntries(
+    STAR_KEYS.map((key) => {
+      const value = raw[key];
+      return [key, typeof value === 'number' ? value : 0];
+    }),
+  ) as RatingDistribution;
+  return {
+    average_rating: row.average_rating,
+    total_reviews: row.total_reviews,
+    rating_distribution,
   };
-  return { average_rating: card.rating_avg, total_reviews: card.rating_count, rating_distribution };
 }

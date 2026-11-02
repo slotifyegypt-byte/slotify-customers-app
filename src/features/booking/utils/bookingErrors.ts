@@ -30,6 +30,11 @@ export function slotConflictMessage(error: unknown, conflicting: { service: { na
     const base = getBookingErrorMessage(error, 'That time has already passed — pick another'); // TODO i18n
     return names ? `${names}: ${base}` : base;
   }
+  if (isApiError(error, 'slot_unavailable')) {
+    // The server says why (e.g. outside working hours); a bare code gets the generic text below.
+    const reason = getBookingErrorMessage(error, '');
+    if (reason) return names ? `${names}: ${reason}` : reason;
+  }
   return names
     ? `That time for ${names} was just taken — pick another` // TODO i18n
     : 'That time was just taken — pick another'; // TODO i18n

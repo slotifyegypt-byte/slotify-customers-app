@@ -2,14 +2,7 @@ import { fromPostgrest } from '@/lib/api/errors';
 import { supabase } from '@/lib/supabase';
 import { branchToday } from '@/lib/time/branchTime';
 
-import {
-  toGalleryItem,
-  toHoursWeek,
-  toReview,
-  toReviewStats,
-  toSpecialDay,
-  toTeamMember,
-} from './mappers';
+import { toGalleryItem, toHoursWeek, toReview, toReviewStats, toSpecialDay, toTeamMember } from './mappers';
 import type { GalleryItem, HoursDay, SpecialDay, TeamMember, VenueReview, VenueReviewStats } from './schemas';
 
 // developer-guide.md §5 — `branchId` is the branch uuid.
@@ -81,24 +74,10 @@ export async function getStoreReviews(branchId: string, params: ReviewListParams
   return (data ?? []).map(toReview);
 }
 
-const STAR_VALUES = [1, 2, 3, 4, 5] as const;
-
-// There is no stats rpc: average and total come precomputed on `branch_cards`
-// and the 1-5 star breakdown is five parallel head-only count queries.
+// One rpc call: average, total and the zero-filled 1-5 breakdown. An unknown or
+// inactive branch raises PT404 `branch_not_found`.
 export async function getStoreReviewStats(branchId: string): Promise<VenueReviewStats> {
-  const [card, ...counts] = await Promise.all([
-    supabase.from('branch_cards').select('rating_avg, rating_count').eq('id', branchId).single(),
-    ...STAR_VALUES.map((rating) =>
-      supabase
-        .from('reviews')
-        .select('id', { count: 'exact', head: true })
-        .eq('branch_id', branchId)
-        .eq('rating', rating),
-    ),
-  ]);
-  if (card.error) throw fromPostgrest(card.error);
-  for (const result of counts) {
-    if (result.error) throw fromPostgrest(result.error);
-  }
-  return toReviewStats(card.data, counts.map((result) => result.count ?? 0) as [number, number, number, number, number]);
+  const { data, error } = await supabase.rpc('get_review_stats', { p_branch_id: branchId }).single();
+  if (error) throw fromPostgrest(error);
+  return toReviewStats(data);
 }

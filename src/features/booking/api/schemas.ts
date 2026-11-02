@@ -69,6 +69,8 @@ export interface Service {
   /** Built public URL, not a storage path. */
   image: string | null;
   duration_minutes: number;
+  /** Clean-up time after the service; the specialist stays blocked for it (server exclusion constraint). */
+  buffer_minutes: number;
   /** The branch's price override when set (0 counts), else the service's own price. */
   price: number;
   /** ISO 4217 code of the business — format with `formatMoney(price, currency)`. */

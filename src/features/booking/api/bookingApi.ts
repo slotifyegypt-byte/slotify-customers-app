@@ -55,7 +55,7 @@ export async function getStoreServices(branchId: string): Promise<Service[]> {
     supabase
       .from('branch_services')
       .select(
-        'price, is_active, service:services(id, name, description, image_path, duration_minutes, booking_mode, capacity, price, sort_order, archived_at, category:service_categories(id, name, sort_order))',
+        'price, is_active, service:services(id, name, description, image_path, duration_minutes, buffer_minutes, booking_mode, capacity, price, sort_order, archived_at, category:service_categories(id, name, sort_order))',
       )
       .eq('branch_id', branchId)
       .eq('is_active', true),
@@ -91,6 +91,8 @@ export interface AvailabilityParams {
   /** The BRANCH's local date, "YYYY-MM-DD" (developer-guide.md §6). */
   date: string;
   employee_id?: string;
+  /** Reschedule only: the `booking_items.id` being moved, so its own slot (and buffer) counts as free. */
+  exclude_item_id?: string;
 }
 
 // developer-guide.md §6 — public (apikey only). `stream=0` asks for one JSON
@@ -103,6 +105,7 @@ export async function getAvailability(params: AvailabilityParams): Promise<Avail
     service_id: params.service_id,
     date: params.date,
     ...(params.employee_id ? { employee_id: params.employee_id } : {}),
+    ...(params.exclude_item_id ? { exclude_item_id: params.exclude_item_id } : {}),
     stream: '0',
   });
   return toAvailability(parseOrReport(availabilityDocSchema, doc, 'GET availability'));
