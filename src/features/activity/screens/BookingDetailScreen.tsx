@@ -366,7 +366,7 @@ function OrderDetail({
   onWriteReview,
 }: {
   data: BookingRead;
-  store: { phone_country_code: string | null; phone_number: string | null } | undefined;
+  store: { phone: string | null } | undefined;
   onWriteReview: (() => void) | undefined;
 }) {
   const colors = useColors();
@@ -378,10 +378,10 @@ function OrderDetail({
     : ORDER_STEPS[Math.min(currentIndex, ORDER_STEPS.length - 1)].label;
   const showHelpRow = data.booking_status === 'pending' || data.booking_status === 'confirmed';
 
-  const hasPhone = Boolean(store?.phone_number);
+  const hasPhone = Boolean(store?.phone);
   const handleCall = () => {
-    if (!store?.phone_number) return;
-    Linking.openURL(`tel:${store.phone_country_code ?? ''}${store.phone_number}`);
+    if (!store?.phone) return;
+    Linking.openURL(`tel:${store.phone}`);
   };
   const handleMessage = () => router.push(`/chat/${data.id}`);
 

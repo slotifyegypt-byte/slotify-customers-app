@@ -1,23 +1,14 @@
 import { z } from 'zod';
 
-// customer-app-api-map.md §2 — no full sample in the doc (described only as
-// "6 seeded categories" matching design icon keys: barbers/salons/spa/
-// carcare/tailors/repair). LIVE-VERIFIED shape (2026-09-18, re-checked after
-// an earlier 500 turned out to be transient): `{id, name, description,
-// created_at, updated_at}` — no `key`/`label`/`icon_url` as originally
-// assumed, and only 3 of the 6 design categories are seeded so far
-// (ids 5/6/7 = salon/barber/automotive). Screens should treat `name` as the
-// display label and derive an icon from a local key→icon map, not from data.
-export const storeCategorySchema = z
-  .object({
-    id: z.number(),
-    name: z.string(),
-    description: z.string().nullable().optional(),
-    created_at: z.string(),
-    updated_at: z.string().nullable().optional(),
-  })
-  .passthrough();
-export type StoreCategory = z.infer<typeof storeCategorySchema>;
+// View model for `categories` rows (developer-guide.md §5). `id` is a uuid;
+// icons and display labels are derived from `slug` in the app. `description`
+// is not selected, so it is always null.
+export interface StoreCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description: null;
+}
 
 // §2 — cross-checked against the live OpenAPI spec's `HomePageOfferRead`
 // (2026-09-20, re-verified after the backend added discount pricing): only

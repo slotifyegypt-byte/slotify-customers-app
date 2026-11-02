@@ -5,25 +5,21 @@ import type { Colors } from '@/theme';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
-// Categories are seeded server-side with free-text names (customer-app-api-map.md
-// §2 — no `key`/`icon_url` field), so the icon is derived from the name here
-// instead of from data. `pinColor` matches the design mockup's per-category
-// map-pin palette (MAPPIN_CAT_COLOR in Design.html). `tint` is a light (~16%)
-// wash of `pinColor`, used behind the Ionicons fallback so a category
-// without a custom illustration still reads as "colored", not gray.
+// Categories come from the `categories` table, which has no icon data the app
+// can use (`icon_path` is unset), so the icon is derived from the category
+// `slug` here. `pinColor` matches the design mockup's per-category map-pin
+// palette (MAPPIN_CAT_COLOR in Design.html). `tint` is a light (~16%) wash of
+// `pinColor`, used behind the Ionicons fallback so a category without a custom
+// illustration still reads as "colored", not gray.
 //
-// LIVE-VERIFIED against GET /store-categories/ (2026-09-24): only 5
-// categories are actually seeded right now — Automotive, Barbershop, Nails,
-// Salon, Spa. car-care/tailor/tire-shops have no live category yet but keep
-// their own rules (with real illustrations, now that assets/images has
-// distinct, correctly-themed art for each — see below) so whichever gets
-// seeded next just works with no code change.
+// Seeded slugs (verified against the hosted project): hair-salon, barber,
+// nail-salon, spa, car-care, automotive, tire-shop, vet. Unknown slugs fall
+// back to a generic grid icon. The patterns are also loose enough to match a
+// display name ("Hair salon", "Barbers"), which unmigrated callers still pass.
 //
-// Nails used to fall through to the Salon rule (`/salon|nail|.../`, "nail"
-// matching "Nails") and rendered Salon's hairdresser illustration — wrong
-// once Nails became its own real category. It has no dedicated illustration
-// yet, so it gets its own rule/color and an Ionicons fallback instead of
-// borrowing Salon's.
+// Order matters: nail-salon must hit the Nails rule before the Salon rule, and
+// car-care before the broader automotive rule. Nails, tire shops and vets have
+// no dedicated illustration yet, so they use an Ionicons fallback.
 const RULES: { match: RegExp; icon: IoniconName; image?: number; imageScale?: number; pinColor: string; tint: string }[] = [
   {
     match: /barber/i,
@@ -80,6 +76,12 @@ const RULES: { match: RegExp; icon: IoniconName; image?: number; imageScale?: nu
     tint: 'rgba(168, 81, 31, 0.16)',
   },
   {
+    match: /vet|animal|pet/i,
+    icon: 'paw-outline',
+    pinColor: '#2F7D6B',
+    tint: 'rgba(47, 125, 107, 0.16)',
+  },
+  {
     match: /auto|repair|fix|phone|electronic|mechanic/i,
     icon: 'construct-outline',
     image: require('../../../../assets/images/auto-repair.png'),
@@ -89,13 +91,13 @@ const RULES: { match: RegExp; icon: IoniconName; image?: number; imageScale?: nu
   },
 ];
 
-export function iconForCategory(name: string): IoniconName {
-  const rule = RULES.find((r) => r.match.test(name));
+export function iconForCategory(key: string): IoniconName {
+  const rule = RULES.find((r) => r.match.test(key));
   return rule?.icon ?? 'grid-outline';
 }
 
-export function imageForCategory(name: string): { source: number; scale: number } | null {
-  const rule = RULES.find((r) => r.match.test(name));
+export function imageForCategory(key: string): { source: number; scale: number } | null {
+  const rule = RULES.find((r) => r.match.test(key));
   return rule?.image ? { source: rule.image, scale: rule.imageScale ?? 1 } : null;
 }
 
@@ -104,12 +106,12 @@ export function imageForCategory(name: string): { source: number; scale: number 
 // light/dark) — `colors` is passed in by the caller (via `useColors()`)
 // rather than read from a module-level import, so this plain function still
 // reacts to theme changes.
-export function pinColorForCategory(name: string, colors: Colors): string {
-  const rule = RULES.find((r) => r.match.test(name));
+export function pinColorForCategory(key: string, colors: Colors): string {
+  const rule = RULES.find((r) => r.match.test(key));
   return rule?.pinColor ?? colors.brandAccent;
 }
 
-export function tintForCategory(name: string, colors: Colors): string {
-  const rule = RULES.find((r) => r.match.test(name));
+export function tintForCategory(key: string, colors: Colors): string {
+  const rule = RULES.find((r) => r.match.test(key));
   return rule?.tint ?? colors.backgroundMuted;
 }

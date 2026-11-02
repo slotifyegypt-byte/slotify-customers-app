@@ -120,7 +120,7 @@ export function VenueDetailScreen() {
 
   const store = storeDetail.data;
   const categoryLabel =
-    categories.data?.find((category) => category.id === store.category_id)?.name ?? null;
+    categories.data?.find((category) => store.category_slugs.includes(category.slug))?.name ?? null;
   const isFavourite = favouriteCheck.data?.is_favourite ?? false;
 
   const handleToggleFavourite = () => {
@@ -156,7 +156,8 @@ export function VenueDetailScreen() {
           status={store.status}
           photos={!gallery.isError ? gallery.data ?? [] : []}
           coverImage={store.logo}
-          shareLink={store.share_link}
+          // TODO: build a share URL from `store.share_slug` once the public web domain is defined (backend gap).
+          shareLink={null}
           isFavourite={isFavourite}
           isFavouriteLoading={add.isPending || remove.isPending}
           onToggleFavourite={handleToggleFavourite}

@@ -20,7 +20,8 @@ import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
 import { ANDROID_MAP_STYLE_DARK, ANDROID_MAP_STYLE_LIGHT, CLUSTER_COLOR, MAP_PROVIDER, MAP_SHADOW_COLOR } from '@/lib/maps';
 import { fontFamily, radius, shadows, spacing, useColors, useTheme, type Colors } from '@/theme';
 
-import { type NearbyStore } from '../api/schemas';
+import { isMappable } from '../api/mappers';
+import { type MappableStore, type NearbyStore } from '../api/schemas';
 import { useNearbyStores } from '../hooks/useNearbyStores';
 
 const RATING_OPTIONS = [4, 4.5];
@@ -60,7 +61,7 @@ export function ExploreScreen() {
   const nearbyParams = { latitude: location.latitude, longitude: location.longitude, radius_km: 15, limit: 50 };
   const nearby = useNearbyStores(nearbyParams);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [openNowOnly, setOpenNowOnly] = useState(false);
   const [minRating, setMinRating] = useState<number | null>(null);
   const [openPanel, setOpenPanel] = useState<'category' | 'rating' | null>(null);
@@ -68,28 +69,30 @@ export function ExploreScreen() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(0);
 
-  const categoryNameById = useMemo(() => {
-    const map = new Map<number, string>();
-    categories.data?.forEach((c) => map.set(c.id, c.name));
+  const categoryNameBySlug = useMemo(() => {
+    const map = new Map<string, string>();
+    categories.data?.forEach((c) => map.set(c.slug, c.name));
     return map;
   }, [categories.data]);
 
+  // Stores without coordinates can't be pinned, so they never reach the map.
+  const mappableStores = useMemo(() => nearby.data?.filter(isMappable) ?? [], [nearby.data]);
+
   const filteredStores = useMemo(() => {
-    if (!nearby.data) return [];
-    return nearby.data.filter((store) => {
-      if (selectedCategoryId !== null && store.category_id !== selectedCategoryId) return false;
+    return mappableStores.filter((store) => {
+      if (selectedCategorySlug !== null && !store.category_slugs.includes(selectedCategorySlug)) return false;
       if (openNowOnly && store.status !== 'open') return false;
       if (minRating !== null && store.rating < minRating) return false;
       return true;
     });
-  }, [nearby.data, selectedCategoryId, openNowOnly, minRating]);
+  }, [mappableStores, selectedCategorySlug, openNowOnly, minRating]);
 
   const selectedStore = useMemo(
-    () => nearby.data?.find((s) => s.id === selectedStoreId) ?? null,
-    [nearby.data, selectedStoreId],
+    () => mappableStores.find((s) => s.id === selectedStoreId) ?? null,
+    [mappableStores, selectedStoreId],
   );
 
-  const selectedCategoryName = selectedCategoryId !== null ? categoryNameById.get(selectedCategoryId) : undefined;
+  const selectedCategoryName = selectedCategorySlug !== null ? categoryNameBySlug.get(selectedCategorySlug) : undefined;
 
   // A pin tap always opens the compact peek first, like Google/Apple Maps —
   // re-selecting the same pin while expanded shouldn't keep it expanded.
@@ -111,7 +114,7 @@ export function ExploreScreen() {
         isLoading={nearby.isLoading}
         isError={nearby.isError}
         filteredStores={filteredStores}
-        categoryNameById={categoryNameById}
+        categoryNameBySlug={categoryNameBySlug}
         selectedStore={selectedStore}
         selectedStoreId={selectedStoreId}
         sheetExpanded={sheetExpanded}
@@ -152,7 +155,7 @@ export function ExploreScreen() {
             <FilterChip
               icon="menu-outline"
               label={selectedCategoryName ?? t('explore.category')}
-              active={selectedCategoryId !== null}
+              active={selectedCategorySlug !== null}
               onPress={() => setOpenPanel((p) => (p === 'category' ? null : 'category'))}
             />
             <FilterChip
@@ -175,9 +178,9 @@ export function ExploreScreen() {
               <View style={[styles.panelCaret, styles.panelCaretLeft]} />
               <PanelRow
                 label={t('explore.allCategories')}
-                selected={selectedCategoryId === null}
+                selected={selectedCategorySlug === null}
                 onPress={() => {
-                  setSelectedCategoryId(null);
+                  setSelectedCategorySlug(null);
                   setOpenPanel(null);
                 }}
               />
@@ -185,10 +188,10 @@ export function ExploreScreen() {
                 <PanelRow
                   key={category.id}
                   label={category.name}
-                  icon={iconForCategory(category.name)}
-                  selected={selectedCategoryId === category.id}
+                  icon={iconForCategory(category.slug)}
+                  selected={selectedCategorySlug === category.slug}
                   onPress={() => {
-                    setSelectedCategoryId(category.id);
+                    setSelectedCategorySlug(category.slug);
                     setOpenPanel(null);
                   }}
                 />
@@ -239,7 +242,7 @@ function ExploreMap({
   isLoading,
   isError,
   filteredStores,
-  categoryNameById,
+  categoryNameBySlug,
   selectedStore,
   selectedStoreId,
   sheetExpanded,
@@ -257,9 +260,9 @@ function ExploreMap({
   showsUserLocation: boolean;
   isLoading: boolean;
   isError: boolean;
-  filteredStores: NearbyStore[];
-  categoryNameById: Map<number, string>;
-  selectedStore: NearbyStore | null;
+  filteredStores: MappableStore[];
+  categoryNameBySlug: Map<string, string>;
+  selectedStore: MappableStore | null;
   selectedStoreId: string | null;
   sheetExpanded: boolean;
   sheetHeight: number;
@@ -298,7 +301,7 @@ function ExploreMap({
   }, [latitude, longitude]);
 
   const storesById = useMemo(() => {
-    const map = new Map<string, NearbyStore>();
+    const map = new Map<string, MappableStore>();
     filteredStores.forEach((store) => map.set(store.id, store));
     return map;
   }, [filteredStores]);
@@ -388,8 +391,8 @@ function ExploreMap({
                 }}
               >
                 <MapPin
-                  categoryName={categoryNameById.get(store.category_id) ?? ''}
-                  color={pinColorForCategory(categoryNameById.get(store.category_id) ?? '', colors)}
+                  categorySlug={store.category_slugs[0] ?? ''}
+                  color={pinColorForCategory(store.category_slugs[0] ?? '', colors)}
                   isOpen={store.status === 'open'}
                   size={store.id === selectedStoreId ? 36 : 30}
                 />
@@ -440,14 +443,14 @@ function ExploreMap({
           {sheetExpanded ? (
             <ExploreSheetExpanded
               store={selectedStore}
-              categoryName={categoryNameById.get(selectedStore.category_id)}
+              categoryName={categoryNameBySlug.get(selectedStore.category_slugs[0] ?? '')}
               onCollapse={onCollapseSheet}
               onLayout={(e) => onSheetHeightChange(e.nativeEvent.layout.height)}
             />
           ) : (
             <ExploreSheetCollapsed
               store={selectedStore}
-              categoryName={categoryNameById.get(selectedStore.category_id)}
+              categoryName={categoryNameBySlug.get(selectedStore.category_slugs[0] ?? '')}
               onExpand={onExpandSheet}
               onLayout={(e) => onSheetHeightChange(e.nativeEvent.layout.height)}
             />
@@ -675,8 +678,8 @@ function ExploreSheetExpanded({
   const styles = createStyles(colors);
 
   const call = () => {
-    if (!store.phone_number) return;
-    Linking.openURL(`tel:${store.phone_country_code ?? ''}${store.phone_number}`);
+    if (!store.phone) return;
+    Linking.openURL(`tel:${store.phone}`);
   };
   const openDirections = async () => {
     const destination = `${store.latitude},${store.longitude}`;
@@ -731,7 +734,7 @@ function ExploreSheetExpanded({
         </Pressable>
 
         <View style={styles.previewActions}>
-          <Pressable style={styles.previewActionBtn} onPress={call} disabled={!store.phone_number}>
+          <Pressable style={styles.previewActionBtn} onPress={call} disabled={!store.phone}>
             <Ionicons name="call-outline" size={16} color={colors.textPrimary} />
             <ThemedText variant="caption" style={styles.previewActionLabel}>
               {t('explore.call')}

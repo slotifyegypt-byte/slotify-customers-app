@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { getFavourites } from '../api/favouritesApi';
 import { favouriteKeys } from '../api/queryKeys';
 
-export function useFavourites(params?: { limit?: number; offset?: number }) {
+export function useFavourites() {
   return useQuery({
-    queryKey: favouriteKeys.list(params),
-    queryFn: () => getFavourites(params),
+    queryKey: favouriteKeys.list(),
+    queryFn: getFavourites,
   });
 }

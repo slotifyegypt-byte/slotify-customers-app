@@ -158,18 +158,18 @@ export function SearchScreen() {
       ) : (
         <FlatList<SearchStore>
           data={results.data.stores}
-          keyExtractor={(item) => item.store_id}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.content}
           renderItem={({ item }) => (
             <StoreCard
-              name={item.store_name}
-              logo={item.store_logo}
-              address={item.store_address}
-              rating={item.store_rating}
-              distanceKm={item.store_distance_km}
+              name={item.name}
+              logo={item.logo}
+              address={item.address}
+              rating={item.rating}
+              distanceKm={item.distance_km}
               isOpen={item.status === 'open'}
               width={CARD_WIDTH}
-              onPress={() => router.push(`/venue/${item.store_id}`)}
+              onPress={() => router.push(`/venue/${item.id}`)}
             />
           )}
         />

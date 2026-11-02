@@ -45,10 +45,10 @@ export function AboutTab({ store, calendarDays, specialDays, photos, isLoading, 
     [calendarDays],
   );
 
-  const hasPhone = Boolean(store.phone_number);
+  const hasPhone = Boolean(store.phone);
   const call = () => {
     if (!hasPhone) return;
-    Linking.openURL(`tel:${store.phone_country_code ?? ''}${store.phone_number}`);
+    Linking.openURL(`tel:${store.phone}`);
   };
   const openDirections = () => {
     Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`);
@@ -119,7 +119,7 @@ export function AboutTab({ store, calendarDays, specialDays, photos, isLoading, 
         <Pressable style={styles.linkRow} onPress={call} disabled={!hasPhone} accessibilityRole="button">
           <Ionicons name="call-outline" size={18} color={hasPhone ? colors.brand : colors.textSecondary} />
           <ThemedText variant="body" color={hasPhone ? 'brand' : 'textSecondary'} style={styles.linkText}>
-            {hasPhone ? `${store.phone_country_code ?? ''}${store.phone_number}` : 'No phone number on file' /* TODO i18n */}
+            {hasPhone ? store.phone : 'No phone number on file' /* TODO i18n */}
           </ThemedText>
         </Pressable>
       </View>

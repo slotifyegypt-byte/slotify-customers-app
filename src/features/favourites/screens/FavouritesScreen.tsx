@@ -41,7 +41,7 @@ export function FavouritesScreen() {
       ) : (
         <FlatList<Favourite>
           data={favourites.data}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => <FavouriteRow favourite={item} />}
         />

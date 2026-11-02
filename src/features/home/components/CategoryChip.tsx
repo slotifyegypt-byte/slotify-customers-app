@@ -10,15 +10,16 @@ import { iconForCategory, imageForCategory, pinColorForCategory, tintForCategory
 
 interface CategoryChipProps {
   name: string;
+  slug: string;
   selected?: boolean;
   muted?: boolean;
   onPress: () => void;
 }
 
-export function CategoryChip({ name, selected, muted, onPress }: CategoryChipProps) {
+export function CategoryChip({ name, slug, selected, muted, onPress }: CategoryChipProps) {
   const colors = useColors();
   const styles = createStyles(colors);
-  const image = imageForCategory(name);
+  const image = imageForCategory(slug);
   // Fixed reference so the Image's style array doesn't get a new object
   // identity every render (was causing expo-image to re-transition on every
   // sibling selection change).
@@ -30,11 +31,11 @@ export function CategoryChip({ name, selected, muted, onPress }: CategoryChipPro
   return (
     <Pressable onPress={onPress} style={[styles.wrap, muted && styles.muted]}>
       <View style={styles.circleOuter}>
-        <View style={[styles.circle, !image && { backgroundColor: tintForCategory(name, colors) }]}>
+        <View style={[styles.circle, !image && { backgroundColor: tintForCategory(slug, colors) }]}>
           {image ? (
             <Image source={image.source} style={imageStyle} contentFit="cover" />
           ) : (
-            <Ionicons name={iconForCategory(name)} size={26} color={pinColorForCategory(name, colors)} />
+            <Ionicons name={iconForCategory(slug)} size={26} color={pinColorForCategory(slug, colors)} />
           )}
         </View>
         {/* Separate, non-clipping overlay so the selection ring never resizes

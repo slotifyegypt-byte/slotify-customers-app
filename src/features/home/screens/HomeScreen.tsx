@@ -10,6 +10,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
 import { formatBookingDateTitle, formatBookingHourStr } from '@/features/booking/utils/time';
+import { isMappable } from '@/features/explore-search/api/mappers';
 import { useNearbyStores } from '@/features/explore-search/hooks/useNearbyStores';
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useNotifications';
 import { useMyProfile } from '@/features/profile/hooks/useProfile';
@@ -37,12 +38,12 @@ export function HomeScreen() {
   const categories = useCategories();
   const offers = useHomeOffers();
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const selectedCategory = useMemo(
     () => categories.data?.find((c) => c.id === selectedCategoryId) ?? null,
     [categories.data, selectedCategoryId],
   );
-  const toggleCategory = (id: number) => setSelectedCategoryId((prev) => (prev === id ? null : id));
+  const toggleCategory = (id: string) => setSelectedCategoryId((prev) => (prev === id ? null : id));
   const clearCategoryFilter = () => setSelectedCategoryId(null);
 
   const nearbyParams = { latitude: location.latitude, longitude: location.longitude, radius_km: 15, limit: 20 };
@@ -64,26 +65,23 @@ export function HomeScreen() {
 
   const topRated = useMemo(() => {
     if (!nearby.data) return [];
-    const source = selectedCategory ? nearby.data.filter((s) => s.category_id === selectedCategory.id) : nearby.data;
+    const source = selectedCategory ? nearby.data.filter((s) => s.category_slugs.includes(selectedCategory.slug)) : nearby.data;
     return [...source].sort((a, b) => b.rating - a.rating).slice(0, 10);
   }, [nearby.data, selectedCategory]);
 
-  const categoryNameById = useMemo(() => {
-    const map = new Map<number, string>();
-    categories.data?.forEach((c) => map.set(c.id, c.name));
-    return map;
-  }, [categories.data]);
-
   const mapPins = useMemo(
     () =>
-      topRated.slice(0, 6).map((store) => ({
-        id: store.id,
-        categoryName: categoryNameById.get(store.category_id) ?? '',
-        latitude: store.latitude,
-        longitude: store.longitude,
-        isOpen: store.status === 'open',
-      })),
-    [topRated, categoryNameById],
+      topRated
+        .slice(0, 6)
+        .filter(isMappable)
+        .map((store) => ({
+          id: store.id,
+          categorySlug: store.category_slugs[0] ?? '',
+          latitude: store.latitude,
+          longitude: store.longitude,
+          isOpen: store.status === 'open',
+        })),
+    [topRated],
   );
 
   const mapRegion = { latitude: location.latitude, longitude: location.longitude };
@@ -150,6 +148,7 @@ export function HomeScreen() {
                 <CategoryChip
                   key={String(category.id)}
                   name={category.name}
+                  slug={category.slug}
                   selected={selectedCategoryId === category.id}
                   muted={selectedCategoryId !== null && selectedCategoryId !== category.id}
                   onPress={() => toggleCategory(category.id)}

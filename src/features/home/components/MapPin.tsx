@@ -7,7 +7,8 @@ import { useColors, type Colors } from '@/theme';
 import { iconForCategory, imageForCategory } from '../utils/categoryIcon';
 
 interface MapPinProps {
-  categoryName: string;
+  /** Category slug (or, for unmigrated callers, a display name) — see categoryIcon.ts. */
+  categorySlug: string;
   color: string;
   size?: number;
   isOpen?: boolean;
@@ -16,10 +17,10 @@ interface MapPinProps {
 // Same circular category badge as the Home screen's CategoryChip (see
 // categoryIcon.ts) — a plain "sticker" marker centered on its coordinate,
 // rather than a teardrop shape.
-export function MapPin({ categoryName, color, size = 34, isOpen }: MapPinProps) {
+export function MapPin({ categorySlug, color, size = 34, isOpen }: MapPinProps) {
   const colors = useColors();
   const styles = createStyles(colors);
-  const image = imageForCategory(categoryName);
+  const image = imageForCategory(categorySlug);
 
   return (
     <View style={{ width: size, height: size }}>
@@ -42,7 +43,7 @@ export function MapPin({ categoryName, color, size = 34, isOpen }: MapPinProps) 
             contentFit="cover"
           />
         ) : (
-          <Ionicons name={iconForCategory(categoryName)} size={size * 0.52} color={colors.surface} />
+          <Ionicons name={iconForCategory(categorySlug)} size={size * 0.52} color={colors.surface} />
         )}
       </View>
       {isOpen ? <View style={styles.dot} /> : null}

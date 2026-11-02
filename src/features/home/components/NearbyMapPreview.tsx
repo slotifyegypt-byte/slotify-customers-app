@@ -13,7 +13,7 @@ import { MapPin } from './MapPin';
 
 export interface MapPreviewPin {
   id: string;
-  categoryName: string;
+  categorySlug: string;
   latitude: number;
   longitude: number;
   isOpen?: boolean;
@@ -58,7 +58,7 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
         >
           {pins.map((pin) => (
             <Marker key={pin.id} coordinate={{ latitude: pin.latitude, longitude: pin.longitude }} anchor={{ x: 0.5, y: 0.5 }}>
-              <MapPin categoryName={pin.categoryName} color={pinColorForCategory(pin.categoryName, colors)} isOpen={pin.isOpen} size={26} />
+              <MapPin categorySlug={pin.categorySlug} color={pinColorForCategory(pin.categorySlug, colors)} isOpen={pin.isOpen} size={26} />
             </Marker>
           ))}
         </MapView>
