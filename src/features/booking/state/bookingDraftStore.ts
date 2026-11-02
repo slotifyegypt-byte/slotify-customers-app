@@ -1,15 +1,17 @@
 import { create } from 'zustand';
 
 import type { AvailabilitySlot, Service } from '../api/schemas';
-import { formatDraftDateLabel } from '../utils/time';
+import { formatDraftDateLabel } from '../utils/dates';
 
 export interface BookingDraftEntry {
   service: Service;
   /** null = "Any Professional" — see SpecialistPicker. */
   employeeId: string | null;
-  /** yyyy-MM-dd */
+  /** Branch-local "YYYY-MM-DD". */
   date: string;
+  /** Carries the UTC `start_time` that is sent as `starts_at`. */
   slot: AvailabilitySlot;
+  /** Per-service note; joined into the booking's one `customer_note` on confirm. */
   note?: string;
 }
 
@@ -17,6 +19,8 @@ interface BookingDraftState {
   storeId: string | null;
   entries: Record<string, BookingDraftEntry>;
   setEntry: (storeId: string, entry: BookingDraftEntry) => void;
+  /** Drops the given services (e.g. ones whose slot was just taken), keeping the rest. */
+  removeEntries: (storeId: string, serviceIds: string[]) => void;
   clear: (storeId: string) => void;
 }
 
@@ -38,6 +42,13 @@ export const useBookingDraftStore = create<BookingDraftState>((set) => ({
       // mixing services from two stores into one booking.
       entries: state.storeId === storeId ? { ...state.entries, [entry.service.id]: entry } : { [entry.service.id]: entry },
     })),
+  removeEntries: (storeId, serviceIds) =>
+    set((state) => {
+      if (state.storeId !== storeId || serviceIds.length === 0) return state;
+      const entries = { ...state.entries };
+      for (const id of serviceIds) delete entries[id];
+      return { entries };
+    }),
   clear: (storeId) => set((state) => (state.storeId === storeId ? { storeId: null, entries: {} } : state)),
 }));
 
@@ -48,8 +59,9 @@ export function useDraftEntries(storeId: string): Record<string, BookingDraftEnt
 
 // Matches the "Any pro · Today · 3:30" summary shown on the store's services
 // list once a service has been configured (24-booking-configure.png flow).
-export function formatDraftSummary(entry: BookingDraftEntry): string {
-  const dateLabel = formatDraftDateLabel(entry.date);
+// `timeZone` is the branch's: "Today" means the branch's today.
+export function formatDraftSummary(entry: BookingDraftEntry, timeZone: string, now: Date = new Date()): string {
+  const dateLabel = formatDraftDateLabel(entry.date, timeZone, now);
   const timeLabel = entry.slot.time_slot_str;
   if (!entry.service.requires_specialist) {
     return `${dateLabel} · ${timeLabel}`;

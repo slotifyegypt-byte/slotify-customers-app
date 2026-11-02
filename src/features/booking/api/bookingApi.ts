@@ -1,17 +1,17 @@
 import { compareBranchServices, toService } from '@/features/venue/api/mappers';
 import { getStoreTeam } from '@/features/venue/api/venueApi';
-import { apiClient } from '@/lib/api/client';
 import { fromPostgrest } from '@/lib/api/errors';
-import { validateResponse } from '@/lib/api/zodFetch';
+import { callFunction, callPublicFunction } from '@/lib/api/functions';
+import { parseOrReport } from '@/lib/api/parse';
 import { supabase } from '@/lib/supabase';
 
 import type { BookingDraftEntry } from '../state/bookingDraftStore';
-import { toBookingTimestamp } from '../utils/time';
 
-import { toBooking, BOOKING_SELECT, type BookingRow } from './mappers';
+import { toAvailability, toBooking, BOOKING_SELECT, type BookingRow } from './mappers';
 import {
-  availabilityResponseSchema,
-  legacyBookingReadSchema,
+  availabilityDocSchema,
+  createdBookingSchema,
+  type AvailabilityResponse,
   type BookingEmployee,
   type BookingRead,
   type BookingStatus,
@@ -88,75 +88,88 @@ export async function getStoreEmployeesForService(branchId: string, serviceId: s
 export interface AvailabilityParams {
   store_id: string;
   service_id: string;
-  date: string; // YYYY-MM-DD
+  /** The BRANCH's local date, "YYYY-MM-DD" (developer-guide.md §6). */
+  date: string;
   employee_id?: string;
 }
 
-// §6 — response shape branches on `booking_mode`.
-export async function getAvailability(params: AvailabilityParams) {
-  const response = await apiClient.get('/availability', { params });
-  return validateResponse(availabilityResponseSchema, response, 'GET /availability');
+// developer-guide.md §6 — public (apikey only). `stream=0` asks for one JSON
+// document instead of NDJSON frames: same data, no streaming fetch needed.
+// An unknown/inactive branch is a 404 `branch_not_found` ApiError; a day with
+// no free slots is an ordinary empty result.
+export async function getAvailability(params: AvailabilityParams): Promise<AvailabilityResponse> {
+  const doc = await callPublicFunction<unknown>('availability', {
+    branch_id: params.store_id,
+    service_id: params.service_id,
+    date: params.date,
+    ...(params.employee_id ? { employee_id: params.employee_id } : {}),
+    stream: '0',
+  });
+  return toAvailability(parseOrReport(availabilityDocSchema, doc, 'GET availability'));
 }
 
-export interface CreateBookingServicePayload {
+/** One item of `POST bookings`. The server derives end times, buffers and prices. */
+export interface CreateBookingItem {
   service_id: string;
+  /** Specialist services only — capacity services must omit it. */
   employee_id?: string;
-  booking_start_time: string;
-  booking_end_time: string;
-  // VERIFIED against live /openapi.json (2026-09-20): BookingServiceCreate
-  // now accepts an optional note.
-  note?: string;
+  /** UTC ISO instant, straight from the picked slot's `start_time`. */
+  starts_at: string;
 }
 
-/** Turns one configured service from the multi-service booking draft into its API payload shape. */
-export function draftEntryToPayload(entry: BookingDraftEntry): CreateBookingServicePayload {
+/** Turns one configured service from the booking draft into a `POST bookings` item. */
+export function draftEntryToPayload(entry: BookingDraftEntry): CreateBookingItem {
   return {
     service_id: entry.service.id,
-    // Capacity-mode services must omit employee_id entirely (§0.2);
-    // specialist-mode resolves it from whichever slot was tapped, which
-    // covers both a specific pick and "Any specialist".
+    // Capacity services omit employee_id entirely; specialist services take
+    // it from whichever slot was tapped, which covers both a specific pick
+    // and "Any specialist" (see mergeSpecialistSlots).
     ...(entry.service.requires_specialist && entry.slot.employee_id ? { employee_id: entry.slot.employee_id } : {}),
-    booking_start_time: toBookingTimestamp(entry.slot.start_time),
-    booking_end_time: toBookingTimestamp(entry.slot.end_time),
-    ...(entry.note ? { note: entry.note } : {}),
+    starts_at: entry.slot.start_time,
   };
 }
 
-// LEGACY (FastAPI) — migrated in Task 6; returns the legacy booking shape.
-// §6/§7 — same call for a fresh booking or a "rebook" (rebook just prefills
-// this from a past booking; there is no dedicated rebook endpoint).
-export async function createBooking(storeId: string, bookingServices: CreateBookingServicePayload[]) {
-  // Trailing slash is load-bearing: the backend 307-redirects the
-  // slash-less path, and that redirect's Location header is (buggily)
-  // `http://`, not `https://` — iOS/Android both block following it, so
-  // the bare path silently fails on-device. Calling the canonical
-  // slash-terminated path avoids the redirect entirely.
-  const response = await apiClient.post('/bookings/', {
-    store_id: storeId,
-    booking_services: bookingServices,
+/**
+ * The whole draft as one booking request. The backend has a single
+ * `customer_note` per booking (no per-item notes — backend gap G4), so each
+ * service's note becomes a "<service name>: <note>" line.
+ */
+export function draftToBookingRequest(entries: BookingDraftEntry[]): {
+  items: CreateBookingItem[];
+  customerNote?: string;
+} {
+  const noteLines = entries
+    .filter((entry) => entry.note?.trim())
+    .map((entry) => `${entry.service.name}: ${entry.note!.trim()}`);
+  return {
+    items: entries.map(draftEntryToPayload),
+    ...(noteLines.length > 0 ? { customerNote: noteLines.join('\n') } : {}),
+  };
+}
+
+// developer-guide.md §6 "Customer books" — same call for a fresh booking or a
+// rebook (rebook just prefills the flow from a past booking). Up to 10 items.
+// → 201 { booking }; callers read the full view model with `getBooking(id)`.
+export async function createBooking(
+  branchId: string,
+  items: CreateBookingItem[],
+  customerNote?: string,
+): Promise<{ id: string }> {
+  const response = await callFunction<unknown>('bookings', {
+    method: 'POST',
+    body: { branch_id: branchId, items, ...(customerNote ? { customer_note: customerNote } : {}) },
   });
-  return validateResponse(legacyBookingReadSchema, response, 'POST /bookings/');
+  const { booking } = parseOrReport(createdBookingSchema, response, 'POST bookings');
+  return { id: booking.id };
 }
 
-export interface RescheduleBookingServiceParams {
-  booking_start_time: string;
-  booking_end_time: string;
-}
-
-// New endpoint — VERIFIED against live /openapi.json + response shapes
-// (2026-09-20): PUT /bookings/services/{booking_service_id}/reschedule/my-booking.
-// `booking_service_id` is the booking SERVICE row's own integer `id`
-// (BookingServiceRead.id), not the parent booking's UUID `id`. Time-only —
-// it keeps whichever specialist is already assigned, so there's no
-// employee_id here; swapping specialists is a rebook (see
-// RebookSheetScreen), not a reschedule. The path already ends in the static
-// `/my-booking` segment, so unlike `POST /bookings/` there's no slash-less
-// redirect to dodge here (same as the `PUT /reviews/{id}` precedent).
-export async function rescheduleBookingService(bookingServiceId: string, params: RescheduleBookingServiceParams) {
-  const response = await apiClient.put(`/bookings/services/${bookingServiceId}/reschedule/my-booking`, params);
-  return validateResponse(
-    legacyBookingReadSchema,
-    response,
-    `PUT /bookings/services/${bookingServiceId}/reschedule/my-booking`,
-  );
+// developer-guide.md §6 "Reschedule" — customers can only move the TIME of an
+// item on their own booking; changing the specialist is staff-only (a
+// customer who wants someone else rebooks instead). `itemId` is the
+// booking_items uuid (BookingServiceRead.id).
+export async function rescheduleBookingService(itemId: string, params: { starts_at: string }): Promise<void> {
+  await callFunction<unknown>(`bookings/items/${itemId}`, {
+    method: 'PATCH',
+    body: { starts_at: params.starts_at },
+  });
 }

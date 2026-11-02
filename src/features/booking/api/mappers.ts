@@ -3,7 +3,7 @@ import type { BranchCardRow } from '@/features/explore-search/api/mappers';
 import type { Database } from '@/lib/database.types';
 import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
 
-import type { BookingRead, BookingServiceRead } from './schemas';
+import type { AvailabilityDoc, AvailabilityResponse, AvailabilitySlot, BookingRead, BookingServiceRead } from './schemas';
 
 type Tables = Database['public']['Tables'];
 
@@ -87,5 +87,41 @@ export function toBooking(row: BookingRow, now: Date = new Date()): BookingRead 
     created_at: row.created_at,
     updated_at: row.updated_at,
     booking_services: items.map(toBookingService),
+  };
+}
+
+// developer-guide.md §6 availability document -> the app's view model. Slot
+// labels are formatted in the branch zone the server sends in `meta`.
+export function toAvailability(doc: AvailabilityDoc): AvailabilityResponse {
+  const { meta } = doc;
+  const toSlot = (
+    raw: AvailabilityDoc['slots'][number],
+    employee: { id: string; name: string } | null,
+  ): AvailabilitySlot => ({
+    start_time: raw.starts_at,
+    end_time: raw.ends_at,
+    employee_id: employee?.id ?? null,
+    employee_name: employee?.name ?? null,
+    capacity_remaining: raw.remaining ?? null,
+    time_slot_str: formatHour(raw.starts_at, meta.timezone),
+  });
+
+  return {
+    store_id: meta.branch_id,
+    service_id: meta.service_id,
+    date: meta.date,
+    timezone: meta.timezone,
+    service_duration_minutes: meta.duration_minutes,
+    step_minutes: meta.step_minutes,
+    price: Number(meta.price),
+    booking_mode: meta.booking_mode,
+    employees: doc.employees.map((employee) => ({
+      employee_id: employee.employee_id,
+      employee_name: employee.name,
+      available_slots: employee.slots.map((raw) =>
+        toSlot(raw, { id: employee.employee_id, name: employee.name }),
+      ),
+    })),
+    slots: doc.slots.map((raw) => toSlot(raw, null)),
   };
 }

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,15 +7,14 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { Button } from '@/components/Button';
 import { ThemedText } from '@/components/ThemedText';
 import { formatMoney } from '@/lib/money';
+import { branchToday } from '@/lib/time/branchTime';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
-import { draftEntryToPayload, type AvailabilityParams, type CreateBookingServicePayload } from '../api/bookingApi';
-import type { AvailabilitySlot, LegacyBookingRead, Service } from '../api/schemas';
+import type { AvailabilitySlot, Service } from '../api/schemas';
 import { useAvailability } from '../hooks/useAvailability';
-import { useCreateBooking } from '../hooks/useCreateBooking';
-import { useBookingDraftStore, useDraftEntries } from '../state/bookingDraftStore';
-import { getBookingErrorMessage, isCapacityConflict } from '../utils/apiError';
-import { getDraftBlockedIntervals, withDraftHolds } from '../utils/draftConflicts';
+import { useConfirmBooking } from '../hooks/useConfirmBooking';
+import { useBookingDraftStore, useDraftEntries, type BookingDraftEntry } from '../state/bookingDraftStore';
+import { availabilityParamsFor, getDraftBlockedIntervals, withDraftHolds } from '../utils/draftConflicts';
 
 import { DateStrip } from './DateStrip';
 import { SlotGrid } from './SlotGrid';
@@ -27,11 +25,14 @@ interface BookingFlowProps {
   service: Service;
   /** Rendered as the gray subtitle under the service name (24-booking-configure.png). */
   storeName?: string;
+  /** The BRANCH's IANA timezone (store detail / booking) — drives "today" and the date strip, never the phone's zone. */
+  timezone: string;
   /** Pre-fill for rebook, or for re-opening a service already configured in the current draft — still overridable via the pickers below. */
   initialEmployeeId?: string | null;
   initialDate?: string;
   initialSlot?: AvailabilitySlot | null;
-  onBooked: (booking: LegacyBookingRead) => void; // legacy shape until Task 6
+  /** Gets the new booking's id; read the full booking with `getBooking`. */
+  onBooked: (booking: { id: string }) => void;
 }
 
 /**
@@ -50,6 +51,7 @@ export function BookingFlow({
   storeId,
   service,
   storeName,
+  timezone,
   initialEmployeeId = null,
   initialDate,
   initialSlot = null,
@@ -59,26 +61,21 @@ export function BookingFlow({
   const styles = createStyles(colors);
   const { t } = useTranslation();
   const [employeeId, setEmployeeId] = useState<string | null>(initialEmployeeId);
-  const [selectedDate, setSelectedDate] = useState(() => initialDate ?? format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDate, setSelectedDate] = useState(() => initialDate ?? branchToday(timezone));
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(initialSlot);
   const [formError, setFormError] = useState<string | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState('');
 
-  const availabilityParams: AvailabilityParams = useMemo(
-    () => ({
-      store_id: storeId,
-      service_id: service.id,
-      date: selectedDate,
-      ...(service.requires_specialist && employeeId ? { employee_id: employeeId } : {}),
-    }),
-    [storeId, service.id, service.requires_specialist, selectedDate, employeeId],
+  // Same params helper conflict recovery uses, so its refetch lands on this grid's cache entry.
+  const availabilityParams = useMemo(
+    () => availabilityParamsFor(storeId, { service, employeeId, date: selectedDate }),
+    [storeId, service, selectedDate, employeeId],
   );
 
   const availability = useAvailability(availabilityParams);
-  const createBooking = useCreateBooking();
+  const { confirm, isPending } = useConfirmBooking(storeId);
   const setDraftEntry = useBookingDraftStore((state) => state.setEntry);
-  const clearDraft = useBookingDraftStore((state) => state.clear);
   // Other services already configured for this store in "+ Add Service"
   // round trips — excludes this screen's own service, which only joins the
   // draft once "+ Add Service" or "Confirm Booking" is actually pressed.
@@ -90,8 +87,8 @@ export function BookingFlow({
   const totalPrice = service.price + otherEntries.reduce((sum, entry) => sum + entry.service.price, 0);
 
   // Specialist/time slots already claimed by this service's siblings in the
-  // current draft — hidden from the backend's own availability check since
-  // they aren't real bookings yet, so we hold them client-side instead.
+  // current draft — invisible to the server's availability since they aren't
+  // real bookings yet, so we hold them client-side instead.
   const blockedIntervals = useMemo(
     () => getDraftBlockedIntervals(otherEntries, selectedDate),
     [otherEntries, selectedDate],
@@ -121,35 +118,40 @@ export function BookingFlow({
     setSelectedSlot(slot);
   };
 
+  // This screen's service as a draft entry (its slot carries the UTC start).
+  const currentEntry = (slot: AvailabilitySlot): BookingDraftEntry => ({
+    service,
+    employeeId,
+    date: selectedDate,
+    slot,
+    note: note.trim() || undefined,
+  });
+
   // Saves this service's config into the shared draft and sends the customer
   // back to the store page to pick another service (24-booking-configure.png
   // flow) — replaces the old same-screen "stack it after this slot" dropdown.
   const handleAddService = () => {
     if (!selectedSlot) return;
-    setDraftEntry(storeId, { service, employeeId, date: selectedDate, slot: selectedSlot, note: note.trim() || undefined });
+    setDraftEntry(storeId, currentEntry(selectedSlot));
     router.back();
   };
 
   const handleConfirm = async () => {
     if (!selectedSlot) return;
     setFormError(null);
-    try {
-      const services: CreateBookingServicePayload[] = [
-        draftEntryToPayload({ service, employeeId, date: selectedDate, slot: selectedSlot, note: note.trim() || undefined }),
-        ...otherEntries.map(draftEntryToPayload),
-      ];
-
-      const booking = await createBooking.mutateAsync({ storeId, services });
-      clearDraft(storeId);
-      onBooked(booking);
-    } catch (error) {
-      // 409 = capacity slot filled up since the grid was fetched, 422 =
-      // validation error — both carry a human-readable `detail` (§6 samples).
-      setFormError(getBookingErrorMessage(error, t('common.errorGeneric')));
-      if (isCapacityConflict(error)) {
-        setSelectedSlot(null);
-        availability.refetch();
-      }
+    const outcome = await confirm([currentEntry(selectedSlot), ...otherEntries], t('common.errorGeneric'));
+    if (outcome.status === 'booked') {
+      onBooked({ id: outcome.id });
+      return;
+    }
+    setFormError(outcome.message);
+    // Slot conflict: useConfirmBooking already refreshed availability and
+    // dropped the conflicting draft entries. Clear this screen's pick when it
+    // was the culprit — or when the culprit couldn't be pinpointed, since
+    // this is the slot the customer is looking at.
+    const { conflicting } = outcome;
+    if (conflicting && (conflicting.length === 0 || conflicting.some((entry) => entry.service.id === service.id))) {
+      setSelectedSlot(null);
     }
   };
 
@@ -224,7 +226,7 @@ export function BookingFlow({
             {/* TODO i18n */}
             Date & Time
           </ThemedText>
-          <DateStrip selectedDate={selectedDate} onSelectDate={handleSelectDate} />
+          <DateStrip selectedDate={selectedDate} timezone={timezone} onSelectDate={handleSelectDate} />
           <View style={styles.slotGridWrap}>
             <SlotGrid
               availability={availabilityWithHolds}
@@ -301,7 +303,7 @@ export function BookingFlow({
           fullWidth={false}
           style={styles.confirmButton}
           onPress={handleConfirm}
-          loading={createBooking.isPending}
+          loading={isPending}
           disabled={!selectedSlot}
         />
       </View>

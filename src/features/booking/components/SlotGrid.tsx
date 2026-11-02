@@ -6,7 +6,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { AvailabilityResponse, AvailabilitySlot } from '../api/schemas';
-import { getBookingErrorMessage } from '../utils/apiError';
+import { getBookingErrorMessage } from '../utils/bookingErrors';
+import { mergeSpecialistSlots } from '../utils/slots';
 
 interface SlotGridProps {
   availability: AvailabilityResponse | undefined;
@@ -21,41 +22,22 @@ function slotKey(slot: AvailabilitySlot) {
   return `${slot.start_time}__${slot.employee_id ?? 'capacity'}`;
 }
 
-// "Specialist" mode returns availability grouped per employee
-// (data.employees[].available_slots). When the customer has "Any
-// Professional" selected there's no single employee to group by, and the
-// design (24-booking-configure.png "DATE & TIME") never shows per-specialist
-// subheadings anyway — it's always one flat 3-column grid. So flatten across
-// employees here, deduping by start_time and preferring whichever employee is
-// actually available at that time; the winning slot's employee_id is what
-// gets booked if the customer taps it (consistent with "Any specialist"
-// resolving to a concrete employee only once a slot is picked).
-function flattenSpecialistSlots(employees: AvailabilityResponse['employees']): AvailabilitySlot[] {
-  const byStart = new Map<string, AvailabilitySlot>();
-  for (const employee of employees) {
-    for (const slot of employee.available_slots) {
-      const existing = byStart.get(slot.start_time);
-      if (!existing || (!existing.is_available && slot.is_available)) {
-        byStart.set(slot.start_time, slot);
-      }
-    }
-  }
-  return Array.from(byStart.values()).sort((a, b) => a.start_time.localeCompare(b.start_time));
-}
-
-// customer-app-api-map.md §6: `booking_mode` decides the shape — "specialist"
-// groups slots per employee (data.employees[].available_slots), "capacity"
-// is a flat list (data.slots[]) with capacity_remaining/capacity_total.
+// developer-guide.md §6: `booking_mode` decides the shape — "specialist"
+// groups slots per employee (employees[].available_slots), "capacity" is a
+// flat list (slots[]) with capacity_remaining. The server only returns FREE
+// slots (after now, clear of bookings), so every pill is tappable; taken
+// times simply don't appear.
 //
-// Design ref: unavailable/past slots (e.g. "2:30", "4:00") render as
-// struck-through, greyed, disabled pills in a fixed 3-column grid — both
-// visual cues together, not just one — and a tapped slot gets an obvious
-// filled/selected treatment distinct from both.
+// Specialist mode is always one flat 3-column grid (24-booking-configure.png
+// "DATE & TIME" never shows per-specialist subheadings): with "Any
+// Professional" the employees are merged earliest-first by
+// mergeSpecialistSlots, and the tapped slot's employee_id is what gets booked.
+// A tapped slot gets an obvious filled/selected treatment.
 export function SlotGrid({ availability, isLoading, isError, error, selectedSlot, onSelectSlot }: SlotGridProps) {
   const colors = useColors();
   const styles = createStyles(colors);
   const specialistSlots = useMemo(
-    () => (availability?.booking_mode === 'specialist' ? flattenSpecialistSlots(availability.employees) : []),
+    () => (availability?.booking_mode === 'specialist' ? mergeSpecialistSlots(availability.employees) : []),
     [availability],
   );
 
@@ -83,21 +65,15 @@ export function SlotGrid({ availability, isLoading, isError, error, selectedSlot
         {specialistSlots.map((slot) => {
           const key = slotKey(slot);
           const isSelected = selectedSlot !== null && slotKey(selectedSlot) === key;
-          const isDisabled = !slot.is_available;
           return (
             <Pressable
               key={key}
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected, disabled: isDisabled }}
-              disabled={isDisabled}
+              accessibilityState={{ selected: isSelected }}
               onPress={() => onSelectSlot(slot)}
-              style={[styles.slot, isSelected && styles.slotSelected, isDisabled && styles.slotDisabled]}
+              style={[styles.slot, isSelected && styles.slotSelected]}
             >
-              <ThemedText
-                variant="bodyMedium"
-                color={isSelected ? 'textOnBrand' : isDisabled ? 'disabledText' : 'textPrimary'}
-                style={isDisabled && styles.slotTextDisabled}
-              >
+              <ThemedText variant="bodyMedium" color={isSelected ? 'textOnBrand' : 'textPrimary'}>
                 {slot.time_slot_str}
               </ThemedText>
             </Pressable>
@@ -116,27 +92,21 @@ export function SlotGrid({ availability, isLoading, isError, error, selectedSlot
       {availability.slots.map((slot) => {
         const key = slotKey(slot);
         const isSelected = selectedSlot !== null && slotKey(selectedSlot) === key;
-        const isDisabled = !slot.is_available;
         return (
           <Pressable
             key={key}
             accessibilityRole="button"
-            accessibilityState={{ selected: isSelected, disabled: isDisabled }}
-            disabled={isDisabled}
+            accessibilityState={{ selected: isSelected }}
             onPress={() => onSelectSlot(slot)}
-            style={[styles.slot, styles.capacitySlot, isSelected && styles.slotSelected, isDisabled && styles.slotDisabled]}
+            style={[styles.slot, styles.capacitySlot, isSelected && styles.slotSelected]}
           >
-            <ThemedText
-              variant="bodyMedium"
-              color={isSelected ? 'textOnBrand' : isDisabled ? 'disabledText' : 'textPrimary'}
-              style={isDisabled && styles.slotTextDisabled}
-            >
+            <ThemedText variant="bodyMedium" color={isSelected ? 'textOnBrand' : 'textPrimary'}>
               {slot.time_slot_str}
             </ThemedText>
-            {!isDisabled ? (
+            {slot.capacity_remaining !== null ? (
               <ThemedText variant="caption" color={isSelected ? 'textOnBrand' : 'textSecondary'}>
                 {/* TODO i18n */}
-                {slot.capacity_remaining}/{slot.capacity_total} left
+                {slot.capacity_remaining} left
               </ThemedText>
             ) : null}
           </Pressable>
@@ -165,6 +135,4 @@ const createStyles = (colors: Colors) =>
   },
   capacitySlot: { minHeight: 52, justifyContent: 'center' },
   slotSelected: { backgroundColor: colors.brandAccent, borderColor: colors.brandAccent },
-  slotDisabled: { backgroundColor: colors.backgroundMuted, borderColor: colors.divider },
-  slotTextDisabled: { textDecorationLine: 'line-through' },
 });

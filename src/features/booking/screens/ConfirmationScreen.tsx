@@ -20,9 +20,9 @@ function toGoogleCalendarStamp(iso: string): string {
   return new Date(iso).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 }
 
-// customer-app-api-map.md §7: confirmation summary is just the BookingRead
-// returned by POST /bookings — re-fetched here via bookingId rather than
-// serialized through navigation params, per the task brief.
+// developer-guide.md §6: `POST bookings` only hands back the new id; the
+// summary is the BookingRead re-fetched here via `getBooking(bookingId)`
+// rather than serialized through navigation params.
 //
 // Design ref 27-booking-confirmation.png: green check + title/subtitle, a
 // summary card (venue label, service, specialist, date/time), a dark
@@ -36,9 +36,9 @@ export function ConfirmationScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const booking = useBookingDetail(bookingId);
 
-  // Same pattern as BookingDetailScreen: employee_id on a booking service is
-  // just an id, so resolving it to a display name needs the store's team
-  // list. Only fetched when at least one service actually has a specialist.
+  // Each item carries a snapshot of the specialist's name taken at booking
+  // time; the store's team list is only a fallback for a missing snapshot.
+  // Only fetched when at least one service actually has a specialist.
   const hasSpecialistService = booking.data?.booking_services.some((s) => s.employee_id) ?? false;
   const team = useStoreTeam(hasSpecialistService ? booking.data?.store_id : undefined);
 
@@ -129,7 +129,7 @@ export function ConfirmationScreen() {
                   <Ionicons name="star" size={14} color={colors.ratingStar} />
                   <ThemedText variant="caption" color="textSecondary">
                     {/* TODO i18n */}
-                    {employeeName(service.employee_id) ?? 'Any professional'}
+                    {service.employee_name ?? employeeName(service.employee_id) ?? 'Any professional'}
                   </ThemedText>
                 </View>
               ) : null}

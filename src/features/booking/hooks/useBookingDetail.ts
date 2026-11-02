@@ -2,7 +2,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 import { isApiError } from '@/lib/api/errors';
 
-import { cancelBooking, getBooking, rescheduleBookingService, type RescheduleBookingServiceParams } from '../api/bookingApi';
+import { cancelBooking, getBooking, rescheduleBookingService } from '../api/bookingApi';
 import { bookingKeys } from '../api/queryKeys';
 
 export function useBookingDetail(bookingId: string) {
@@ -30,16 +30,13 @@ export function useCancelBooking(bookingId: string) {
   });
 }
 
-export function useRescheduleBooking(bookingId: string) {
+export function useRescheduleBooking() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      bookingServiceId,
-      ...params
-    }: RescheduleBookingServiceParams & { bookingServiceId: string }) =>
-      rescheduleBookingService(bookingServiceId, params),
-    // Reschedule still returns the legacy booking shape until Task 6, so the
-    // detail cache can't be seeded from it — refetch instead.
+    mutationFn: ({ itemId, starts_at }: { itemId: string; starts_at: string }) =>
+      rescheduleBookingService(itemId, { starts_at }),
+    // Refetch this booking, the lists and availability rather than mapping
+    // the function's response — getBooking owns the view model.
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bookingKeys.all });
     },

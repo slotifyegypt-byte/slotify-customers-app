@@ -11,7 +11,7 @@ import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { formatMoney } from '@/lib/money';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
-import type { LegacyBookingRead, Service } from '../api/schemas';
+import type { Service } from '../api/schemas';
 import { BookingFlow } from '../components/BookingFlow';
 import { useStoreServices } from '../hooks/useStoreServices';
 import { useDraftEntries } from '../state/bookingDraftStore';
@@ -41,11 +41,13 @@ export function ServiceBookingConfigScreen() {
   const draftEntries = useDraftEntries(storeId);
   const draftEntry = selectedService ? draftEntries[selectedService.id] : undefined;
 
-  const handleBooked = (booking: LegacyBookingRead) => {
+  const handleBooked = (booking: { id: string }) => {
     router.push({ pathname: '/(modal)/confirmation', params: { bookingId: booking.id } });
   };
 
-  if (services.isLoading) {
+  // The branch timezone (store detail) decides "today" and the date strip,
+  // so the booking flow waits for it as well as for the services.
+  if (services.isLoading || store.isLoading) {
     return (
       <Screen style={styles.container}>
         <BackOnlyHeader />
@@ -56,7 +58,7 @@ export function ServiceBookingConfigScreen() {
     );
   }
 
-  if (services.isError) {
+  if (services.isError || store.isError || !store.data) {
     return (
       <Screen style={styles.container}>
         <BackOnlyHeader />
@@ -64,7 +66,10 @@ export function ServiceBookingConfigScreen() {
           <EmptyState
             title={t('common.errorGeneric')}
             actionLabel={t('common.retry')}
-            onAction={() => services.refetch()}
+            onAction={() => {
+              if (services.isError) services.refetch();
+              if (store.isError || !store.data) store.refetch();
+            }}
           />
         </View>
       </Screen>
@@ -119,7 +124,8 @@ export function ServiceBookingConfigScreen() {
         key={selectedService.id}
         storeId={storeId}
         service={selectedService}
-        storeName={store.data?.name}
+        storeName={store.data.name}
+        timezone={store.data.timezone}
         initialEmployeeId={draftEntry?.employeeId ?? null}
         initialDate={draftEntry?.date}
         initialSlot={draftEntry?.slot ?? null}

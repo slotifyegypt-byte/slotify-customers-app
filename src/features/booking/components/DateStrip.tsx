@@ -1,25 +1,25 @@
-import { addDays, format } from 'date-fns';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
+import { branchDateStrip } from '../utils/dates';
+
 interface DateStripProps {
-  /** yyyy-MM-dd */
+  /** Branch-local "YYYY-MM-DD". */
   selectedDate: string;
+  /** The BRANCH's IANA timezone — "today" is the branch's today, not the phone's. */
+  timezone: string;
   onSelectDate: (date: string) => void;
   daysAhead?: number;
 }
 
-/** Simple horizontal date strip for the next N days — no calendar library needed (per spec). */
-export function DateStrip({ selectedDate, onSelectDate, daysAhead = 14 }: DateStripProps) {
+/** Simple horizontal date strip for the next N branch-local days — no calendar library needed (per spec). */
+export function DateStrip({ selectedDate, timezone, onSelectDate, daysAhead = 14 }: DateStripProps) {
   const colors = useColors();
   const styles = createStyles(colors);
-  const days = useMemo(() => {
-    const today = new Date();
-    return Array.from({ length: daysAhead }, (_, i) => addDays(today, i));
-  }, [daysAhead]);
+  const days = useMemo(() => branchDateStrip(timezone, daysAhead), [timezone, daysAhead]);
 
   return (
     <ScrollView
@@ -28,8 +28,7 @@ export function DateStrip({ selectedDate, onSelectDate, daysAhead = 14 }: DateSt
       style={styles.scroll}
       contentContainerStyle={styles.row}
     >
-      {days.map((day) => {
-        const value = format(day, 'yyyy-MM-dd');
+      {days.map(({ value, weekday, day }) => {
         const isSelected = value === selectedDate;
         return (
           <Pressable
@@ -40,10 +39,10 @@ export function DateStrip({ selectedDate, onSelectDate, daysAhead = 14 }: DateSt
             style={[styles.chip, isSelected && styles.chipSelected]}
           >
             <ThemedText variant="caption" color={isSelected ? 'textOnBrand' : 'textSecondary'}>
-              {format(day, 'EEE')}
+              {weekday}
             </ThemedText>
             <ThemedText variant="h3" color={isSelected ? 'textOnBrand' : 'textPrimary'}>
-              {format(day, 'd')}
+              {day}
             </ThemedText>
           </Pressable>
         );

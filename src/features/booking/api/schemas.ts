@@ -59,48 +59,6 @@ export interface BookingRead {
   booking_services: BookingServiceRead[];
 }
 
-// ─── Legacy FastAPI booking shape — removed in Task 6 ───────────────────────
-// Still returned by `createBooking` / `rescheduleBookingService`, which keep
-// talking to the old axios API until Task 6 migrates them. Nothing that reads
-// bookings (`getMyBookings` / `getBooking`) may use these.
-export const legacyBookingServiceReadSchema = z.object({
-  id: z.number(),
-  booking_id: z.string(),
-  service_id: z.string(),
-  employee_id: z.string().nullable(),
-  booking_start_time: z.string(),
-  booking_end_time: z.string(),
-  booking_status: bookingStatusSchema,
-  total_price: z.number(),
-  service_name: z.string(),
-  service_image: z.string().nullable(),
-  note: z.string().nullable().optional(),
-  created_at: z.string(),
-  updated_at: z.string().nullable(),
-});
-
-export const legacyBookingReadSchema = z.object({
-  id: z.string(),
-  customer_id: z.string(),
-  store_id: z.string(),
-  store_name: z.string(),
-  store_logo: z.string().nullable(),
-  store_address: z.string(),
-  store_rating: z.number(),
-  booking_status: bookingStatusSchema,
-  booking_type: z.enum(['appointment', 'drop_off']),
-  total_price: z.number(),
-  booking_date: z.string(),
-  booking_date_title: z.string(),
-  booking_date_str: z.string(),
-  booking_hour_str: z.string(),
-  booking_services_str: z.string(),
-  created_at: z.string(),
-  updated_at: z.string().nullable(),
-  booking_services: z.array(legacyBookingServiceReadSchema),
-});
-export type LegacyBookingRead = z.infer<typeof legacyBookingReadSchema>;
-
 // Services offered by one branch (developer-guide.md §5), built by
 // `toService` in features/venue/api/mappers. Mixed specialist/capacity per
 // `requires_specialist`. `id` is the service uuid.
@@ -127,37 +85,75 @@ export interface ServiceCategory {
   sort_order: number;
 }
 
-// §6 — GET /availability. `booking_mode` decides which of employees/slots is populated.
-export const availabilitySlotSchema = z.object({
-  start_time: z.string(),
-  end_time: z.string(),
-  employee_id: z.string().nullable(),
-  employee_name: z.string().nullable(),
-  capacity_total: z.number().nullable(),
-  capacity_booked: z.number().nullable(),
-  capacity_remaining: z.number().nullable(),
-  is_available: z.boolean(),
-  time_slot_str: z.string(),
-});
-export type AvailabilitySlot = z.infer<typeof availabilitySlotSchema>;
-
-export const availabilityEmployeeSchema = z.object({
-  employee_id: z.string(),
-  employee_name: z.string(),
-  service_id: z.string(),
-  available_slots: z.array(availabilitySlotSchema),
+// developer-guide.md §6 — `GET availability?…&stream=0` returns one JSON
+// document: the NDJSON `meta` frame, the `employee` frames (specialist
+// services) and the capacity `slots`. Raw shape, validated with parseOrReport
+// and mapped to `AvailabilityResponse` by `toAvailability` in ./mappers.
+// The server only returns FREE slots, starting after "now".
+const rawAvailabilitySlotSchema = z.object({
+  starts_at: z.string(),
+  ends_at: z.string(),
+  /** Capacity services only. */
+  remaining: z.number().optional(),
 });
 
-export const availabilityResponseSchema = z.object({
-  store_id: z.string(),
-  service_id: z.string(),
-  date: z.string(),
-  service_duration_minutes: z.number(),
-  booking_mode: z.enum(['specialist', 'capacity']),
-  employees: z.array(availabilityEmployeeSchema),
-  slots: z.array(availabilitySlotSchema),
+export const availabilityDocSchema = z.object({
+  meta: z.object({
+    branch_id: z.string(),
+    service_id: z.string(),
+    date: z.string(),
+    timezone: z.string(),
+    duration_minutes: z.number(),
+    booking_mode: z.enum(['specialist', 'capacity']),
+    step_minutes: z.number(),
+    /** numeric(12,2) as a string, e.g. "300.00". */
+    price: z.union([z.string(), z.number()]),
+  }),
+  employees: z.array(
+    z.object({
+      employee_id: z.string(),
+      name: z.string(),
+      slots: z.array(rawAvailabilitySlotSchema),
+    }),
+  ),
+  slots: z.array(rawAvailabilitySlotSchema),
 });
-export type AvailabilityResponse = z.infer<typeof availabilityResponseSchema>;
+export type AvailabilityDoc = z.infer<typeof availabilityDocSchema>;
+
+/** One free slot. Times are UTC ISO instants from the server. */
+export interface AvailabilitySlot {
+  start_time: string;
+  end_time: string;
+  /** The specialist this slot belongs to; null for capacity services. */
+  employee_id: string | null;
+  employee_name: string | null;
+  /** Capacity services only: places left at this time. */
+  capacity_remaining: number | null;
+  /** `start_time` formatted in the branch `timezone`, e.g. "10:00 AM". */
+  time_slot_str: string;
+}
+
+// `booking_mode` decides which of employees/slots is populated: specialist ->
+// per-employee `available_slots`, capacity -> flat `slots`. Empty lists are a
+// normal "no free slots" result, not an error.
+export interface AvailabilityResponse {
+  store_id: string;
+  service_id: string;
+  /** Branch-local "YYYY-MM-DD". */
+  date: string;
+  /** Branch IANA timezone. */
+  timezone: string;
+  service_duration_minutes: number;
+  step_minutes: number;
+  price: number;
+  booking_mode: 'specialist' | 'capacity';
+  employees: { employee_id: string; employee_name: string; available_slots: AvailabilitySlot[] }[];
+  slots: AvailabilitySlot[];
+}
+
+// Response of `POST bookings` (201) — only the id is read; callers refetch the
+// full booking with `getBooking(id)`.
+export const createdBookingSchema = z.object({ booking: z.object({ id: z.string() }) });
 
 // §6 — specialist picker, built from a `get_branch_team` row. `rating` is
 // absent: the team rpc carries no per-specialist rating.

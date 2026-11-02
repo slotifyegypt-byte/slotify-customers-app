@@ -9,7 +9,7 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
-import type { BookingRead, LegacyBookingRead } from '../api/schemas';
+import type { BookingRead } from '../api/schemas';
 import { BookingFlow } from '../components/BookingFlow';
 import { useBookingDetail } from '../hooks/useBookingDetail';
 import { useStoreServices } from '../hooks/useStoreServices';
@@ -30,8 +30,10 @@ function BackOnlyHeader() {
   );
 }
 
-// customer-app-api-map.md §7: rebook is a normal POST /bookings with the same
-// service(s) and a new time from GET /availability — no dedicated endpoint.
+// developer-guide.md §6: rebook is a normal `POST bookings` prefilled from a
+// past booking (same branch, service and — for specialist services — the
+// same specialist), with a new time from availability. No dedicated
+// endpoint. The branch id and timezone come from the past booking itself.
 // Only the first service on the original booking is rebooked (the common
 // case, and the only shape the doc's samples show); a banner below warns the
 // customer if the original booking had more than one.
@@ -42,7 +44,7 @@ export function RebookSheetScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const original = useBookingDetail(bookingId);
 
-  const handleBooked = (booking: LegacyBookingRead) => {
+  const handleBooked = (booking: { id: string }) => {
     router.replace({ pathname: '/(modal)/confirmation', params: { bookingId: booking.id } });
   };
 
@@ -75,7 +77,7 @@ export function RebookSheetScreen() {
   return <RebookFlow originalBooking={original.data} onBooked={handleBooked} />;
 }
 
-function RebookFlow({ originalBooking, onBooked }: { originalBooking: BookingRead; onBooked: (booking: LegacyBookingRead) => void }) {
+function RebookFlow({ originalBooking, onBooked }: { originalBooking: BookingRead; onBooked: (booking: { id: string }) => void }) {
   const colors = useColors();
   const styles = createStyles(colors);
   const { t } = useTranslation();
@@ -128,7 +130,8 @@ function RebookFlow({ originalBooking, onBooked }: { originalBooking: BookingRea
         storeId={originalBooking.store_id}
         service={matchedService}
         storeName={originalBooking.store_name}
-        initialEmployeeId={firstService.employee_id}
+        timezone={originalBooking.timezone}
+        initialEmployeeId={matchedService.requires_specialist ? firstService.employee_id : null}
         onBooked={onBooked}
       />
     </Screen>

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,43 +10,50 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import type { AvailabilityParams } from '@/features/booking/api/bookingApi';
+import { bookingKeys } from '@/features/booking/api/queryKeys';
 import type { AvailabilitySlot } from '@/features/booking/api/schemas';
 import { DateStrip } from '@/features/booking/components/DateStrip';
 import { SlotGrid } from '@/features/booking/components/SlotGrid';
 import { useAvailability } from '@/features/booking/hooks/useAvailability';
 import { useBookingDetail, useRescheduleBooking } from '@/features/booking/hooks/useBookingDetail';
-import { getBookingErrorMessage, isCapacityConflict } from '@/features/booking/utils/apiError';
-import { toBookingTimestamp } from '@/features/booking/utils/time';
+import { getBookingErrorMessage, isSlotConflict, slotConflictMessage } from '@/features/booking/utils/bookingErrors';
+import { isApiError } from '@/lib/api/errors';
+import { branchToday } from '@/lib/time/branchTime';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 /**
- * New endpoint — VERIFIED against live /openapi.json + response shapes
- * (2026-09-20): PUT /bookings/services/{booking_service_id}/reschedule/my-booking.
- * Time-only: the specialist already on this booking_service stays put, so
- * this reuses the same DateStrip -> SlotGrid pattern BookingFlow uses for a
- * fresh booking, but skips SpecialistPicker entirely and pins the
- * availability lookup to that specialist's employee_id.
+ * developer-guide.md §6 "Reschedule": `PATCH bookings/items/{item_id}` with
+ * `{ starts_at }`. Customers can only move the TIME of an item on their own
+ * booking — the specialist already on it stays put — so this reuses the
+ * DateStrip -> SlotGrid pattern BookingFlow uses, skips SpecialistPicker and
+ * pins the availability lookup to that specialist. Swapping specialists is a
+ * rebook (RebookSheetScreen), not a reschedule.
  *
  * Reached from BookingDetailScreen's "Reschedule" button, which only shows
- * for specialist-mode (appointment) bookings and passes the specific
- * booking_service's own integer id (not the parent booking's UUID).
+ * for specialist-mode (appointment) bookings and passes the booking item's
+ * uuid as `bookingServiceId`. Dates are the BRANCH's (booking `timezone`).
  */
 export function RescheduleBookingScreen() {
   const colors = useColors();
   const styles = createStyles(colors);
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { bookingId, bookingServiceId } = useLocalSearchParams<{ bookingId: string; bookingServiceId: string }>();
   const booking = useBookingDetail(bookingId);
-  const reschedule = useRescheduleBooking(bookingId);
+  const reschedule = useRescheduleBooking();
 
-  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  // null until the customer picks a day: defaults to the branch's today,
+  // which needs the booking (its timezone) to have loaded.
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const bookingService = booking.data?.booking_services.find((s) => String(s.id) === bookingServiceId);
+  const timezone = booking.data?.timezone;
+  const selectedDate = pickedDate ?? (timezone ? branchToday(timezone) : null);
+  const bookingService = booking.data?.booking_services.find((s) => s.id === bookingServiceId);
 
   const availabilityParams: AvailabilityParams | null = useMemo(() => {
-    if (!booking.data || !bookingService) return null;
+    if (!booking.data || !bookingService || !selectedDate) return null;
     return {
       store_id: booking.data.store_id,
       service_id: bookingService.service_id,
@@ -58,7 +65,7 @@ export function RescheduleBookingScreen() {
   const availability = useAvailability(availabilityParams);
 
   const handleSelectDate = (date: string) => {
-    setSelectedDate(date);
+    setPickedDate(date);
     setSelectedSlot(null);
     setFormError(null);
   };
@@ -67,20 +74,22 @@ export function RescheduleBookingScreen() {
     if (!selectedSlot || !bookingService) return;
     setFormError(null);
     try {
-      await reschedule.mutateAsync({
-        bookingServiceId: bookingService.id,
-        booking_start_time: toBookingTimestamp(selectedSlot.start_time),
-        booking_end_time: toBookingTimestamp(selectedSlot.end_time),
-      });
+      // The slot's UTC instant goes up as-is; the server derives the end.
+      await reschedule.mutateAsync({ itemId: bookingService.id, starts_at: selectedSlot.start_time });
       router.back();
     } catch (error) {
-      // Same 409/422 shape as create-booking (§6 samples) — a 409 here means
-      // the newly-picked slot filled up between fetch and confirm.
-      setFormError(getBookingErrorMessage(error, t('common.errorGeneric')));
-      if (isCapacityConflict(error)) {
+      // slot_taken / slot_unavailable: someone got there first; time_in_past:
+      // the slot expired while the screen was open. Either way re-read the
+      // grid and ask for another time.
+      if (isSlotConflict(error) || isApiError(error, 'time_in_past')) {
         setSelectedSlot(null);
-        availability.refetch();
+        setFormError(slotConflictMessage(error, []));
+        if (availabilityParams) {
+          queryClient.invalidateQueries({ queryKey: bookingKeys.availability(availabilityParams) });
+        }
+        return;
       }
+      setFormError(getBookingErrorMessage(error, t('common.errorGeneric')));
     }
   };
 
@@ -95,7 +104,7 @@ export function RescheduleBookingScreen() {
     );
   }
 
-  if (booking.isError || !booking.data || !bookingService) {
+  if (booking.isError || !booking.data || !bookingService || !selectedDate) {
     return (
       <Screen style={styles.container}>
         <ScreenHeader title={/* TODO i18n */ 'Reschedule'} />
@@ -118,12 +127,13 @@ export function RescheduleBookingScreen() {
           {/* TODO i18n */}
           Date & Time
         </ThemedText>
-        <DateStrip selectedDate={selectedDate} onSelectDate={handleSelectDate} />
+        <DateStrip selectedDate={selectedDate} timezone={booking.data.timezone} onSelectDate={handleSelectDate} />
         <View style={styles.slotGridWrap}>
           <SlotGrid
             availability={availability.data}
             isLoading={availability.isLoading}
             isError={availability.isError}
+            error={availability.error}
             selectedSlot={selectedSlot}
             onSelectSlot={setSelectedSlot}
           />

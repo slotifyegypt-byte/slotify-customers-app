@@ -6,13 +6,11 @@ import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
-import { draftEntryToPayload } from '@/features/booking/api/bookingApi';
 import type { Service } from '@/features/booking/api/schemas';
-import { useCreateBooking } from '@/features/booking/hooks/useCreateBooking';
+import { useConfirmBooking } from '@/features/booking/hooks/useConfirmBooking';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
 import { useStoreServices } from '@/features/booking/hooks/useStoreServices';
-import { formatDraftSummary, useBookingDraftStore, useDraftEntries } from '@/features/booking/state/bookingDraftStore';
-import { getBookingErrorMessage } from '@/features/booking/utils/apiError';
+import { formatDraftSummary, useDraftEntries } from '@/features/booking/state/bookingDraftStore';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { useFavouriteCheck, useToggleFavourite } from '@/features/favourites/hooks/useToggleFavourite';
 import { useCategories } from '@/features/home/hooks/useHomeData';
@@ -72,27 +70,29 @@ export function VenueDetailScreen() {
   // Multi-service booking draft built up across "+ Add Service" round trips
   // to the booking config screen and back (24-booking-configure.png flow).
   const draftEntries = useDraftEntries(storeId);
-  const clearDraft = useBookingDraftStore((state) => state.clear);
   const draftEntryList = useMemo(() => Object.values(draftEntries), [draftEntries]);
+  // "Today"/"Tomorrow" in the summaries means the branch's day.
+  const branchTimezone = storeDetail.data?.timezone;
   const draftSummaryByServiceId = useMemo(
-    () => Object.fromEntries(draftEntryList.map((entry) => [entry.service.id, formatDraftSummary(entry)])),
-    [draftEntryList],
+    () =>
+      branchTimezone
+        ? Object.fromEntries(draftEntryList.map((entry) => [entry.service.id, formatDraftSummary(entry, branchTimezone)]))
+        : {},
+    [draftEntryList, branchTimezone],
   );
   const draftTotal = draftEntryList.reduce((sum, entry) => sum + entry.service.price, 0);
-  const createBooking = useCreateBooking();
+  const { confirm: confirmDraft, isPending: isConfirmingDraft } = useConfirmBooking(storeId);
   const [draftError, setDraftError] = useState<string | null>(null);
 
+  // On a slot conflict useConfirmBooking drops only the entries that lost
+  // their slot from the draft (the bar updates) and the message names them.
   const handleConfirmDraft = async () => {
     setDraftError(null);
-    try {
-      const booking = await createBooking.mutateAsync({
-        storeId,
-        services: draftEntryList.map(draftEntryToPayload),
-      });
-      clearDraft(storeId);
-      router.push({ pathname: '/(modal)/confirmation', params: { bookingId: booking.id } });
-    } catch (error) {
-      setDraftError(getBookingErrorMessage(error, "Something went wrong. Please try again.")); // TODO i18n
+    const outcome = await confirmDraft(draftEntryList, 'Something went wrong. Please try again.'); // TODO i18n
+    if (outcome.status === 'booked') {
+      router.push({ pathname: '/(modal)/confirmation', params: { bookingId: outcome.id } });
+    } else {
+      setDraftError(outcome.message);
     }
   };
 
@@ -206,32 +206,36 @@ export function VenueDetailScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {draftEntryList.length > 0 ? (
+      {/* Also shown with only an error: a slot conflict can empty the draft,
+          and the customer still needs to see why it vanished. */}
+      {draftEntryList.length > 0 || draftError ? (
         <View style={styles.draftBar}>
           {draftError ? (
             <ThemedText variant="caption" color="danger" style={styles.draftError}>
               {draftError}
             </ThemedText>
           ) : null}
-          <View style={styles.draftBarRow}>
-            <View>
-              <ThemedText variant="caption" color="textSecondary">
-                {/* TODO i18n */}
-                {draftEntryList.length} service{draftEntryList.length > 1 ? 's' : ''} configured
-              </ThemedText>
-              <ThemedText variant="h3">
-                {formatMoney(draftTotal, draftEntryList[0].service.currency)}
-              </ThemedText>
+          {draftEntryList.length > 0 ? (
+            <View style={styles.draftBarRow}>
+              <View>
+                <ThemedText variant="caption" color="textSecondary">
+                  {/* TODO i18n */}
+                  {draftEntryList.length} service{draftEntryList.length > 1 ? 's' : ''} configured
+                </ThemedText>
+                <ThemedText variant="h3">
+                  {formatMoney(draftTotal, draftEntryList[0].service.currency)}
+                </ThemedText>
+              </View>
+              <Button
+                label={/* TODO i18n */ 'Confirm Booking'}
+                variant="accent"
+                fullWidth={false}
+                style={styles.draftConfirmButton}
+                onPress={handleConfirmDraft}
+                loading={isConfirmingDraft}
+              />
             </View>
-            <Button
-              label={/* TODO i18n */ 'Confirm Booking'}
-              variant="accent"
-              fullWidth={false}
-              style={styles.draftConfirmButton}
-              onPress={handleConfirmDraft}
-              loading={createBooking.isPending}
-            />
-          </View>
+          ) : null}
         </View>
       ) : null}
     </Screen>
