@@ -34,12 +34,12 @@ export function BookingDetailScreen() {
   // `employee_id` -> a display name (§9; see venue/api/venueApi.ts getStoreTeam for why this
   // lookup is needed instead of a field already on the booking).
   const hasSpecialistService = booking.data?.booking_services.some((s) => s.employee_id) ?? false;
-  const team = useStoreTeam(hasSpecialistService ? booking.data?.store_id : undefined);
+  const team = useStoreTeam(hasSpecialistService && booking.data?.venue_available ? booking.data.store_id : undefined);
   // Directions (real lat/lng) and Call (real phone) both need the full store
   // record — BookingRead only carries store_name/address/logo — so this is
   // fetched the same way WriteReviewScreen/VenueDetailScreen already do.
   const store = useStoreDetail(booking.data?.store_id ?? '', {
-    enabled: Boolean(booking.data?.store_id),
+    enabled: Boolean(booking.data?.store_id) && booking.data?.venue_available === true,
   });
 
   if (booking.isLoading) {
@@ -77,7 +77,7 @@ export function BookingDetailScreen() {
   const isOrder = data.booking_type === 'drop_off';
   const canCancel = data.booking_status === 'pending' || data.booking_status === 'confirmed';
   // One review per booking: once reviewed, the button goes away.
-  const canReview = data.booking_status === 'completed' && !data.has_review;
+  const canReview = data.booking_status === 'completed' && !data.has_review && data.venue_available;
 
   const employeeName = (employeeId: string) => {
     const member = team.data?.find((m) => m.id === employeeId);
@@ -138,7 +138,7 @@ export function BookingDetailScreen() {
             data={data}
             employeeName={employeeName}
             canDirections={Boolean(store.data)}
-            canReschedule={Boolean(specialistServiceForReschedule)}
+            canReschedule={Boolean(specialistServiceForReschedule) && data.venue_available}
             canCancel={canCancel}
             canReview={canReview}
             onDirections={handleDirections}

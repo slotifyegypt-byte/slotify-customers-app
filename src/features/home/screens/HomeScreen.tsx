@@ -60,7 +60,11 @@ export function HomeScreen() {
   const bookAgain = useMemo(() => {
     if (!past.data?.length) return [];
     const seen = new Set<string>();
-    return past.data.filter((b) => (seen.has(b.store_id) ? false : (seen.add(b.store_id), true))).slice(0, 10);
+    // A booking at a deactivated branch can't be rebooked or opened.
+    return past.data
+      .filter((b) => b.venue_available)
+      .filter((b) => (seen.has(b.store_id) ? false : (seen.add(b.store_id), true)))
+      .slice(0, 10);
   }, [past.data]);
 
   const topRated = useMemo(() => {

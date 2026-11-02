@@ -48,6 +48,8 @@ export interface BookingRead {
   booking_date_str: string;
   booking_hour_str: string;
   booking_services_str: string;
+  /** False when the booking's branch is no longer active/readable (store_* fields are placeholders). */
+  venue_available: boolean;
   /** Whether the customer has already reviewed this booking. */
   has_review: boolean;
   /** The existing review's id (for edit flows), else null. */

@@ -119,6 +119,43 @@ describe('toBooking', () => {
     expect(booking.booking_type).toBe('drop_off');
   });
 
+  it('is not a drop_off when there are no items', () => {
+    expect(toBooking(row({ items: [] })).booking_type).toBe('appointment');
+  });
+
+  it('keeps a booking at a deactivated branch (branch: null) visible with safe defaults', () => {
+    const booking = toBooking(row({ branch: null, currency: 'PLN' }));
+
+    expect(booking).toMatchObject({
+      store_id: 'b1',
+      store_name: 'Unavailable venue',
+      store_logo: null,
+      store_address: '',
+      store_rating: 0,
+      currency: 'PLN',
+      timezone: 'Africa/Cairo',
+      venue_available: false,
+    });
+    expect(booking.booking_hour_str).toBe('10:00 AM');
+    expect(booking.booking_services_str).toBe('Service i1, Service i2');
+  });
+
+  it('flags venue_available when the branch embed is present', () => {
+    expect(toBooking(row()).venue_available).toBe(true);
+  });
+
+  it('orders items by instant, not by string', () => {
+    const booking = toBooking(
+      row({
+        items: [
+          item('late', { starts_at: '2026-11-10T09:00:00+00:00' }),
+          item('early', { starts_at: '2026-11-10T10:00:00+02:00' }),
+        ],
+      }),
+    );
+    expect(booking.booking_services.map((s) => s.id)).toEqual(['early', 'late']);
+  });
+
   it('has_review is false for an empty reviews array and true for one element', () => {
     expect(toBooking(row({ reviews: [] })).has_review).toBe(false);
     expect(toBooking(row({ reviews: [] })).review_id).toBeNull();

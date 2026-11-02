@@ -80,12 +80,12 @@ export function ActivityScreen() {
 
   const activeBookings = useMemo(() => {
     const merged = [...(confirmed.data ?? []), ...(pending.data ?? [])];
-    return merged.sort((a, b) => a.booking_date.localeCompare(b.booking_date));
+    return merged.sort((a, b) => Date.parse(a.booking_date) - Date.parse(b.booking_date));
   }, [confirmed.data, pending.data]);
 
   const pastBookings = useMemo(() => {
     const merged = [...(completed.data ?? []), ...(cancelled.data ?? []), ...(noShow.data ?? [])];
-    return merged.sort((a, b) => b.booking_date.localeCompare(a.booking_date));
+    return merged.sort((a, b) => Date.parse(b.booking_date) - Date.parse(a.booking_date));
   }, [completed.data, cancelled.data, noShow.data]);
 
   const isActive = tab === 'active';

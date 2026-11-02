@@ -17,7 +17,9 @@ export type BookingItemRow = Tables['booking_items']['Row'];
 
 export type BookingRow = Tables['bookings']['Row'] & {
   items: BookingItemRow[];
-  branch: BranchCardRow;
+  // `branch_cards` only exposes active branches, so the embed is null for a
+  // booking at a branch that was later deactivated or suspended.
+  branch: BranchCardRow | null;
   reviews: { id: string; rating: number }[];
 };
 
@@ -38,9 +40,23 @@ function toBookingService(item: BookingItemRow): BookingServiceRead {
   };
 }
 
+// Stand-in for a booking whose branch is no longer readable, so history stays
+// visible instead of the whole list failing.
+function fallbackStore() {
+  return {
+    name: 'Unavailable venue', // TODO i18n
+    logo: null,
+    address: '',
+    rating: 0,
+    // The booking row carries no timezone. 'Africa/Cairo' is the
+    // branches.timezone column default, used here as a last-resort guess.
+    timezone: 'Africa/Cairo',
+  };
+}
+
 export function toBooking(row: BookingRow, now: Date = new Date()): BookingRead {
-  const store = toStore(row.branch);
-  const items = [...row.items].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const store = row.branch ? toStore(row.branch) : fallbackStore();
+  const items = [...row.items].sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
   const review = row.reviews[0] ?? null;
 
   return {
@@ -57,6 +73,7 @@ export function toBooking(row: BookingRow, now: Date = new Date()): BookingRead 
     // not a drop-off.
     booking_type: items.length > 0 && items.every((item) => item.employee_id === null) ? 'drop_off' : 'appointment',
     total_price: row.total_price,
+    // The booking's own currency column, not the (possibly missing) branch's.
     currency: row.currency,
     timezone: store.timezone,
     booking_date: row.starts_at,
@@ -64,6 +81,7 @@ export function toBooking(row: BookingRow, now: Date = new Date()): BookingRead 
     booking_date_str: formatDate(row.starts_at, store.timezone),
     booking_hour_str: formatHour(row.starts_at, store.timezone),
     booking_services_str: items.map((item) => item.service_name).join(', '),
+    venue_available: row.branch !== null,
     has_review: review !== null,
     review_id: review?.id ?? null,
     created_at: row.created_at,
