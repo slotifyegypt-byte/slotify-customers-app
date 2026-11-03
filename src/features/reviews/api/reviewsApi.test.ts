@@ -152,17 +152,28 @@ describe('deleteReview', () => {
 });
 
 describe('getCustomerReviews', () => {
+  // `reviews.customer_id` is not selectable by `authenticated`, so reviews are
+  // read through the customer's own bookings (embedded) — never filtered on it.
   const mine = { ...reviewRow, branch_id: 'b1', booking_id: 'bk1' };
 
-  it('reads the customer reviews newest first and names each from its branch card', async () => {
-    const reviews = mockQuery({ data: [mine], error: null });
-    const branches = mockQuery({ data: [branchRow], error: null });
-    mockFrom.mockImplementation((table: string) => (table === 'reviews' ? reviews.builder : branches.builder));
+  function setup(bookingRows: unknown[], cardRows: unknown[] = [branchRow]) {
+    const bookings = mockQuery({ data: bookingRows, error: null });
+    const branches = mockQuery({ data: cardRows, error: null });
+    mockFrom.mockImplementation((table: string) => (table === 'bookings' ? bookings.builder : branches.builder));
+    return { bookings, branches };
+  }
+
+  it('reads through the customer bookings, never filtering reviews on customer_id, and names each review from its branch card', async () => {
+    const { bookings, branches } = setup([{ id: 'bk1', reviews: [mine] }]);
 
     const result = await getCustomerReviews('cust1');
 
-    expect(reviews.calls).toContainEqual(['eq', ['customer_id', 'cust1']]);
-    expect(reviews.calls).toContainEqual(['order', ['created_at', { ascending: false }]]);
+    expect(mockFrom).not.toHaveBeenCalledWith('reviews');
+    expect(mockFrom).toHaveBeenCalledWith('bookings');
+    expect(bookings.calls).toContainEqual(['eq', ['customer_id', 'cust1']]);
+    const select = bookings.calls.find(([method]) => method === 'select')?.[1][0] as string;
+    expect(select).toContain('reviews!reviews_booking_id_branch_id_fkey!inner(');
+    expect(select).not.toMatch(/customer_id|\*/);
     expect(mockFrom).toHaveBeenCalledWith('branch_cards');
     expect(branches.calls).toContainEqual(['in', ['id', ['b1']]]);
     expect(result).toEqual([
@@ -182,10 +193,24 @@ describe('getCustomerReviews', () => {
     ]);
   });
 
+  it('returns reviews newest first across bookings and ignores bookings without one', async () => {
+    const older = { ...mine, id: 'r0', booking_id: 'bk0', created_at: '2026-10-01T10:00:00Z' };
+    setup([
+      { id: 'bk0', reviews: [older] },
+      { id: 'bk2', reviews: [] },
+      { id: 'bk1', reviews: [mine] },
+    ]);
+
+    const result = await getCustomerReviews('cust1');
+
+    expect(result.map((r) => r.id)).toEqual(['r1', 'r0']);
+  });
+
   it('keeps a review whose branch is no longer readable, with a null store_name', async () => {
-    const reviews = mockQuery({ data: [mine, { ...mine, id: 'r2', branch_id: 'gone', booking_id: 'bk2' }], error: null });
-    const branches = mockQuery({ data: [branchRow], error: null });
-    mockFrom.mockImplementation((table: string) => (table === 'reviews' ? reviews.builder : branches.builder));
+    setup([
+      { id: 'bk1', reviews: [mine] },
+      { id: 'bk2', reviews: [{ ...mine, id: 'r2', branch_id: 'gone', booking_id: 'bk2', created_at: '2026-10-01T10:00:00Z' }] },
+    ]);
 
     const result = await getCustomerReviews('cust1');
 
@@ -196,10 +221,17 @@ describe('getCustomerReviews', () => {
   });
 
   it('skips the branch lookup when there are no reviews', async () => {
-    const reviews = mockQuery({ data: [], error: null });
-    mockFrom.mockReturnValue(reviews.builder);
+    setup([{ id: 'bk1', reviews: [] }]);
 
     await expect(getCustomerReviews('cust1')).resolves.toEqual([]);
     expect(mockFrom).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps a Postgres error through fromPostgrest', async () => {
+    const bookings = mockQuery({ data: null, error: { code: '42501', message: 'denied' } });
+    mockFrom.mockReturnValue(bookings.builder);
+
+    const error = await getCustomerReviews('cust1').catch((e) => e);
+    expect(isApiError(error, 'forbidden')).toBe(true);
   });
 });

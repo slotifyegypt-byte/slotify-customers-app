@@ -53,18 +53,28 @@ export async function deleteReview(reviewId: string): Promise<void> {
 
 type CustomerReviewRow = ReviewRow & { branch_id: string; booking_id: string };
 
+// `authenticated` has no SELECT privilege on `reviews.customer_id` (reviews are
+// public and the column is deliberately hidden), so reviews can't be filtered
+// on it. Per the backend, customers find their own reviews through their
+// bookings: the bookings embed carries the (at most one) review per booking,
+// `!inner` drops bookings without one. `customerId` filters bookings so a
+// signed-in staff user (who can also read other customers' bookings) only
+// sees their own customer reviews.
+const CUSTOMER_REVIEWS_SELECT = `id, reviews:reviews!reviews_booking_id_branch_id_fkey!inner(${REVIEW_COLUMNS}, branch_id, booking_id)`;
+
 // `reviews` has no foreign key to `branches`/`branch_cards` (only to
 // `bookings`), so the branch cards are read in a second query rather than
 // embedded. A branch that was deactivated has no card: its reviews stay
 // visible with `store_name: null` for the screen to fall back on.
 export async function getCustomerReviews(customerId: string): Promise<CustomerReview[]> {
   const { data, error } = await supabase
-    .from('reviews')
-    .select(`${REVIEW_COLUMNS}, branch_id, booking_id`)
-    .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .from('bookings')
+    .select(CUSTOMER_REVIEWS_SELECT)
+    .eq('customer_id', customerId);
   if (error) throw fromPostgrest(error);
-  const rows = (data ?? []) as CustomerReviewRow[];
+  const rows = ((data ?? []) as unknown as { reviews: CustomerReviewRow[] }[])
+    .flatMap((booking) => booking.reviews)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
   if (rows.length === 0) return [];
 
   const branchIds = [...new Set(rows.map((row) => row.branch_id))];
