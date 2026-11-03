@@ -50,6 +50,10 @@ export function useBookingChat(bookingId: string) {
     enabled: Boolean(bookingId),
   });
 
+  // `useMutation` returns a new result object on every render, but `mutate` /
+  // `mutateAsync` are stable. The callbacks below depend on those, never on the
+  // result object, so the screen can put them in effect dependency lists
+  // without re-firing on every state change.
   const sendMutation = useMutation({
     mutationFn: (message: string) => sendBookingMessage(bookingId, message),
     onSuccess: (sent) => {
@@ -60,6 +64,8 @@ export function useBookingChat(bookingId: string) {
   const markReadMutation = useMutation({
     mutationFn: () => markBookingMessagesRead(bookingId),
   });
+  const { mutate: markReadMutate } = markReadMutation;
+  const { mutateAsync: sendMutateAsync } = sendMutation;
 
   useEffect(() => {
     if (!bookingId || !isSignedIn) return undefined;
@@ -93,12 +99,9 @@ export function useBookingChat(bookingId: string) {
     };
   }, [bookingId, isSignedIn, queryClient]);
 
-  const sendMessage = useCallback(
-    (message: string) => sendMutation.mutateAsync(message),
-    [sendMutation],
-  );
+  const sendMessage = useCallback((message: string) => sendMutateAsync(message), [sendMutateAsync]);
 
-  const markRead = useCallback(() => markReadMutation.mutate(), [markReadMutation]);
+  const markRead = useCallback(() => markReadMutate(), [markReadMutate]);
 
   return {
     messages: messagesQuery.data ?? [],

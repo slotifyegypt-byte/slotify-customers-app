@@ -1,8 +1,8 @@
 import { notifyManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
-import { getBookingMessages } from '../api/chatApi';
+import { getBookingMessages, markBookingMessagesRead } from '../api/chatApi';
 import type { BookingMessage } from '../api/schemas';
 
 import { useBookingChat } from './useBookingChat';
@@ -53,6 +53,7 @@ jest.mock('../api/chatApi', () => ({
 }));
 
 const mockGetMessages = getBookingMessages as jest.MockedFunction<typeof getBookingMessages>;
+const mockMarkRead = markBookingMessagesRead as jest.MockedFunction<typeof markBookingMessagesRead>;
 
 notifyManager.setScheduler((callback) => callback());
 
@@ -93,6 +94,7 @@ beforeEach(() => {
   mockChannels.length = 0;
   mockAccessToken = 'token';
   mockGetMessages.mockResolvedValue([msg('a', '2026-11-01T10:00:00Z')]);
+  mockMarkRead.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -177,5 +179,42 @@ describe('useBookingChat', () => {
     mockAccessToken = null;
     await setup();
     expect(mockChannels).toHaveLength(0);
+  });
+
+  describe('callback identity', () => {
+    it('keeps markRead and sendMessage stable across re-renders', async () => {
+      const { result, rerender } = await setup();
+      const { markRead, sendMessage } = result.current;
+      await rerender({ id: 'bk1' });
+      await act(async () => result.current.markRead());
+      await rerender({ id: 'bk1' });
+      expect(result.current.markRead).toBe(markRead);
+      expect(result.current.sendMessage).toBe(sendMessage);
+    });
+
+    it('marks read once per focus when markRead sits in an effect dependency list (as the screen does)', async () => {
+      queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } },
+      });
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+      await renderHook(
+        () => {
+          const chat = useBookingChat('bk1');
+          const { markRead } = chat;
+          useEffect(() => {
+            markRead();
+          }, [markRead]);
+          return chat;
+        },
+        { wrapper },
+      );
+      // Let the mutation go pending -> success and re-render a few times.
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      expect(mockMarkRead).toHaveBeenCalledTimes(1);
+    });
   });
 });
