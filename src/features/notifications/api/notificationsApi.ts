@@ -1,35 +1,63 @@
-import { z } from 'zod';
+import { ApiError, fromPostgrest } from '@/lib/api/errors';
+import { supabase } from '@/lib/supabase';
 
-import { apiClient } from '@/lib/api/client';
-import { validateResponse } from '@/lib/api/zodFetch';
+import { NOTIFICATION_COLUMNS, toNotification } from './mappers';
+import type { Notification } from './schemas';
 
-import { notificationSchema, unreadCountSchema } from './schemas';
+const DEFAULT_LIMIT = 50;
 
-// customer-app-api-map.md §12
-// Trailing slash is load-bearing: the backend 307-redirects the slash-less
-// path, and that redirect's Location header is (buggily) `http://`, not
-// `https://` — iOS/Android both block following it, so the bare path
-// silently fails on-device. Calling the canonical slash-terminated path
-// avoids the redirect entirely.
-export async function getNotifications(params?: { is_read?: boolean; limit?: number }) {
-  const response = await apiClient.get('/notifications/', { params });
-  return validateResponse(z.array(notificationSchema), response, 'GET /notifications/');
+// developer-guide.md §5. RLS (`notifications_own_*`) scopes every statement to
+// the signed-in customer, so no customer_id filter is sent (and filtering on it
+// is not needed). `authenticated` can only UPDATE `read_at`.
+export async function getNotifications(params?: {
+  is_read?: boolean;
+  limit?: number;
+}): Promise<Notification[]> {
+  let query = supabase
+    .from('notifications')
+    .select(NOTIFICATION_COLUMNS)
+    .order('created_at', { ascending: false })
+    .limit(params?.limit ?? DEFAULT_LIMIT);
+  if (params?.is_read === false) query = query.is('read_at', null);
+  if (params?.is_read === true) query = query.not('read_at', 'is', null);
+  const { data, error } = await query;
+  if (error) throw fromPostgrest(error);
+  return (data ?? []).map(toNotification);
 }
 
-// VERIFIED against the backend source (2026-09-18): `{unread_count: int}`
-// for the customer-token endpoint below. There's a second, unrelated
-// `/stores/{store_id}/notifications/unread-count` for employee tokens on the
-// partner dashboard — not this app's concern.
-export async function getUnreadNotificationCount() {
-  const response = await apiClient.get('/notifications/unread-count');
-  return validateResponse(unreadCountSchema, response, 'GET /notifications/unread-count');
+export async function getUnreadNotificationCount(): Promise<{ unread_count: number }> {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null);
+  if (error) throw fromPostgrest(error);
+  return { unread_count: count ?? 0 };
 }
 
-export async function markAllNotificationsRead() {
-  const response = await apiClient.put('/notifications/mark-all-read');
-  return response.data as { marked_read?: number };
+// A row RLS hides (or that no longer exists) updates zero rows without an
+// error, so an empty result is surfaced as forbidden rather than silently
+// passing.
+export async function markNotificationRead(id: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id');
+  if (error) throw fromPostgrest(error);
+  if (!data?.length) throw new ApiError('forbidden', 403, 'notification not updated');
 }
 
-export async function deleteNotification(id: number) {
-  await apiClient.delete(`/notifications/${id}`);
+export async function markAllNotificationsRead(): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .is('read_at', null);
+  if (error) throw fromPostgrest(error);
+}
+
+// `notifications_own_delete` policy + table DELETE grant exist for customers.
+export async function deleteNotification(id: string): Promise<void> {
+  const { data, error } = await supabase.from('notifications').delete().eq('id', id).select('id');
+  if (error) throw fromPostgrest(error);
+  if (!data?.length) throw new ApiError('forbidden', 403, 'notification not deleted');
 }

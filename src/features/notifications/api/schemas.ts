@@ -1,33 +1,20 @@
-import { z } from 'zod';
+import type { Database } from '@/lib/database.types';
 
-// customer-app-api-map.md §12 — VERIFIED against the live backend's
-// /openapi.json (2026-09-20): `NotificationRead` now carries a real
-// `notification_type` enum plus optional `store_id`/`booking_id` reference
-// fields. Notifications are now actually triggered by real backend events
-// (booking confirmed/cancelled, pickup-ready for drop-off orders), replacing
-// the old gap where the doc noted there was no type/reference field to
-// deep-link or categorize on at all.
-export const notificationTypeSchema = z.enum([
-  'booking_confirmed',
-  'booking_cancelled',
-  'pickup_ready',
-  'general',
-]);
-export type NotificationType = z.infer<typeof notificationTypeSchema>;
+// Full backend enum. Some values (review_received, time_off_decided) are for
+// partner/employee recipients and never reach a customer, but the type stays
+// honest so `notificationVisual` has to cover or fall back for each of them.
+export type NotificationType = Database['public']['Enums']['notification_type'];
 
-export const notificationSchema = z.object({
-  id: z.number(),
-  customer_id: z.string(),
-  title: z.string(),
-  message: z.string(),
-  notification_type: notificationTypeSchema,
-  store_id: z.string().nullable().optional(),
-  booking_id: z.string().nullable().optional(),
-  is_read: z.boolean(),
-  created_at: z.string(),
-});
-export type Notification = z.infer<typeof notificationSchema>;
-
-export const unreadCountSchema = z.object({
-  unread_count: z.number(),
-});
+// View model the screens render (developer-guide.md §5). Built from a
+// `notifications` row by `toNotification`: `message` is the row's `body`,
+// `store_id`/`booking_id` come out of the `data` jsonb, `is_read` is `read_at`.
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  notification_type: NotificationType;
+  store_id: string | null;
+  booking_id: string | null;
+  is_read: boolean;
+  created_at: string;
+}

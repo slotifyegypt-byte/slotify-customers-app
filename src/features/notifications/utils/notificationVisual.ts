@@ -14,24 +14,36 @@ interface NotificationVisual {
   showDirections: boolean;
 }
 
-// customer-app-api-map.md §12 — VERIFIED against the live backend's
-// /openapi.json (2026-09-20): `NotificationRead` now carries a real
-// `notification_type` field, so the icon/tint/"Get Directions" gating are
-// derived directly from it instead of the previous title-text regex
-// matching (there was no type field to key off before).
+// Keyed on the backend `notification_type` enum. Every customer-relevant type
+// has its own icon; the test loops over the generated enum so a value added
+// later fails there, and the default branch keeps an unknown value on the
+// generic bell instead of a blank row.
 // `colors` is passed in by the caller (via `useColors()`) rather than read
 // from a module-level import, so this plain (non-hook) function still
 // reacts to theme changes.
 export function notificationVisual(type: NotificationType, colors: Colors): NotificationVisual {
+  const brand = { tint: colors.brandTint, iconColor: colors.brandAccent, showDirections: false };
   switch (type) {
+    case 'booking_created':
+      return { icon: 'calendar-outline', ...brand };
     case 'booking_confirmed':
-    case 'booking_cancelled':
       return {
-        icon: 'calendar-outline',
-        tint: colors.brandTint,
-        iconColor: colors.brandAccent,
+        icon: 'checkmark-circle-outline',
+        tint: colors.successTint,
+        iconColor: colors.success,
         showDirections: false,
       };
+    case 'booking_rescheduled':
+      return { icon: 'swap-horizontal-outline', ...brand };
+    case 'booking_cancelled':
+      return {
+        icon: 'close-circle-outline',
+        tint: colors.neutralTint,
+        iconColor: colors.danger,
+        showDirections: false,
+      };
+    case 'booking_reminder':
+      return { icon: 'alarm-outline', ...brand };
     case 'pickup_ready':
       return {
         icon: 'bag-handle-outline',
@@ -39,6 +51,8 @@ export function notificationVisual(type: NotificationType, colors: Colors): Noti
         iconColor: colors.success,
         showDirections: true,
       };
+    case 'message_received':
+      return { icon: 'chatbubble-ellipses-outline', ...brand };
     case 'general':
     default:
       return {

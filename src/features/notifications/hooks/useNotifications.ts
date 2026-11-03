@@ -5,6 +5,7 @@ import {
   getNotifications,
   getUnreadNotificationCount,
   markAllNotificationsRead,
+  markNotificationRead,
 } from '../api/notificationsApi';
 import { notificationKeys } from '../api/queryKeys';
 
@@ -19,7 +20,6 @@ export function useUnreadNotificationCount() {
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: getUnreadNotificationCount,
-    refetchInterval: 60_000,
   });
 }
 
@@ -27,6 +27,14 @@ export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: markAllNotificationsRead,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
+  });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markNotificationRead,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
   });
 }

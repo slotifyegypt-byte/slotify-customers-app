@@ -9,6 +9,8 @@ import 'react-native-reanimated';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useNotificationsRealtime } from '@/features/notifications/hooks/useNotificationsRealtime';
+import { registerForPush, useNotificationResponseRouting } from '@/features/notifications/push';
 import '@/lib/i18n';
 import { queryClient } from '@/lib/query/queryClient';
 import { initSentry } from '@/lib/sentry';
@@ -21,6 +23,19 @@ import { fontsToLoad, ThemeProvider, useTheme } from '@/theme';
 function AppStatusBar() {
   const { scheme } = useTheme();
   return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+}
+
+// Everything that only makes sense while signed in: the live notification
+// badge, the device's push token and push-tap deep links. Rendered only for an
+// authenticated session (and inside QueryClientProvider), so it mounts after
+// sign-in and unmounts on sign-out (which also tears its channel down).
+function SignedInEffects() {
+  useNotificationsRealtime();
+  useNotificationResponseRouting();
+  useEffect(() => {
+    void registerForPush();
+  }, []);
+  return null;
 }
 
 SplashScreen.preventAutoHideAsync();
@@ -56,6 +71,7 @@ export default function RootLayout() {
         <AppStatusBar />
         <QueryClientProvider client={queryClient}>
           <ErrorBoundary boundary="root">
+            {isAuthed ? <SignedInEffects /> : null}
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="auth/callback" />
