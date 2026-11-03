@@ -14,6 +14,9 @@ function devicePlatform(): DevicePlatform {
   return 'web';
 }
 
+// The token this session registered, so sign-out can remove exactly it.
+let registeredToken: string | null = null;
+
 function logPushFailure(step: string, error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   Sentry.addBreadcrumb({ category: 'push', level: 'warning', message: `${step}: ${message}` });
@@ -49,8 +52,46 @@ export async function registerForPush(): Promise<void> {
       p_app: 'customer',
     });
     if (error) logPushFailure('register_push_token', error.message);
+    else registeredToken = token;
   } catch (error) {
     logPushFailure('register', error);
+  }
+}
+
+const UNREGISTER_TIMEOUT_MS = 3000;
+
+/**
+ * Deletes this device's token from `push_tokens` (own-row DELETE policy) so a
+ * signed-out device stops receiving the previous user's pushes. Must run while
+ * the session is still valid, i.e. before `signOut`. Best-effort and bounded:
+ * never throws, and gives up after `timeoutMs` so an offline logout is never
+ * blocked. Zero rows deleted (already gone) is fine. Uses the token cached by
+ * `registerForPush`, else re-reads it from Expo.
+ */
+export async function unregisterPush(timeoutMs: number = UNREGISTER_TIMEOUT_MS): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const work = (async () => {
+    try {
+      let token = registeredToken;
+      if (!token) {
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+        if (!projectId) return;
+        token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+      }
+      const { error } = await supabase.from('push_tokens').delete().eq('token', token);
+      if (error) logPushFailure('unregister', error.message);
+      else registeredToken = null;
+    } catch (error) {
+      logPushFailure('unregister', error);
+    }
+  })();
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs);
+  });
+  try {
+    await Promise.race([work, timeout]);
+  } finally {
+    clearTimeout(timer);
   }
 }
 

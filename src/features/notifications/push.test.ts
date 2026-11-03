@@ -1,7 +1,14 @@
 import { renderHook } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 
-import { registerForPush, routeForNotificationData, useNotificationResponseRouting } from './push';
+import { mockQuery } from '@/test/mockSupabase';
+
+import {
+  registerForPush,
+  routeForNotificationData,
+  unregisterPush,
+  useNotificationResponseRouting,
+} from './push';
 
 const mockGetPermissions = jest.fn();
 const mockRequestPermissions = jest.fn();
@@ -11,6 +18,7 @@ const mockRemove = jest.fn();
 const mockAddListener = jest.fn();
 const mockGetLastResponse = jest.fn();
 const mockRpc = jest.fn();
+const mockFrom = jest.fn();
 const mockPush = jest.fn();
 const mockBreadcrumb = jest.fn();
 let mockProjectId: string | undefined = 'proj-123';
@@ -32,7 +40,9 @@ jest.mock('expo-constants', () => ({
   },
 }));
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a) } }));
-jest.mock('@/lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...a) } }));
+jest.mock('@/lib/supabase', () => ({
+  supabase: { rpc: (...a: unknown[]) => mockRpc(...a), from: (...a: unknown[]) => mockFrom(...a) },
+}));
 jest.mock('@/lib/sentry', () => ({
   Sentry: { addBreadcrumb: (...a: unknown[]) => mockBreadcrumb(...a) },
 }));
@@ -148,5 +158,78 @@ describe('useNotificationResponseRouting', () => {
   it('shows foreground notifications', async () => {
     await renderHook(() => useNotificationResponseRouting());
     expect(mockSetHandler).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('unregisterPush', () => {
+  // The token cached by a previous registerForPush (module state) must not leak
+  // between tests, so each test starts by clearing it with a no-op unregister.
+  beforeEach(async () => {
+    const { builder } = mockQuery({ data: null });
+    mockFrom.mockReturnValue(builder);
+    await unregisterPush();
+    jest.clearAllMocks();
+    mockGetToken.mockResolvedValue({ data: 'ExponentPushToken[abc]' });
+    mockGetPermissions.mockResolvedValue({ status: 'granted' });
+  });
+
+  it('deletes the token registered earlier by value, then forgets it', async () => {
+    await registerForPush();
+    const { builder, calls } = mockQuery({ data: null });
+    mockFrom.mockReturnValue(builder);
+    mockGetToken.mockClear();
+
+    await unregisterPush();
+
+    expect(mockFrom).toHaveBeenCalledWith('push_tokens');
+    expect(calls).toContainEqual(['delete', []]);
+    expect(calls).toContainEqual(['eq', ['token', 'ExponentPushToken[abc]']]);
+    expect(mockGetToken).not.toHaveBeenCalled();
+
+    // Cache cleared: the next call has to re-read the token.
+    await unregisterPush();
+    expect(mockGetToken).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-reads the token when none is cached', async () => {
+    const { builder, calls } = mockQuery({ data: null });
+    mockFrom.mockReturnValue(builder);
+
+    await unregisterPush();
+
+    expect(mockGetToken).toHaveBeenCalledWith({ projectId: 'proj-123' });
+    expect(calls).toContainEqual(['eq', ['token', 'ExponentPushToken[abc]']]);
+  });
+
+  it('resolves without deleting when no token is cached and the re-read fails', async () => {
+    mockGetToken.mockRejectedValue(new Error('simulator'));
+    await expect(unregisterPush()).resolves.toBeUndefined();
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('swallows a delete error and a zero-row delete', async () => {
+    const failing = mockQuery({ error: { code: '42501', message: 'denied' } });
+    mockFrom.mockReturnValue(failing.builder);
+    await expect(unregisterPush()).resolves.toBeUndefined();
+
+    const empty = mockQuery({ data: [] });
+    mockFrom.mockReturnValue(empty.builder);
+    await expect(unregisterPush()).resolves.toBeUndefined();
+  });
+
+  it('gives up on a hanging delete after the timeout', async () => {
+    jest.useFakeTimers();
+    try {
+      mockFrom.mockReturnValue({ delete: () => ({ eq: () => new Promise(() => undefined) }) });
+      const done = jest.fn();
+      const pending = unregisterPush(3000).then(done);
+      await jest.advanceTimersByTimeAsync(2999);
+      expect(done).not.toHaveBeenCalled();
+      await jest.advanceTimersByTimeAsync(2);
+      await pending;
+      expect(done).toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
