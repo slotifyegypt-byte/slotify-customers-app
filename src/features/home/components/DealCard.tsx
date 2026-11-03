@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
+import { formatMoney } from '@/lib/money';
 import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { SoftGradient } from './SoftGradient';
@@ -12,17 +13,25 @@ interface DealCardProps {
   discountPercentage?: number | null;
   originalPrice?: number | null;
   discountedPrice?: number | null;
+  currency?: string | null;
   onPress: () => void;
 }
 
 // Matches 08-home-scrolled.png: a "-20%" badge top-left, title + a price row
-// (original price struck through, discounted price bold) bottom-left. No
-// `price_symbol` field exists on HomePageOfferRead — EGP is hardcoded here
-// same as it is store-side for services without one.
-export function DealCard({ title, photo, discountPercentage, originalPrice, discountedPrice, onPress }: DealCardProps) {
+// (original price struck through, discounted price bold) bottom-left. Prices
+// are formatted in the offer branch's currency.
+export function DealCard({
+  title,
+  photo,
+  discountPercentage,
+  originalPrice,
+  discountedPrice,
+  currency,
+  onPress,
+}: DealCardProps) {
   const colors = useColors();
   const styles = createStyles(colors);
-  const hasPrices = originalPrice != null && discountedPrice != null;
+  const hasPrices = originalPrice != null && discountedPrice != null && !!currency;
 
   return (
     <Pressable onPress={onPress} style={styles.card}>
@@ -46,10 +55,10 @@ export function DealCard({ title, photo, discountPercentage, originalPrice, disc
         {hasPrices ? (
           <View style={styles.priceRow}>
             <ThemedText variant="captionSmall" color="textInverse" style={styles.originalPrice}>
-              {originalPrice} EGP
+              {formatMoney(originalPrice, currency)}
             </ThemedText>
             <ThemedText variant="captionStrong" color="textInverse">
-              {discountedPrice} EGP
+              {formatMoney(discountedPrice, currency)}
             </ThemedText>
           </View>
         ) : null}

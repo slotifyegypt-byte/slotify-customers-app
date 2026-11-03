@@ -92,8 +92,10 @@ export function HomeScreen() {
 
   const deals = useMemo(() => {
     if (!offers.data) return [];
+    // `offer.category_id` points at `offer_categories`, not the store category
+    // chips, so match through the offer's branch categories instead.
     return selectedCategory
-      ? offers.data.filter((o) => o.category_id === String(selectedCategory.id))
+      ? offers.data.filter((o) => o.store_category_slugs.includes(selectedCategory.slug))
       : offers.data;
   }, [offers.data, selectedCategory]);
 
@@ -249,11 +251,12 @@ export function HomeScreen() {
                 {deals.map((offer) => (
                   <DealCard
                     key={offer.id}
-                    title={offer.description ?? offer.store_name ?? ''}
+                    title={offer.title || offer.description || offer.store_name}
                     photo={offer.offer_image}
                     discountPercentage={offer.discount_percentage}
                     originalPrice={offer.original_price}
                     discountedPrice={offer.discounted_price}
+                    currency={offer.currency}
                     onPress={() => router.push(`/venue/${offer.store_id}`)}
                   />
                 ))}

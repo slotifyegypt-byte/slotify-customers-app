@@ -1,31 +1,37 @@
-import { z } from 'zod';
+import { ApiError, fromPostgrest } from '@/lib/api/errors';
+import { supabase } from '@/lib/supabase';
 
-import { apiClient } from '@/lib/api/client';
-import { validateResponse } from '@/lib/api/zodFetch';
-
-import { supportTicketSchema } from './schemas';
+import type { SupportTicket } from './schemas';
 
 export interface CreateSupportTicketPayload {
   subject: string;
   message: string;
 }
 
-// customer-app-api-map.md §11 — VERIFIED against the live backend's
-// /openapi.json (2026-09-20). Trailing slash is load-bearing on both calls
-// below, same precedent as /favourites/ and /reviews/: the backend
-// 307-redirects the slash-less path to an `http://` (not `https://`)
-// Location, which iOS/Android both refuse to follow — the bare path
-// silently fails on-device. Calling the canonical slash-terminated path
-// avoids the redirect entirely.
-export async function createSupportTicket(payload: CreateSupportTicketPayload) {
-  const response = await apiClient.post('/support-tickets/', payload);
-  return validateResponse(supportTicketSchema, response, 'POST /support-tickets/');
+// `authenticated` is only granted INSERT on (app, subject, message). `user_id`
+// defaults to the login and a trigger forces `status` to 'open'. `admin_note`
+// is staff-internal, so it is deliberately not selected.
+const TICKET_COLUMNS = 'id, subject, message, status, created_at, updated_at';
+
+// Contact Us files tickets for the customer app.
+export async function createSupportTicket(payload: CreateSupportTicketPayload): Promise<SupportTicket> {
+  const { data, error } = await supabase
+    .from('support_tickets')
+    .insert({ app: 'customer', subject: payload.subject, message: payload.message })
+    .select(TICKET_COLUMNS);
+  if (error) throw fromPostgrest(error);
+  // RLS refusal shows up as an insert that returns no row.
+  if (!data?.length) throw new ApiError('forbidden', 403, 'ticket not created');
+  return data[0];
 }
 
-// Lists the caller's own tickets. Not surfaced in the UI yet (Contact Us
-// only creates tickets today), kept alongside `createSupportTicket` since
-// it's the natural counterpart on this endpoint.
-export async function getSupportTickets() {
-  const response = await apiClient.get('/support-tickets/');
-  return validateResponse(z.array(supportTicketSchema), response, 'GET /support-tickets/');
+// Lists the caller's own tickets, newest first. Not surfaced in the UI yet
+// (Contact Us only creates tickets today).
+export async function getSupportTickets(): Promise<SupportTicket[]> {
+  const { data, error } = await supabase
+    .from('support_tickets')
+    .select(TICKET_COLUMNS)
+    .order('created_at', { ascending: false });
+  if (error) throw fromPostgrest(error);
+  return data ?? [];
 }
