@@ -18,23 +18,21 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import type { BookingRead } from '@/features/booking/api/schemas';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
-import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { useMyProfile } from '@/features/profile/hooks/useProfile';
 import { formatDate } from '@/lib/time/branchTime';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
-import type { Review } from '../api/schemas';
+import type { CustomerReview } from '../api/schemas';
 import { StarRating } from '../components/StarRating';
 import { useMyReviews } from '../hooks/useMyReviews';
 import { useDeleteReview, useUpdateReview } from '../hooks/useReviewMutations';
 
-// customer-app-api-map.md §11 — GET /reviews/customer/{customer_id}.
-// VERIFIED against live /openapi.json (2026-09-20): `ReviewRead` now
-// optionally carries `booking_id`, tying a review back to the specific
-// visit it was written for. There's no dedicated "booking by id, for
-// reviews" lookup endpoint, so rather than fetch per-review (N+1), this
-// resolves `booking_id` against the customer's already-cheap-to-fetch full
-// booking list (one extra request for the whole screen, not one per row).
+// Every review carries its `booking_id`, so the visit it was written for is
+// resolved against the customer's full booking list (one request for the
+// whole screen, not one per row).
+// Same last-resort zone the bookings feature uses (the branches.timezone default).
+const FALLBACK_TIMEZONE = 'Africa/Cairo';
+
 export function MyReviewsScreen() {
   const colors = useColors();
   const styles = createStyles(colors);
@@ -75,14 +73,13 @@ export function MyReviewsScreen() {
           <EmptyState title={t('reviews.emptyTitle')} />
         </View>
       ) : (
-        <FlatList<Review>
+        <FlatList<CustomerReview>
           data={reviews.data}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <ReviewRow
               review={item}
-              customerId={customerId}
               linkedBooking={item.booking_id ? bookingsById.get(item.booking_id) : undefined}
             />
           )}
@@ -94,19 +91,16 @@ export function MyReviewsScreen() {
 
 function ReviewRow({
   review,
-  customerId,
   linkedBooking,
 }: {
-  review: Review;
-  customerId: string | undefined;
+  review: CustomerReview;
   linkedBooking: BookingRead | undefined;
 }) {
   const colors = useColors();
   const styles = createStyles(colors);
   const { t } = useTranslation();
-  const store = useStoreDetail(review.store_id);
-  const updateReview = useUpdateReview(customerId);
-  const deleteReview = useDeleteReview(customerId);
+  const updateReview = useUpdateReview();
+  const deleteReview = useDeleteReview();
 
   const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(review.rating);
@@ -136,16 +130,20 @@ function ReviewRow({
       {
         text: t('reviews.delete'),
         style: 'destructive',
-        onPress: () => deleteReview.mutate(review.id),
+        onPress: () => deleteReview.mutate(review.id, { onError: () => Alert.alert(t('common.errorGeneric')) }),
       },
     ]);
   };
 
   return (
     <View style={styles.card}>
-      <Pressable onPress={() => router.push(`/venue/${review.store_id}`)}>
+      <Pressable
+        // A deactivated branch has no venue page to open.
+        disabled={review.store_name === null}
+        onPress={() => router.push(`/venue/${review.store_id}`)}
+      >
         <ThemedText variant="h3" numberOfLines={1}>
-          {store.data?.name ?? review.store_id}
+          {review.store_name ?? t('reviews.unavailableVenue')}
         </ThemedText>
       </Pressable>
       {linkedBooking ? (
@@ -205,7 +203,7 @@ function ReviewRow({
             </View>
           ) : null}
           <ThemedText variant="caption" color="textSecondary" style={styles.date}>
-            {review.review_date_str ?? review.created_at}
+            {formatDate(review.created_at, review.timezone ?? linkedBooking?.timezone ?? FALLBACK_TIMEZONE)}
           </ThemedText>
           <View style={styles.rowActions}>
             <Pressable onPress={startEdit} hitSlop={8}>

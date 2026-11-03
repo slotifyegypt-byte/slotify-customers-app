@@ -1,25 +1,24 @@
-import { z } from 'zod';
+import type { VenueReview } from '@/features/venue/api/schemas';
 
-// customer-app-api-map.md §5/§11 + verified directly against the live
-// backend's /openapi.json (ReviewRead/ReviewCreate/ReviewUpdate) and a real
-// GET /reviews/store/{store_id} response — the doc itself has no full
-// sample payload for reviews. `ReviewRead`'s only required fields are
-// id/store_id/customer_id/rating/created_at; everything else is optional
-// and comes back explicit `null` (not omitted) when unset.
-// VERIFIED against live /openapi.json (2026-09-20): both `ReviewCreate` and
-// `ReviewRead` now carry `booking_id` — a review can optionally be tied to
-// the specific completed booking it was written for.
-export const reviewSchema = z.object({
-  id: z.number(),
-  store_id: z.string(),
-  customer_id: z.string(),
-  customer_name: z.string().nullable().optional(),
-  rating: z.number(),
-  comment: z.string().nullable().optional(),
-  owner_reply: z.string().nullable().optional(),
-  owner_reply_at: z.string().nullable().optional(),
-  created_at: z.string(),
-  review_date_str: z.string().nullable().optional(),
-  booking_id: z.string().nullable().optional(),
-});
-export type Review = z.infer<typeof reviewSchema>;
+/** One of the signed-in customer's own reviews, as the My Reviews list shows it. */
+export interface CustomerReview extends VenueReview {
+  /** The reviewed branch (the app calls branches "stores"). */
+  store_id: string;
+  /** The booking this review is for — a review always belongs to exactly one. */
+  booking_id: string;
+  /** Branch display name; null when the branch is no longer active/readable. */
+  store_name: string | null;
+  /** Branch IANA timezone for showing the review date; null when the branch is unavailable. */
+  timezone: string | null;
+}
+
+export interface CreateReviewPayload {
+  booking_id: string;
+  rating: number;
+  comment?: string;
+}
+
+export interface UpdateReviewPayload {
+  rating?: number;
+  comment?: string;
+}

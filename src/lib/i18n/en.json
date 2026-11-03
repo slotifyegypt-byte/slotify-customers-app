@@ -37,7 +37,10 @@
     "submitError": "Could not submit your review",
     "submitErrorBody": "Please try again.",
     "missingContext": "We couldn't find the booking for this review.",
-    "linkedVisit": "For your visit"
+    "linkedVisit": "For your visit",
+    "unavailableVenue": "Unavailable venue",
+    "alreadyReviewed": "You already reviewed this booking.",
+    "notEligible": "Only completed bookings you attended can be reviewed."
   },
   "home": {
     "greeting": "Hi",

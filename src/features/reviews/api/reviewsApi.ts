@@ -1,52 +1,82 @@
-import { z } from 'zod';
+import { toStore } from '@/features/explore-search/api/mappers';
+import type { BranchCardRow } from '@/features/explore-search/api/mappers';
+import { toReview, type ReviewRow } from '@/features/venue/api/mappers';
+import type { VenueReview } from '@/features/venue/api/schemas';
+import { ApiError, fromPostgrest } from '@/lib/api/errors';
+import type { Database } from '@/lib/database.types';
+import { supabase } from '@/lib/supabase';
 
-import { apiClient } from '@/lib/api/client';
-import { validateResponse } from '@/lib/api/zodFetch';
+import type { CreateReviewPayload, CustomerReview, UpdateReviewPayload } from './schemas';
 
-import { reviewSchema } from './schemas';
+const REVIEW_COLUMNS = 'id, rating, comment, reply, replied_at, reviewer_name, created_at';
 
-export interface CreateReviewPayload {
-  store_id: string;
-  rating: number;
-  comment?: string;
-  // VERIFIED against live /openapi.json (2026-09-20): `ReviewCreate` now
-  // accepts an optional `booking_id`, which must be one of the customer's
-  // own COMPLETED bookings at `store_id` — the backend 400s otherwise, so
-  // callers should only pass this when that's already guaranteed (see
-  // WriteReviewScreen, the sole place reviews are created from).
-  booking_id?: string;
+type ReviewInsert = Database['public']['Tables']['reviews']['Insert'];
+
+// developer-guide.md §5 "Review" — completed bookings only, once per booking.
+// The generated Insert type lists branch_id/customer_id as required, but the
+// `reviews_before_insert` trigger overwrites both from the booking, so only
+// the three fields the guide names are sent. Errors: `23505` (already
+// reviewed) -> duplicate; `42501` (booking not completed or not yours) -> forbidden.
+export async function createReview(payload: CreateReviewPayload): Promise<VenueReview> {
+  const row = {
+    booking_id: payload.booking_id,
+    rating: payload.rating,
+    ...(payload.comment !== undefined ? { comment: payload.comment } : {}),
+  };
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert(row as ReviewInsert)
+    .select(REVIEW_COLUMNS)
+    .single();
+  if (error) throw fromPostgrest(error);
+  return toReview(data);
 }
 
-export interface UpdateReviewPayload {
-  rating?: number;
-  comment?: string;
+// RLS hides rows that aren't the customer's own, so such an update matches
+// nothing and succeeds with zero rows — surface that as forbidden.
+export async function updateReview(reviewId: string, payload: UpdateReviewPayload): Promise<VenueReview> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .update(payload)
+    .eq('id', reviewId)
+    .select(REVIEW_COLUMNS);
+  if (error) throw fromPostgrest(error);
+  if (!data?.length) throw new ApiError('forbidden', 403, 'review not updated');
+  return toReview(data[0]);
 }
 
-// customer-app-api-map.md §11
-export async function getCustomerReviews(
-  customerId: string,
-  params?: { limit?: number; offset?: number },
-) {
-  const response = await apiClient.get(`/reviews/customer/${customerId}`, { params });
-  return validateResponse(z.array(reviewSchema), response, `GET /reviews/customer/${customerId}`);
+export async function deleteReview(reviewId: string): Promise<void> {
+  const { data, error } = await supabase.from('reviews').delete().eq('id', reviewId).select('id');
+  if (error) throw fromPostgrest(error);
+  if (!data?.length) throw new ApiError('forbidden', 403, 'review not deleted');
 }
 
-// §5 — `ReviewCreate` now optionally carries `booking_id` (VERIFIED against
-// live /openapi.json, 2026-09-20), tying the review to the specific
-// completed booking it was written for. Note: the live backend's create
-// route is registered with a trailing slash (`POST /reviews/`) — calling
-// `POST /reviews` 307-redirects there, so this calls the canonical path
-// directly to skip the round trip.
-export async function createReview(payload: CreateReviewPayload) {
-  const response = await apiClient.post('/reviews/', payload);
-  return validateResponse(reviewSchema, response, 'POST /reviews/');
-}
+type CustomerReviewRow = ReviewRow & { branch_id: string; booking_id: string };
 
-export async function updateReview(reviewId: number, payload: UpdateReviewPayload) {
-  const response = await apiClient.put(`/reviews/${reviewId}`, payload);
-  return validateResponse(reviewSchema, response, `PUT /reviews/${reviewId}`);
-}
+// `reviews` has no foreign key to `branches`/`branch_cards` (only to
+// `bookings`), so the branch cards are read in a second query rather than
+// embedded. A branch that was deactivated has no card: its reviews stay
+// visible with `store_name: null` for the screen to fall back on.
+export async function getCustomerReviews(customerId: string): Promise<CustomerReview[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select(`${REVIEW_COLUMNS}, branch_id, booking_id`)
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false });
+  if (error) throw fromPostgrest(error);
+  const rows = (data ?? []) as CustomerReviewRow[];
+  if (rows.length === 0) return [];
 
-export async function deleteReview(reviewId: number) {
-  await apiClient.delete(`/reviews/${reviewId}`);
+  const branchIds = [...new Set(rows.map((row) => row.branch_id))];
+  const cards = await supabase.from('branch_cards').select('*').in('id', branchIds);
+  if (cards.error) throw fromPostgrest(cards.error);
+  const stores = new Map(((cards.data ?? []) as BranchCardRow[]).map((card) => [card.id, toStore(card)]));
+
+  return rows.map((row) => ({
+    ...toReview(row),
+    store_id: row.branch_id,
+    booking_id: row.booking_id,
+    store_name: stores.get(row.branch_id)?.name ?? null,
+    timezone: stores.get(row.branch_id)?.timezone ?? null,
+  }));
 }

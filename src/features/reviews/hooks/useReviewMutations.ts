@@ -1,39 +1,30 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { reviewKeys } from '../api/queryKeys';
+import { invalidateReviewQueries } from '../api/invalidate';
 import { createReview, deleteReview, updateReview } from '../api/reviewsApi';
+import type { UpdateReviewPayload } from '../api/schemas';
 
 export function useCreateReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createReview,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: reviewKeys.all });
-    },
+    onSuccess: () => invalidateReviewQueries(queryClient),
   });
 }
 
-export function useUpdateReview(customerId: string | undefined) {
+export function useUpdateReview() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ reviewId, payload }: { reviewId: number; payload: { rating?: number; comment?: string } }) =>
+    mutationFn: ({ reviewId, payload }: { reviewId: string; payload: UpdateReviewPayload }) =>
       updateReview(reviewId, payload),
-    onSuccess: () => {
-      if (customerId) {
-        queryClient.invalidateQueries({ queryKey: reviewKeys.byCustomer(customerId) });
-      }
-    },
+    onSuccess: () => invalidateReviewQueries(queryClient),
   });
 }
 
-export function useDeleteReview(customerId: string | undefined) {
+export function useDeleteReview() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (reviewId: number) => deleteReview(reviewId),
-    onSuccess: () => {
-      if (customerId) {
-        queryClient.invalidateQueries({ queryKey: reviewKeys.byCustomer(customerId) });
-      }
-    },
+    mutationFn: (reviewId: string) => deleteReview(reviewId),
+    onSuccess: () => invalidateReviewQueries(queryClient),
   });
 }

@@ -37,7 +37,10 @@
     "submitError": "تعذّر إرسال تقييمك",
     "submitErrorBody": "يرجى المحاولة مرة أخرى.",
     "missingContext": "لم نتمكن من العثور على الحجز الخاص بهذا التقييم.",
-    "linkedVisit": "بخصوص زيارتك"
+    "linkedVisit": "بخصوص زيارتك",
+    "unavailableVenue": "المكان غير متاح",
+    "alreadyReviewed": "لقد قيّمت هذا الحجز بالفعل.",
+    "notEligible": "يمكن تقييم الحجوزات المكتملة التي حضرتها فقط."
   },
   "home": {
     "greeting": "أهلاً",

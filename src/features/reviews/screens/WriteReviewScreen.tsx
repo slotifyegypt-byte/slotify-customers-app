@@ -8,22 +8,16 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
+import { isApiError } from '@/lib/api/errors';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import { StarRating } from '../components/StarRating';
 import { useCreateReview } from '../hooks/useReviewMutations';
 
-// customer-app-api-map.md §5: `ReviewCreate` now optionally accepts a
-// `booking_id` (VERIFIED against live /openapi.json, 2026-09-20), which the
-// backend validates is one of the customer's own COMPLETED bookings at
-// `storeId` — 400s otherwise. `bookingId` is forwarded by
-// BookingDetailScreen's `handleWriteReview`, the only entry point that is
-// gated on `booking_status === 'completed'`, so it's always eligible when
-// present. Other entry points (e.g. VenueDetailScreen's "Write a review"
-// button, reached from the venue profile rather than a specific booking)
-// don't have a booking in scope and simply omit the param — this screen
-// treats it as optional and never requires it. `serviceName`/`date` remain
-// optional, display-only params — never sent in the create payload.
+// A review is always for one booking (`booking_id` is required), so both
+// entry points pass it: BookingDetailScreen (completed, not yet reviewed) and
+// VenueDetailScreen (the branch's first completed, unreviewed booking).
+// `serviceName`/`date` are display-only params, never sent.
 export function WriteReviewScreen() {
   const colors = useColors();
   const styles = createStyles(colors);
@@ -40,10 +34,9 @@ export function WriteReviewScreen() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
 
-  // Only reachable via BookingDetailScreen's gated "Write a review" button
-  // (completed bookings only), which always passes storeId — this guards
+  // Both entry points always pass storeId and bookingId — this guards
   // against a bare/untargeted deep link into the route.
-  if (!storeId) {
+  if (!storeId || !bookingId) {
     return (
       <Screen style={styles.container}>
         <EmptyState
@@ -58,16 +51,20 @@ export function WriteReviewScreen() {
   const handleSubmit = async () => {
     try {
       await createReview.mutateAsync({
-        store_id: storeId,
+        booking_id: bookingId,
         rating,
         comment: comment.trim() || undefined,
-        booking_id: bookingId || undefined,
       });
       Alert.alert(t('reviews.submitSuccessTitle'), undefined, [
         { text: t('common.ok'), onPress: () => router.back() },
       ]);
-    } catch {
-      Alert.alert(t('reviews.submitError'), t('reviews.submitErrorBody'));
+    } catch (error) {
+      const body = isApiError(error, 'duplicate')
+        ? t('reviews.alreadyReviewed')
+        : isApiError(error, 'forbidden')
+          ? t('reviews.notEligible')
+          : t('reviews.submitErrorBody');
+      Alert.alert(t('reviews.submitError'), body);
     }
   };
 

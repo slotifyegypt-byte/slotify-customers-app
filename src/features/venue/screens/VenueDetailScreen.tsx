@@ -16,6 +16,7 @@ import { useFavouriteCheck, useToggleFavourite } from '@/features/favourites/hoo
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
 import { formatMoney } from '@/lib/money';
+import { formatDate } from '@/lib/time/branchTime';
 import { spacing, useColors, type Colors } from '@/theme';
 
 import { AboutTab } from '../components/AboutTab';
@@ -59,13 +60,16 @@ export function VenueDetailScreen() {
   const reviewStats = useVenueReviewStats(storeId);
   const reviews = useVenueReviews(storeId, { limit: 20, offset: 0 });
 
-  // "Write a review" eligibility: there's no dedicated eligibility endpoint
-  // and `ReviewCreate` has no booking_id to check against directly
-  // (customer-app-api-map.md §5), but a completed booking at this store is
-  // the closest real signal available — reuses the same bookings list the
-  // Activity tab already fetches rather than inventing a new call.
+  // "Write a review" eligibility: a review belongs to one completed booking
+  // and each booking takes at most one, so the customer can review this venue
+  // only while they have a completed, not-yet-reviewed booking here. Reuses
+  // the bookings list the Activity tab already fetches; the write screen
+  // is given that booking.
   const completedBookings = useMyBookings('completed');
-  const canReview = (completedBookings.data ?? []).some((booking) => booking.store_id === storeId);
+  const reviewableBooking = (completedBookings.data ?? []).find(
+    (booking) => booking.store_id === storeId && !booking.has_review,
+  );
+  const canReview = reviewableBooking !== undefined;
 
   // Multi-service booking draft built up across "+ Add Service" round trips
   // to the booking config screen and back (24-booking-configure.png flow).
@@ -199,7 +203,18 @@ export function VenueDetailScreen() {
             isLoading={reviewStats.isLoading || reviews.isLoading}
             isError={reviewStats.isError || reviews.isError}
             canReview={canReview}
-            onWriteReview={() => router.push({ pathname: '/(modal)/write-review', params: { storeId } })}
+            onWriteReview={() => {
+              if (!reviewableBooking) return;
+              router.push({
+                pathname: '/(modal)/write-review',
+                params: {
+                  storeId,
+                  bookingId: reviewableBooking.id,
+                  serviceName: reviewableBooking.booking_services_str,
+                  date: formatDate(reviewableBooking.booking_date, reviewableBooking.timezone),
+                },
+              });
+            }}
           />
         ) : null}
 
