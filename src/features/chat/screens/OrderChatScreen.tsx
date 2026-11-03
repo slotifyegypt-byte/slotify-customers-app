@@ -31,7 +31,7 @@ function formatTime(iso: string) {
 
 function MessageBubble({ item }: { item: BookingMessage }) {
   const styles = createStyles(useColors());
-  const isCustomer = item.sender_type === 'customer';
+  const isCustomer = item.sender === 'customer';
   return (
     <View style={[styles.bubbleRow, isCustomer ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       <View style={[styles.bubbleColumn, isCustomer ? styles.bubbleColumnRight : styles.bubbleColumnLeft]}>
