@@ -99,7 +99,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     appEnv: APP_ENV,
-    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.slotify-eg.com/api/v1',
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     eas: {
