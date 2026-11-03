@@ -6,9 +6,11 @@ import type { Notification } from './schemas';
 
 const DEFAULT_LIMIT = 50;
 
-// developer-guide.md §5. RLS (`notifications_own_*`) scopes every statement to
-// the signed-in customer, so no customer_id filter is sent (and filtering on it
-// is not needed). `authenticated` can only UPDATE `read_at`.
+// developer-guide.md §5. RLS (`notifications_own_*`) also matches a staff
+// login's partner notifications (`employee_id`), so every statement keeps only
+// customer-addressed rows: `notifications_one_recipient` makes a visible,
+// non-null `customer_id` the caller's own. `authenticated` can only UPDATE
+// `read_at`.
 export async function getNotifications(params?: {
   is_read?: boolean;
   limit?: number;
@@ -16,6 +18,7 @@ export async function getNotifications(params?: {
   let query = supabase
     .from('notifications')
     .select(NOTIFICATION_COLUMNS)
+    .not('customer_id', 'is', null)
     .order('created_at', { ascending: false })
     .limit(params?.limit ?? DEFAULT_LIMIT);
   if (params?.is_read === false) query = query.is('read_at', null);
@@ -29,6 +32,7 @@ export async function getUnreadNotificationCount(): Promise<{ unread_count: numb
   const { count, error } = await supabase
     .from('notifications')
     .select('id', { count: 'exact', head: true })
+    .not('customer_id', 'is', null)
     .is('read_at', null);
   if (error) throw fromPostgrest(error);
   return { unread_count: count ?? 0 };
@@ -51,6 +55,7 @@ export async function markAllNotificationsRead(): Promise<void> {
   const { error } = await supabase
     .from('notifications')
     .update({ read_at: new Date().toISOString() })
+    .not('customer_id', 'is', null)
     .is('read_at', null);
   if (error) throw fromPostgrest(error);
 }

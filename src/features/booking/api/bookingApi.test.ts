@@ -184,7 +184,7 @@ describe('getMyBookings', () => {
     const q = mockQuery({ data: [bookingRow()], error: null });
     mockFrom.mockReturnValueOnce(q.builder);
 
-    const bookings = await getMyBookings();
+    const bookings = await getMyBookings('cust1');
 
     expect(mockFrom).toHaveBeenCalledWith('bookings');
     expect(q.calls).toContainEqual([
@@ -195,7 +195,7 @@ describe('getMyBookings', () => {
       '*, items:booking_items(*), branch:branch_cards(*), reviews:reviews!reviews_booking_id_branch_id_fkey(id, rating)',
     );
     expect(q.calls).toContainEqual(['order', ['starts_at', { ascending: false }]]);
-    expect(q.calls.some(([method]) => method === 'eq')).toBe(false);
+    expect(q.calls).toContainEqual(['eq', ['customer_id', 'cust1']]);
     expect(bookings.map((b) => b.id)).toEqual(['bk1']);
   });
 
@@ -203,7 +203,7 @@ describe('getMyBookings', () => {
     const q = mockQuery({ data: [], error: null });
     mockFrom.mockReturnValueOnce(q.builder);
 
-    await getMyBookings('confirmed');
+    await getMyBookings('cust1', 'confirmed');
 
     expect(q.calls).toContainEqual(['eq', ['status', 'confirmed']]);
     expect(q.calls).toContainEqual(['order', ['starts_at', { ascending: false }]]);
@@ -211,7 +211,7 @@ describe('getMyBookings', () => {
 
   it('throws an ApiError on a postgrest error', async () => {
     mockFrom.mockReturnValueOnce(mockQuery({ data: null, error: { code: '42501', message: 'rls' } }).builder);
-    await expect(getMyBookings()).rejects.toMatchObject({ code: 'forbidden', status: 403 });
+    await expect(getMyBookings('cust1')).rejects.toMatchObject({ code: 'forbidden', status: 403 });
   });
 });
 

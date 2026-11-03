@@ -75,6 +75,7 @@ describe('getNotifications', () => {
     expect(calls).toContainEqual(['order', ['created_at', { ascending: false }]]);
     expect(calls).toContainEqual(['limit', [50]]);
     expect(calls.some(([m]) => m === 'is')).toBe(false);
+    expect(calls).toContainEqual(['not', ['customer_id', 'is', null]]);
     expect(result.map((n) => n.id)).toEqual(['n2', 'n1']);
   });
 
@@ -116,6 +117,7 @@ describe('getUnreadNotificationCount', () => {
     expect(mockFrom).toHaveBeenCalledWith('notifications');
     expect(calls).toContainEqual(['select', ['id', { count: 'exact', head: true }]]);
     expect(calls).toContainEqual(['is', ['read_at', null]]);
+    expect(calls).toContainEqual(['not', ['customer_id', 'is', null]]);
   });
 
   it('treats a missing count as zero', async () => {
@@ -161,6 +163,7 @@ describe('markAllNotificationsRead', () => {
     const update = calls.find(([m]) => m === 'update');
     expect(update?.[1][0]).toEqual({ read_at: expect.any(String) });
     expect(calls).toContainEqual(['is', ['read_at', null]]);
+    expect(calls).toContainEqual(['not', ['customer_id', 'is', null]]);
   });
 
   it('throws on error', async () => {

@@ -46,12 +46,20 @@ const renderScreen = () =>
     </ThemeProvider>,
   );
 
+const globalWithDev = globalThis as { __DEV__?: boolean };
+const originalDev = globalWithDev.__DEV__;
+
 beforeEach(() => {
   signInWithPassword.mockReset();
 });
 
+afterEach(() => {
+  globalWithDev.__DEV__ = originalDev;
+});
+
 describe('SignInScreen dev password sign-in', () => {
   it('is not rendered in a production build', async () => {
+    globalWithDev.__DEV__ = false;
     mockConfig.env = 'production';
     await renderScreen();
 
@@ -59,6 +67,23 @@ describe('SignInScreen dev password sign-in', () => {
     expect(screen.queryByPlaceholderText('Password')).toBeNull();
     // The real sign-in options are still there.
     expect(screen.getByText('Continue with Google')).toBeTruthy();
+  });
+
+  it('is not rendered when APP_ENV is unset in a release bundle', async () => {
+    // An OTA published without APP_ENV ships extra.appEnv='development'.
+    globalWithDev.__DEV__ = false;
+    mockConfig.env = 'development';
+    await renderScreen();
+
+    expect(screen.queryByPlaceholderText('Email')).toBeNull();
+  });
+
+  it('is rendered in a staging release build', async () => {
+    globalWithDev.__DEV__ = false;
+    mockConfig.env = 'staging';
+    await renderScreen();
+
+    expect(screen.getByPlaceholderText('Email')).toBeTruthy();
   });
 
   it('signs in with email and password outside production', async () => {

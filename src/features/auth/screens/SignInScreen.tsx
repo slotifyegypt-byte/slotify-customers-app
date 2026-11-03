@@ -84,8 +84,9 @@ export function SignInScreen() {
         />
       )}
 
-      {/* Demo accounts are email/password; production only offers Google/Apple. */}
-      {appConfig.env !== 'production' ? <DevPasswordSignIn /> : null}
+      {/* Demo accounts are email/password; only dev and staging builds offer it. An
+          unset APP_ENV falls back to 'development', so this must be an allow-list. */}
+      {__DEV__ || appConfig.env === 'staging' ? <DevPasswordSignIn /> : null}
     </Screen>
   );
 }

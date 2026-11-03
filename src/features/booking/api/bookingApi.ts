@@ -18,10 +18,11 @@ import {
   type Service,
 } from './schemas';
 
-// developer-guide.md §5 "My bookings" — RLS limits `bookings` to the signed-in
-// customer's own rows. `reviews` is embedded so `has_review` needs no second call.
-export async function getMyBookings(status?: BookingStatus): Promise<BookingRead[]> {
-  let query = supabase.from('bookings').select(BOOKING_SELECT);
+// developer-guide.md §5 "My bookings". RLS alone is not enough: a login that is
+// also partner staff can read its branch's bookings, so the query is scoped to
+// the customer row. `reviews` is embedded so `has_review` needs no second call.
+export async function getMyBookings(customerId: string, status?: BookingStatus): Promise<BookingRead[]> {
+  let query = supabase.from('bookings').select(BOOKING_SELECT).eq('customer_id', customerId);
   if (status) query = query.eq('status', status);
   const { data, error } = await query.order('starts_at', { ascending: false });
   if (error) throw fromPostgrest(error);
