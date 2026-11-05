@@ -12,7 +12,9 @@ type IoniconName = ComponentProps<typeof Ionicons>['name'];
 // `pinColor`, used behind the Ionicons fallback for a category the badges don't cover.
 //
 // Seeded slugs (verified against the hosted project): hair-salon, barber,
-// nail-salon, spa, car-care, automotive, tire-shop, vet. Unknown slugs fall
+// nail-salon, spa, car-care, automotive, tire-shop, vet, tailor, dentist,
+// dermatologist, doctor, lab-and-imaging, lawyer, makeup-artist,
+// pilates-studio, real-estate, therapist, wedding-dress-atelier. Unknown slugs fall
 // back to a generic grid icon. The patterns are also loose enough to match a
 // display name ("Hair salon", "Barbers"), which unmigrated callers still pass.
 //
@@ -118,6 +120,116 @@ const RULES: {
     ),
     pinColor: '#2F7D6B',
     tint: 'rgba(47, 125, 107, 0.16)',
+  },
+  {
+    match: /dentist|dental/i,
+    icon: 'medkit-outline',
+    image: badge(
+      'dentist',
+      require('../../../../assets/images/categories/dentist-light.png'),
+      require('../../../../assets/images/categories/dentist-dark.png'),
+    ),
+    pinColor: '#1C93A8',
+    tint: 'rgba(28, 147, 168, 0.16)',
+  },
+  {
+    match: /dermatolog|skin/i,
+    icon: 'water-outline',
+    image: badge(
+      'dermatologist',
+      require('../../../../assets/images/categories/dermatologist-light.png'),
+      require('../../../../assets/images/categories/dermatologist-dark.png'),
+    ),
+    pinColor: '#D0804A',
+    tint: 'rgba(208, 128, 74, 0.16)',
+  },
+  {
+    match: /doctor|physician|clinic/i,
+    icon: 'medical-outline',
+    image: badge(
+      'doctor',
+      require('../../../../assets/images/categories/doctor-light.png'),
+      require('../../../../assets/images/categories/doctor-dark.png'),
+    ),
+    pinColor: '#3A7BC8',
+    tint: 'rgba(58, 123, 200, 0.16)',
+  },
+  {
+    match: /\blab\b|imaging|radiolog/i,
+    icon: 'flask-outline',
+    image: badge(
+      'lab-and-imaging',
+      require('../../../../assets/images/categories/lab-and-imaging-light.png'),
+      require('../../../../assets/images/categories/lab-and-imaging-dark.png'),
+    ),
+    pinColor: '#8A5CC2',
+    tint: 'rgba(138, 92, 194, 0.16)',
+  },
+  {
+    match: /lawyer|attorney|legal/i,
+    icon: 'scale-outline',
+    image: badge(
+      'lawyer',
+      require('../../../../assets/images/categories/lawyer-light.png'),
+      require('../../../../assets/images/categories/lawyer-dark.png'),
+    ),
+    pinColor: '#7A6232',
+    tint: 'rgba(122, 98, 50, 0.16)',
+  },
+  {
+    match: /make.?up|cosmetic/i,
+    icon: 'brush-outline',
+    image: badge(
+      'makeup-artist',
+      require('../../../../assets/images/categories/makeup-artist-light.png'),
+      require('../../../../assets/images/categories/makeup-artist-dark.png'),
+    ),
+    pinColor: '#C23B6B',
+    tint: 'rgba(194, 59, 107, 0.16)',
+  },
+  {
+    match: /pilates|yoga|fitness/i,
+    icon: 'barbell-outline',
+    image: badge(
+      'pilates-studio',
+      require('../../../../assets/images/categories/pilates-studio-light.png'),
+      require('../../../../assets/images/categories/pilates-studio-dark.png'),
+    ),
+    pinColor: '#4E9F3D',
+    tint: 'rgba(78, 159, 61, 0.16)',
+  },
+  {
+    match: /real.?estate|property/i,
+    icon: 'home-outline',
+    image: badge(
+      'real-estate',
+      require('../../../../assets/images/categories/real-estate-light.png'),
+      require('../../../../assets/images/categories/real-estate-dark.png'),
+    ),
+    pinColor: '#2D6A9F',
+    tint: 'rgba(45, 106, 159, 0.16)',
+  },
+  {
+    match: /therap|counsel|psycholog/i,
+    icon: 'chatbubbles-outline',
+    image: badge(
+      'therapist',
+      require('../../../../assets/images/categories/therapist-light.png'),
+      require('../../../../assets/images/categories/therapist-dark.png'),
+    ),
+    pinColor: '#E08A2E',
+    tint: 'rgba(224, 138, 46, 0.16)',
+  },
+  {
+    match: /wedding|bridal|atelier/i,
+    icon: 'heart-outline',
+    image: badge(
+      'wedding-dress-atelier',
+      require('../../../../assets/images/categories/wedding-dress-atelier-light.png'),
+      require('../../../../assets/images/categories/wedding-dress-atelier-dark.png'),
+    ),
+    pinColor: '#C48A9C',
+    tint: 'rgba(196, 138, 156, 0.16)',
   },
   {
     match: /auto|repair|fix|phone|electronic|mechanic/i,

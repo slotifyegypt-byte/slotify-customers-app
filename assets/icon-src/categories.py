@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes the SVG sources of the nine category badges (Home chips, map pins), light and dark.
+"""Writes the SVG sources of the category badges (Home chips, map pins), light and dark.
 
 Every badge is a square (the app crops it to a circle): a soft wash of the category colour with a two-tone glyph.
 `P` is the glyph's main colour, `S` its softer second tone, `BG` the badge wash (also used for cut-outs).
@@ -22,6 +22,16 @@ CATEGORIES = {
     'tailor': '#A8511F',
     'vet': '#2F7D6B',
     'automotive': '#854F0B',
+    'dentist': '#1C93A8',
+    'dermatologist': '#D0804A',
+    'doctor': '#3A7BC8',
+    'lab-and-imaging': '#8A5CC2',
+    'lawyer': '#7A6232',
+    'makeup-artist': '#C23B6B',
+    'pilates-studio': '#4E9F3D',
+    'real-estate': '#2D6A9F',
+    'therapist': '#E08A2E',
+    'wedding-dress-atelier': '#C48A9C',
 }
 
 
@@ -125,6 +135,82 @@ def glyph(key, c):
   <ellipse cx="58" cy="32" rx="6.8" ry="9.5" transform="rotate(8 58 32)" fill="{P}"/>
   <ellipse cx="71" cy="46" rx="6.5" ry="9" transform="rotate(24 71 46)" fill="{S}"/>
   <path d="M50 68C44 63 41 60 41 57C41 54 43.5 52.5 45.5 52.5C47.5 52.5 49 53.5 50 55C51 53.5 52.5 52.5 54.5 52.5C56.5 52.5 59 54 59 57C59 60 56 63 50 68Z" fill="{BG}"/>'''
+    if key == 'dentist':
+        return f'''
+  <path d="M30 38Q30 24 42 24Q47 24 50 27Q53 24 58 24Q70 24 70 38Q70 50 64 58Q62 77 56 77Q51 77 50 64Q49 77 44 77Q38 77 36 58Q30 50 30 38Z" fill="{P}" stroke="{P}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M38 33Q39 29 43 29" stroke="{HI}" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.55"/>
+  {sparkle(76, 26, 8, S)}{sparkle(24, 64, 5, S)}'''
+    if key == 'dermatologist':
+        return f'''
+  <path d="M50 20C50 20 27 46 27 61A23 23 0 0 0 73 61C73 46 50 20 50 20Z" fill="{P}"/>
+  <path d="M50 20C50 20 27 46 27 61A23 23 0 0 0 38 80C28 66 34 48 50 20Z" fill="{S}" opacity="0.55"/>
+  <path d="M36 62Q37 72 46 75" stroke="{HI}" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.55"/>
+  {sparkle(72, 28, 8, S)}{sparkle(27, 30, 5, S)}'''
+    if key == 'doctor':
+        return f'''
+  <path d="M32 22V44Q32 63 50 63Q68 63 68 44V22" stroke="{P}" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <circle cx="32" cy="21" r="5" fill="{S}"/><circle cx="68" cy="21" r="5" fill="{S}"/>
+  <path d="M50 63V70Q50 78 58 78" stroke="{P}" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <circle cx="66" cy="78" r="9" fill="{P}"/><circle cx="66" cy="78" r="4" fill="{BG}"/>
+  {sparkle(80, 40, 6, S)}'''
+    if key == 'lab-and-imaging':
+        return f'''
+  <defs><clipPath id="fl"><path d="M42 24H58V42L73 70Q77 79 67 79H33Q23 79 27 70L42 42Z"/></clipPath></defs>
+  <path d="M42 24H58V42L73 70Q77 79 67 79H33Q23 79 27 70L42 42Z" fill="{S}"/>
+  <g clip-path="url(#fl)"><rect x="20" y="58" width="60" height="26" fill="{P}"/></g>
+  <rect x="38" y="19" width="24" height="7" rx="3.5" fill="{P}"/>
+  <circle cx="45" cy="67" r="3" fill="{HI}" opacity="0.5"/><circle cx="56" cy="71" r="2.2" fill="{HI}" opacity="0.5"/><circle cx="52" cy="50" r="2.6" fill="{P}" opacity="0.6"/>
+  {sparkle(76, 28, 7, S)}'''
+    if key == 'lawyer':
+        return f'''
+  <g stroke-linecap="round">
+    <line x1="24" y1="31" x2="76" y2="31" stroke="{P}" stroke-width="4"/>
+    <line x1="50" y1="24" x2="50" y2="74" stroke="{P}" stroke-width="4"/>
+    <line x1="28" y1="32" x2="18" y2="56" stroke="{P}" stroke-width="2"/><line x1="28" y1="32" x2="38" y2="56" stroke="{P}" stroke-width="2"/>
+    <line x1="72" y1="32" x2="62" y2="56" stroke="{P}" stroke-width="2"/><line x1="72" y1="32" x2="82" y2="56" stroke="{P}" stroke-width="2"/>
+  </g>
+  <circle cx="50" cy="23" r="5" fill="{P}"/>
+  <path d="M15 56H41Q41 68 28 68Q15 68 15 56Z" fill="{S}"/><path d="M59 56H85Q85 68 72 68Q59 68 59 56Z" fill="{S}"/>
+  <rect x="34" y="73" width="32" height="7" rx="3.5" fill="{P}"/>'''
+    if key == 'makeup-artist':
+        return f'''
+  <rect x="37" y="55" width="26" height="25" rx="4" fill="{P}"/>
+  <rect x="40" y="46" width="20" height="11" rx="2" fill="{S}"/>
+  <path d="M42 46V32L58 22V46Z" fill="{P}"/>
+  <rect x="42" y="61" width="4" height="14" rx="2" fill="{HI}" opacity="0.45"/>
+  {sparkle(76, 36, 8, S)}{sparkle(25, 30, 5, S)}'''
+    if key == 'pilates-studio':
+        return f'''
+  <circle cx="50" cy="23" r="8" fill="{P}"/>
+  <g stroke-linecap="round" fill="none" stroke-width="7">
+    <path d="M50 36V58" stroke="{P}"/>
+    <path d="M50 40L31 22" stroke="{S}"/><path d="M50 40L69 22" stroke="{S}"/>
+    <path d="M50 58L37 76" stroke="{P}"/><path d="M50 58L63 76" stroke="{P}"/>
+  </g>
+  <rect x="20" y="81" width="60" height="6" rx="3" fill="{S}"/>
+  {sparkle(78, 44, 6, S)}'''
+    if key == 'real-estate':
+        return f'''
+  <rect x="64" y="23" width="8" height="18" rx="2" fill="{P}"/>
+  <rect x="26" y="46" width="48" height="33" rx="4" fill="{S}"/>
+  <path d="M50 20L82 47H18Z" fill="{P}" stroke="{P}" stroke-width="4" stroke-linejoin="round"/>
+  <rect x="44" y="57" width="12" height="22" rx="2.5" fill="{P}"/><circle cx="53" cy="68" r="1.4" fill="{BG}"/>
+  <rect x="30" y="54" width="9" height="9" rx="1.5" fill="{BG}"/><rect x="61" y="54" width="9" height="9" rx="1.5" fill="{BG}"/>
+  {sparkle(80, 24, 6, S)}'''
+    if key == 'therapist':
+        return f'''
+  <path d="M48 48H76Q80 48 80 52V70Q80 74 76 74H72L74 86L60 74H48Q44 74 44 70V52Q44 48 48 48Z" fill="{S}"/>
+  <circle cx="53" cy="61" r="2.6" fill="{P}"/><circle cx="62" cy="61" r="2.6" fill="{P}"/><circle cx="71" cy="61" r="2.6" fill="{P}"/>
+  <path d="M26 20H58Q64 20 64 26V46Q64 52 58 52H44L28 64L30 52H26Q20 52 20 46V26Q20 20 26 20Z" fill="{P}"/>
+  <path d="M42 45C32 38 32 30 37 29C40 28.5 42 30 42 32C42 30 44 28.5 47 29C52 30 52 38 42 45Z" fill="{BG}"/>'''
+    if key == 'wedding-dress-atelier':
+        return f'''
+  <path d="M38 50H62L81 81Q50 90 19 81Z" fill="{S}"/>
+  <g stroke="{BG}" stroke-width="2" stroke-linecap="round" opacity="0.8"><line x1="46" y1="56" x2="38" y2="82"/><line x1="54" y1="56" x2="62" y2="82"/><line x1="50" y1="56" x2="50" y2="85"/></g>
+  <path d="M37 27Q43 34 50 29Q57 34 63 27L62 50H38Z" fill="{P}"/>
+  <rect x="35" y="47" width="30" height="6" rx="3" fill="{P}"/>
+  
+  {sparkle(77, 30, 8, S)}{sparkle(23, 40, 5, S)}'''
     # automotive: crossed wrenches
     wrench = lambda col, rot: f'''<g transform="rotate({rot} 50 50)">
     <rect x="45" y="36" width="10" height="46" rx="5" fill="{col}"/><circle cx="50" cy="31" r="14" fill="{col}"/>
