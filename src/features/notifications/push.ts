@@ -125,6 +125,8 @@ function handleResponse(response: Notifications.NotificationResponse | null) {
  */
 export function useNotificationResponseRouting(): void {
   useEffect(() => {
+    // Push notifications do not exist in a browser (the web build is only used to preview the design).
+    if (Platform.OS === 'web') return;
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowBanner: true,

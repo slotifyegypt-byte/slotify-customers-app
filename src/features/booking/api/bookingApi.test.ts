@@ -1,6 +1,12 @@
 import { mockQuery } from '@/test/mockSupabase';
 
-import { cancelBooking, getBooking, getMyBookings, getStoreEmployeesForService, getStoreServices } from './bookingApi';
+import {
+  cancelBooking,
+  getBooking,
+  getMyBookings,
+  getStoreEmployeesForService,
+  getStoreServices,
+} from './bookingApi';
 import { BOOKING_SELECT } from './mappers';
 
 const mockRpc = jest.fn();
@@ -12,7 +18,9 @@ jest.mock('@/lib/supabase', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
     storage: {
       from: (bucket: string) => ({
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${path}` } }),
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
       }),
     },
   },
@@ -45,8 +53,16 @@ describe('getStoreServices', () => {
     const rows = mockQuery({
       data: [
         { price: 80, is_active: true, service: service('s1') },
-        { price: 0, is_active: true, service: service('s2', { booking_mode: 'capacity', capacity: 3 }) },
-        { price: null, is_active: true, service: service('s3', { archived_at: '2026-10-01T00:00:00Z' }) },
+        {
+          price: 0,
+          is_active: true,
+          service: service('s2', { booking_mode: 'capacity', capacity: 3 }),
+        },
+        {
+          price: null,
+          is_active: true,
+          service: service('s3', { archived_at: '2026-10-01T00:00:00Z' }),
+        },
         { price: null, is_active: false, service: service('s4') },
       ],
       error: null,
@@ -66,7 +82,15 @@ describe('getStoreServices', () => {
       [expect.stringContaining('duration_minutes, buffer_minutes, booking_mode')],
     ]);
     expect(services.map((s) => s.buffer_minutes)).toEqual([10, 10]);
-    expect(services.map((s) => [s.id, s.price, s.currency, s.requires_specialist, s.max_concurrent_bookings])).toEqual([
+    expect(
+      services.map((s) => [
+        s.id,
+        s.price,
+        s.currency,
+        s.requires_specialist,
+        s.max_concurrent_bookings,
+      ]),
+    ).toEqual([
       ['s1', 80, 'PLN', true, null],
       ['s2', 0, 'PLN', false, 3],
     ]);
@@ -80,9 +104,21 @@ describe('getStoreServices', () => {
       data: [
         { price: null, is_active: true, service: service('none') },
         { price: null, is_active: true, service: service('nails', { category: nails }) },
-        { price: null, is_active: true, service: service('hair-b', { category: hair, name: 'B', sort_order: 1 }) },
-        { price: null, is_active: true, service: service('hair-a', { category: hair, name: 'A', sort_order: 1 }) },
-        { price: null, is_active: true, service: service('hair-first', { category: hair, name: 'Z', sort_order: 0 }) },
+        {
+          price: null,
+          is_active: true,
+          service: service('hair-b', { category: hair, name: 'B', sort_order: 1 }),
+        },
+        {
+          price: null,
+          is_active: true,
+          service: service('hair-a', { category: hair, name: 'A', sort_order: 1 }),
+        },
+        {
+          price: null,
+          is_active: true,
+          service: service('hair-first', { category: hair, name: 'Z', sort_order: 0 }),
+        },
       ],
       error: null,
     });
@@ -98,7 +134,10 @@ describe('getStoreServices', () => {
     const rows = mockQuery({ data: [], error: null });
     mockFrom.mockReturnValueOnce(card.builder).mockReturnValueOnce(rows.builder);
 
-    await expect(getStoreServices('missing')).rejects.toMatchObject({ code: 'not_found', status: 404 });
+    await expect(getStoreServices('missing')).rejects.toMatchObject({
+      code: 'not_found',
+      status: 404,
+    });
   });
 });
 
@@ -106,9 +145,33 @@ describe('getStoreEmployeesForService', () => {
   it('returns only team members whose service_ids include the service', async () => {
     mockRpc.mockResolvedValue({
       data: [
-        { employee_id: 'e1', first_name: 'Sara', last_name: 'Adel', job_title: 'Stylist', avatar_path: null, bio: null, service_ids: ['s1', 's2'] },
-        { employee_id: 'e2', first_name: 'Omar', last_name: null, job_title: null, avatar_path: 'employees/e2/a.jpg', bio: null, service_ids: ['s2'] },
-        { employee_id: 'e3', first_name: 'Lina', last_name: 'K', job_title: 'Barber', avatar_path: null, bio: null, service_ids: ['s1'] },
+        {
+          employee_id: 'e1',
+          first_name: 'Sara',
+          last_name: 'Adel',
+          job_title: 'Stylist',
+          avatar_path: null,
+          bio: null,
+          service_ids: ['s1', 's2'],
+        },
+        {
+          employee_id: 'e2',
+          first_name: 'Omar',
+          last_name: null,
+          job_title: null,
+          avatar_path: 'employees/e2/a.jpg',
+          bio: null,
+          service_ids: ['s2'],
+        },
+        {
+          employee_id: 'e3',
+          first_name: 'Lina',
+          last_name: 'K',
+          job_title: 'Barber',
+          avatar_path: null,
+          bio: null,
+          service_ids: ['s1'],
+        },
       ],
       error: null,
     });
@@ -118,7 +181,14 @@ describe('getStoreEmployeesForService', () => {
     expect(mockRpc).toHaveBeenCalledTimes(1);
     expect(mockRpc).toHaveBeenCalledWith('get_branch_team', { p_branch_id: 'b1' });
     expect(employees).toEqual([
-      { id: 'e1', first_name: 'Sara', last_name: 'Adel', profile_picture: null, role_name: 'Stylist', rating: null },
+      {
+        id: 'e1',
+        first_name: 'Sara',
+        last_name: 'Adel',
+        profile_picture: null,
+        role_name: 'Stylist',
+        rating: null,
+      },
       {
         id: 'e2',
         first_name: 'Omar',
@@ -189,7 +259,9 @@ describe('getMyBookings', () => {
     expect(mockFrom).toHaveBeenCalledWith('bookings');
     expect(q.calls).toContainEqual([
       'select',
-      ['*, items:booking_items(*), branch:branch_cards(*), reviews:reviews!reviews_booking_id_branch_id_fkey(id, rating)'],
+      [
+        '*, items:booking_items(*), branch:branch_cards(*), reviews:reviews!reviews_booking_id_branch_id_fkey(id, rating)',
+      ],
     ]);
     expect(BOOKING_SELECT).toBe(
       '*, items:booking_items(*), branch:branch_cards(*), reviews:reviews!reviews_booking_id_branch_id_fkey(id, rating)',
@@ -210,7 +282,9 @@ describe('getMyBookings', () => {
   });
 
   it('throws an ApiError on a postgrest error', async () => {
-    mockFrom.mockReturnValueOnce(mockQuery({ data: null, error: { code: '42501', message: 'rls' } }).builder);
+    mockFrom.mockReturnValueOnce(
+      mockQuery({ data: null, error: { code: '42501', message: 'rls' } }).builder,
+    );
     await expect(getMyBookings('cust1')).rejects.toMatchObject({ code: 'forbidden', status: 403 });
   });
 });
@@ -228,7 +302,9 @@ describe('getBooking', () => {
   });
 
   it('maps a missing row to not_found', async () => {
-    mockFrom.mockReturnValueOnce(mockQuery({ data: null, error: { code: 'PGRST116', message: 'no rows' } }).builder);
+    mockFrom.mockReturnValueOnce(
+      mockQuery({ data: null, error: { code: 'PGRST116', message: 'no rows' } }).builder,
+    );
     await expect(getBooking('nope')).rejects.toMatchObject({ code: 'not_found', status: 404 });
   });
 });
@@ -236,7 +312,9 @@ describe('getBooking', () => {
 describe('cancelBooking', () => {
   it('calls transition_booking then refetches and returns the booking', async () => {
     mockRpc.mockResolvedValue({ data: {}, error: null });
-    mockFrom.mockReturnValueOnce(mockQuery({ data: bookingRow({ status: 'cancelled' }), error: null }).builder);
+    mockFrom.mockReturnValueOnce(
+      mockQuery({ data: bookingRow({ status: 'cancelled' }), error: null }).builder,
+    );
 
     const booking = await cancelBooking('bk1', 'changed my mind');
 
@@ -251,17 +329,29 @@ describe('cancelBooking', () => {
 
   it('omits p_reason when none is given', async () => {
     mockRpc.mockResolvedValue({ data: {}, error: null });
-    mockFrom.mockReturnValueOnce(mockQuery({ data: bookingRow({ status: 'cancelled' }), error: null }).builder);
+    mockFrom.mockReturnValueOnce(
+      mockQuery({ data: bookingRow({ status: 'cancelled' }), error: null }).builder,
+    );
 
     await cancelBooking('bk1');
 
-    expect(mockRpc).toHaveBeenCalledWith('transition_booking', { p_booking_id: 'bk1', p_to_status: 'cancelled' });
+    expect(mockRpc).toHaveBeenCalledWith('transition_booking', {
+      p_booking_id: 'bk1',
+      p_to_status: 'cancelled',
+    });
   });
 
   it('surfaces PT409 invalid_transition as ApiError and does not refetch', async () => {
-    mockRpc.mockResolvedValue({ data: null, error: { code: 'PT409', message: 'invalid_transition' } });
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { code: 'PT409', message: 'invalid_transition' },
+    });
 
-    await expect(cancelBooking('bk1')).rejects.toMatchObject({ name: 'ApiError', code: 'invalid_transition', status: 409 });
+    await expect(cancelBooking('bk1')).rejects.toMatchObject({
+      name: 'ApiError',
+      code: 'invalid_transition',
+      status: 409,
+    });
     expect(mockFrom).not.toHaveBeenCalled();
   });
 });

@@ -22,14 +22,19 @@ async function createMe(): Promise<CustomerProfile> {
   const { data: sessionData } = await supabase.auth.getSession();
   const user = sessionData.session?.user;
   const meta: Record<string, unknown> = user?.user_metadata ?? {};
-  const str = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
+  const str = (value: unknown) =>
+    typeof value === 'string' && value.trim() ? value.trim() : undefined;
 
   // Google puts the name in the user metadata; Apple only hands it to the
   // app on first sign-in (see features/auth/pendingProfile.ts).
   const pending = takePendingProfileName();
   const [fullFirst, ...fullRest] = (str(meta.full_name) ?? str(meta.name) ?? '').split(/\s+/);
   const firstName =
-    str(pending?.first_name) ?? str(meta.given_name) ?? str(fullFirst) ?? user?.email?.split('@')[0] ?? 'Guest';
+    str(pending?.first_name) ??
+    str(meta.given_name) ??
+    str(fullFirst) ??
+    user?.email?.split('@')[0] ??
+    'Guest';
   const lastName = str(pending?.last_name) ?? str(meta.family_name) ?? str(fullRest.join(' '));
 
   // `user_id` and `email` are filled in server-side from the login. The OAuth
@@ -55,7 +60,9 @@ async function createMe(): Promise<CustomerProfile> {
 // Phone is overwritten directly with no OTP/verification step. Email is owned
 // by Supabase Auth and isn't editable here.
 export async function updateMe(
-  patch: Partial<Pick<CustomerProfile, 'first_name' | 'last_name' | 'gender' | 'date_of_birth' | 'phone'>>,
+  patch: Partial<
+    Pick<CustomerProfile, 'first_name' | 'last_name' | 'gender' | 'date_of_birth' | 'phone'>
+  >,
 ): Promise<CustomerProfile> {
   if (patch.phone != null && !isE164(patch.phone)) {
     throw new ApiError('invalid_field', 400, 'phone must be E.164, e.g. +201001234567');

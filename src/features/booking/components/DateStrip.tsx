@@ -1,42 +1,57 @@
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
+import { PressableScale } from '@/components/PressableScale';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { radius, spacing, useColors } from '@/theme';
 
 import { branchDateStrip } from '../utils/dates';
 
 interface DateStripProps {
   /** Branch-local "YYYY-MM-DD". */
   selectedDate: string;
-  /** The BRANCH's IANA timezone — "today" is the branch's today, not the phone's. */
+  /** The BRANCH's IANA timezone: "today" is the branch's today, not the phone's. */
   timezone: string;
   onSelectDate: (date: string) => void;
   daysAhead?: number;
+  /** Lets the strip run to the screen edge: pass the screen's side margin and it cancels it, then pads itself. */
+  bleed?: number;
 }
 
-/** Simple horizontal date strip for the next N branch-local days — no calendar library needed (per spec). */
-export function DateStrip({ selectedDate, timezone, onSelectDate, daysAhead = 14 }: DateStripProps) {
+/** A horizontal strip of the next N branch-local days: tall, easy targets with the chosen day filled in brand. */
+export function DateStrip({
+  selectedDate,
+  timezone,
+  onSelectDate,
+  daysAhead = 14,
+  bleed = 0,
+}: DateStripProps) {
   const colors = useColors();
-  const styles = createStyles(colors);
   const days = useMemo(() => branchDateStrip(timezone, daysAhead), [timezone, daysAhead]);
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.scroll}
-      contentContainerStyle={styles.row}
+      style={[styles.scroll, bleed ? { marginHorizontal: -bleed } : null]}
+      contentContainerStyle={[styles.row, bleed ? { paddingHorizontal: bleed } : null]}
     >
       {days.map(({ value, weekday, day }) => {
         const isSelected = value === selectedDate;
         return (
-          <Pressable
+          <PressableScale
             key={value}
             accessibilityRole="button"
+            accessibilityLabel={`${weekday} ${day}`}
             accessibilityState={{ selected: isSelected }}
             onPress={() => onSelectDate(value)}
-            style={[styles.chip, isSelected && styles.chipSelected]}
+            scaleTo={0.94}
+            style={[
+              styles.chip,
+              isSelected
+                ? { backgroundColor: colors.brand, borderColor: colors.brand }
+                : { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
             <ThemedText variant="caption" color={isSelected ? 'textOnBrand' : 'textSecondary'}>
               {weekday}
@@ -44,34 +59,27 @@ export function DateStrip({ selectedDate, timezone, onSelectDate, daysAhead = 14
             <ThemedText variant="h3" color={isSelected ? 'textOnBrand' : 'textPrimary'}>
               {day}
             </ThemedText>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </ScrollView>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
+const styles = StyleSheet.create({
   // Without an explicit style, an unconstrained ScrollView placed inside a
   // `flex: 1` ancestor (RescheduleBookingScreen) stretches to fill that
-  // ambiguous main-axis space on iOS instead of sizing to its content —
-  // `flexGrow: 0` pins it to its natural (content) height everywhere,
-  // including where it already worked (BookingFlow's own ScrollView).
+  // ambiguous main-axis space on iOS instead of sizing to its content;
+  // `flexGrow: 0` pins it to its natural (content) height everywhere.
   scroll: { flexGrow: 0 },
-  row: { paddingVertical: spacing.xs },
+  row: { paddingVertical: spacing.xxs, gap: spacing.xs },
   chip: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 52,
-    paddingVertical: spacing.xs,
+    gap: 2,
+    width: 56,
+    height: 68,
     borderRadius: radius.md,
-    marginRight: spacing.xs,
-    backgroundColor: colors.backgroundMuted,
+    borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  // Selected-state purple: `brandAccent` (bright purple) is the mockups'
-  // "selected/CTA accent" color — `brand` (deep navy) is reserved for dark
-  // header/summary surfaces (see colors.ts), so using it here washed the
-  // selected pill out to near-black instead of the mockup's mid-purple.
-  chipSelected: { backgroundColor: colors.brandAccent },
 });

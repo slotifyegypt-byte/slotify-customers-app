@@ -8,7 +8,20 @@ import { branchToday } from '@/lib/time/branchTime';
 
 // Hard-coded English names (rather than Intl) so labels match on every engine.
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_ABBR = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 function ymdToUtc(ymd: string): Date {
   return new Date(`${ymd}T00:00:00Z`);
@@ -31,7 +44,11 @@ export interface StripDate {
 }
 
 /** The next `daysAhead` days starting from the branch's today (not the phone's). */
-export function branchDateStrip(timeZone: string, daysAhead = 14, now: Date = new Date()): StripDate[] {
+export function branchDateStrip(
+  timeZone: string,
+  daysAhead = 14,
+  now: Date = new Date(),
+): StripDate[] {
   const today = branchToday(timeZone, now);
   return Array.from({ length: daysAhead }, (_, i) => {
     const value = addDaysToDate(today, i);
@@ -41,7 +58,11 @@ export function branchDateStrip(timeZone: string, daysAhead = 14, now: Date = ne
 }
 
 /** "YYYY-MM-DD" -> "Today" / "Tomorrow" / "Mon, Jan 5", relative to the branch's today. */
-export function formatDraftDateLabel(ymd: string, timeZone: string, now: Date = new Date()): string {
+export function formatDraftDateLabel(
+  ymd: string,
+  timeZone: string,
+  now: Date = new Date(),
+): string {
   const today = branchToday(timeZone, now);
   if (ymd === today) return 'Today'; // TODO i18n
   if (ymd === addDaysToDate(today, 1)) return 'Tomorrow'; // TODO i18n

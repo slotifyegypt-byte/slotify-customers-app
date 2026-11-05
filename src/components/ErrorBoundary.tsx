@@ -39,11 +39,11 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <View style={styles.container}>
-          <ThemedText variant="h3" style={styles.center}>
-            Something broke
+          <ThemedText variant="h2" style={styles.center}>
+            Something went wrong
           </ThemedText>
           <ThemedText variant="body" color="textSecondary" style={[styles.center, styles.spaced]}>
-            {this.props.boundary} ran into an error.
+            This part of the app ran into a problem. Your data is safe.
           </ThemedText>
           <Button label="Try again" onPress={this.reset} fullWidth={false} style={styles.spaced} />
         </View>

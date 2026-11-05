@@ -9,7 +9,9 @@ import type { AvailabilityResponse, AvailabilitySlot } from '../api/schemas';
  * With a specific specialist picked the server only returns that employee, so
  * this is just their own list.
  */
-export function mergeSpecialistSlots(employees: AvailabilityResponse['employees']): AvailabilitySlot[] {
+export function mergeSpecialistSlots(
+  employees: AvailabilityResponse['employees'],
+): AvailabilitySlot[] {
   const byInstant = new Map<number, AvailabilitySlot>();
   for (const employee of employees) {
     for (const slot of employee.available_slots) {

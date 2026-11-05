@@ -1,39 +1,27 @@
-import { Link, Stack, usePathname, useSegments } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Stack, router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import Animated from 'react-native-reanimated';
 
+import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
-import { ThemedText } from '@/components/ThemedText';
-import { spacing } from '@/theme';
+import { enter } from '@/theme';
 
 export default function NotFoundScreen() {
-  // TEMP DEBUG: show exactly what path/segments failed to match, so this is
-  // visible on-device without needing adb/device logs.
-  const pathname = usePathname();
-  const segments = useSegments();
-
+  const { t } = useTranslation();
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <Screen style={styles.container}>
-        <ThemedText variant="h2">This screen doesn&apos;t exist.</ThemedText>
-        <ThemedText variant="body" color="danger" style={styles.debug}>
-          pathname: {pathname || '(empty)'}
-        </ThemedText>
-        <ThemedText variant="body" color="danger" style={styles.debug}>
-          segments: {JSON.stringify(segments)}
-        </ThemedText>
-        <Link href="/(tabs)/home" style={styles.link}>
-          <ThemedText variant="bodyMedium" color="accentSecondary">
-            Go to home screen!
-          </ThemedText>
-        </Link>
+      <Stack.Screen options={{ title: t('notFound.title') }} />
+      <Screen>
+        <Animated.View entering={enter(0)} style={{ flex: 1 }}>
+          <EmptyState
+            icon="compass-outline"
+            title={t('notFound.title')}
+            body={t('notFound.body')}
+            actionLabel={t('notFound.action')}
+            onAction={() => router.replace('/(tabs)/home')}
+          />
+        </Animated.View>
       </Screen>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  link: { marginTop: spacing.md, paddingVertical: spacing.sm },
-  debug: { marginTop: spacing.sm, textAlign: 'center' },
-});

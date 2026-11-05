@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '@/theme';
+import { spacing, useColors } from '@/theme';
 
+import { PressableScale } from './PressableScale';
 import { ThemedText } from './ThemedText';
 
 interface SectionHeaderProps {
@@ -10,19 +12,28 @@ interface SectionHeaderProps {
   onSeeAll?: () => void;
 }
 
+/** A section's title, with a quiet "See all" on the right when there is more to see. */
 export function SectionHeader({ title, onSeeAll }: SectionHeaderProps) {
   const { t } = useTranslation();
+  const colors = useColors();
   return (
     <View style={styles.row}>
-      <ThemedText variant="h3" numberOfLines={1} style={styles.title}>
+      <ThemedText variant="h2" numberOfLines={1} style={styles.title}>
         {title}
       </ThemedText>
       {onSeeAll ? (
-        <Pressable onPress={onSeeAll} style={styles.seeAll}>
-          <ThemedText variant="bodyMedium" color="accentSecondary">
+        <PressableScale
+          onPress={onSeeAll}
+          accessibilityRole="button"
+          hitSlop={8}
+          scaleTo={0.96}
+          style={styles.seeAll}
+        >
+          <ThemedText variant="bodyMedium" color="brandAccent">
             {t('common.seeAll')}
           </ThemedText>
-        </Pressable>
+          <Ionicons name="chevron-forward" size={15} color={colors.brandAccent} />
+        </PressableScale>
       ) : null}
     </View>
   );
@@ -35,9 +46,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
   },
-  // Title can genuinely overflow the row at larger accessibility text-size
-  // settings once "See all" is competing for the same line — shrink and
-  // ellipsize it instead of hard-clipping mid-word with no indicator.
-  title: { flexShrink: 1, marginRight: spacing.sm },
-  seeAll: { flexShrink: 0 },
+  title: { flex: 1 },
+  seeAll: { flexDirection: 'row', alignItems: 'center', gap: 2, marginLeft: spacing.sm },
 });

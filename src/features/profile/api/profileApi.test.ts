@@ -74,7 +74,9 @@ describe('getMe', () => {
   });
 
   it('maps a missing avatar_path to a null avatar_url', async () => {
-    mockFrom.mockReturnValue(mockQuery({ data: { ...row, avatar_path: null }, error: null }).builder);
+    mockFrom.mockReturnValue(
+      mockQuery({ data: { ...row, avatar_path: null }, error: null }).builder,
+    );
     await expect(getMe()).resolves.toMatchObject({ avatar_url: null });
   });
 
@@ -83,7 +85,11 @@ describe('getMe', () => {
       sessionWith({
         id: 'u1',
         email: 'lina@slotify.dev',
-        user_metadata: { given_name: 'Lina', family_name: 'Hassan', picture: 'https://g.test/p.jpg' },
+        user_metadata: {
+          given_name: 'Lina',
+          family_name: 'Hassan',
+          picture: 'https://g.test/p.jpg',
+        },
       }),
     );
     const select = mockQuery({ data: null, error: null });
@@ -116,7 +122,10 @@ describe('getMe', () => {
     ).toEqual({ first_name: 'Apple', last_name: 'User' });
 
     expect(
-      await insertWith({ id: 'u1', email: 'a@b.c', user_metadata: { full_name: 'Sara Ali Khan' } }, null),
+      await insertWith(
+        { id: 'u1', email: 'a@b.c', user_metadata: { full_name: 'Sara Ali Khan' } },
+        null,
+      ),
     ).toEqual({ first_name: 'Sara', last_name: 'Ali Khan' });
 
     expect(await insertWith({ id: 'u1', email: 'omar@b.c' }, null)).toEqual({
@@ -124,7 +133,10 @@ describe('getMe', () => {
       last_name: undefined,
     });
 
-    expect(await insertWith({ id: 'u1' }, null)).toEqual({ first_name: 'Guest', last_name: undefined });
+    expect(await insertWith({ id: 'u1' }, null)).toEqual({
+      first_name: 'Guest',
+      last_name: undefined,
+    });
   });
 
   it('refetches and returns the winner when the insert loses a race (23505)', async () => {
@@ -154,7 +166,9 @@ describe('getMe', () => {
   });
 
   it('throws an ApiError when the select fails', async () => {
-    mockFrom.mockReturnValue(mockQuery({ data: null, error: { code: 'XX000', message: 'boom' } }).builder);
+    mockFrom.mockReturnValue(
+      mockQuery({ data: null, error: { code: 'XX000', message: 'boom' } }).builder,
+    );
     const failure: unknown = await getMe().catch((e) => e);
     expect(isApiError(failure, 'unknown')).toBe(true);
   });
@@ -186,7 +200,9 @@ describe('updateMe', () => {
   });
 
   it('maps a check-constraint failure to invalid_field', async () => {
-    mockFrom.mockReturnValue(mockQuery({ data: null, error: { code: '23514', message: 'check' } }).builder);
+    mockFrom.mockReturnValue(
+      mockQuery({ data: null, error: { code: '23514', message: 'check' } }).builder,
+    );
     const failure: unknown = await updateMe({ first_name: 'X' }).catch((e) => e);
     expect(isApiError(failure, 'invalid_field')).toBe(true);
   });

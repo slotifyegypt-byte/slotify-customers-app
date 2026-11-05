@@ -32,7 +32,8 @@ export const useNotificationPreferencesStore = create<NotificationPreferencesSta
       promotions: false,
       orderUpdates: true,
       chatMessages: true,
-      setPreference: (key, value) => set({ [key]: value } as Pick<NotificationPreferencesState, typeof key>),
+      setPreference: (key, value) =>
+        set({ [key]: value } as Pick<NotificationPreferencesState, typeof key>),
     }),
     {
       name: 'slotify-notification-preferences',

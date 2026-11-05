@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/EmptyState';
+import { PressableScale } from '@/components/PressableScale';
+import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { radius, spacing, useColors } from '@/theme';
 
 import type { AvailabilityResponse, AvailabilitySlot } from '../api/schemas';
 import { getBookingErrorMessage } from '../utils/bookingErrors';
@@ -18,121 +20,204 @@ interface SlotGridProps {
   onSelectSlot: (slot: AvailabilitySlot) => void;
 }
 
+const COLUMNS = 3;
+const GAP = spacing.xs;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += size) rows.push(items.slice(i, i + size));
+  return rows;
+}
+
 function slotKey(slot: AvailabilitySlot) {
   return `${slot.start_time}__${slot.employee_id ?? 'capacity'}`;
 }
 
-// developer-guide.md §6: `booking_mode` decides the shape — "specialist"
+type DayPart = 'morning' | 'afternoon' | 'evening';
+
+const DAY_PART_LABEL: Record<DayPart, string> = {
+  morning: 'Morning', // TODO i18n
+  afternoon: 'Afternoon', // TODO i18n
+  evening: 'Evening', // TODO i18n
+};
+
+// `time_slot_str` is already the branch-local "10:00 AM", so the day part reads the branch's clock, never the phone's.
+function dayPartOf(slot: AvailabilitySlot): DayPart {
+  const match = /^(\d{1,2}):\d{2}\s*(AM|PM)/i.exec(slot.time_slot_str);
+  if (!match) return 'morning';
+  const hour = (Number(match[1]) % 12) + (match[2].toUpperCase() === 'PM' ? 12 : 0);
+  return hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+}
+
+// developer-guide.md §6: `booking_mode` decides the shape: "specialist"
 // groups slots per employee (employees[].available_slots), "capacity" is a
 // flat list (slots[]) with capacity_remaining. The server only returns FREE
-// slots (after now, clear of bookings), so every pill is tappable; taken
+// slots (after now, clear of bookings), so every time is tappable; taken
 // times simply don't appear.
 //
-// Specialist mode is always one flat 3-column grid (24-booking-configure.png
-// "DATE & TIME" never shows per-specialist subheadings): with "Any
-// Professional" the employees are merged earliest-first by
+// Specialist mode is always one flat grid (never per-specialist subheadings):
+// with "Any professional" the employees are merged earliest-first by
 // mergeSpecialistSlots, and the tapped slot's employee_id is what gets booked.
-// A tapped slot gets an obvious filled/selected treatment.
-export function SlotGrid({ availability, isLoading, isError, error, selectedSlot, onSelectSlot }: SlotGridProps) {
+// Times are grouped Morning / Afternoon / Evening (a heading only appears when
+// the day spans more than one part), three to a row.
+export function SlotGrid({
+  availability,
+  isLoading,
+  isError,
+  error,
+  selectedSlot,
+  onSelectSlot,
+}: SlotGridProps) {
   const colors = useColors();
-  const styles = createStyles(colors);
   const specialistSlots = useMemo(
-    () => (availability?.booking_mode === 'specialist' ? mergeSpecialistSlots(availability.employees) : []),
+    () =>
+      availability?.booking_mode === 'specialist'
+        ? mergeSpecialistSlots(availability.employees)
+        : [],
     [availability],
   );
+  const slots = availability?.booking_mode === 'specialist' ? specialistSlots : availability?.slots;
+
+  const groups = useMemo(() => {
+    const byPart = new Map<DayPart, AvailabilitySlot[]>();
+    for (const slot of slots ?? []) {
+      const part = dayPartOf(slot);
+      byPart.set(part, [...(byPart.get(part) ?? []), slot]);
+    }
+    return (['morning', 'afternoon', 'evening'] as const)
+      .filter((part) => byPart.has(part))
+      .map((part) => ({ part, slots: byPart.get(part) ?? [] }));
+  }, [slots]);
 
   if (isLoading) {
-    return <ActivityIndicator style={styles.spinner} color={colors.brand} />;
+    return (
+      <View style={styles.grid}>
+        {[0, 1, 2].map((row) => (
+          <View key={row} style={styles.row}>
+            {[0, 1, 2].map((col) => (
+              <Skeleton key={col} style={styles.cell} height={48} radius={radius.md} />
+            ))}
+          </View>
+        ))}
+      </View>
+    );
   }
 
   if (isError) {
     // The backend's own detail (e.g. "No employees found for this service")
-    // is usually more accurate than a generic error — and often describes an
+    // is usually more accurate than a generic error, and often describes an
     // expected, calm empty state rather than an actual failure.
-    return <EmptyState title={getBookingErrorMessage(error, "Couldn't load availability for this date.")} /* TODO i18n */ />;
+    return (
+      <EmptyState
+        icon="calendar-outline"
+        title={getBookingErrorMessage(
+          error,
+          "Couldn't load availability for this date.",
+        )} /* TODO i18n */
+      />
+    );
   }
 
   if (!availability) {
     return null;
   }
 
-  if (availability.booking_mode === 'specialist') {
-    if (specialistSlots.length === 0) {
-      return <EmptyState title="No open slots on this date" />; /* TODO i18n */
-    }
+  if (groups.length === 0) {
     return (
-      <View style={styles.grid}>
-        {specialistSlots.map((slot) => {
-          const key = slotKey(slot);
-          const isSelected = selectedSlot !== null && slotKey(selectedSlot) === key;
-          return (
-            <Pressable
-              key={key}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
-              onPress={() => onSelectSlot(slot)}
-              style={[styles.slot, isSelected && styles.slotSelected]}
-            >
-              <ThemedText variant="bodyMedium" color={isSelected ? 'textOnBrand' : 'textPrimary'}>
-                {slot.time_slot_str}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
+      <EmptyState
+        icon="calendar-outline"
+        title="No open times on this date" /* TODO i18n */
+        body="Pick another day from the strip above." /* TODO i18n */
+      />
     );
   }
 
-  if (availability.slots.length === 0) {
-    return <EmptyState title="No open slots on this date" />; /* TODO i18n */
-  }
-
   return (
-    <View style={styles.grid}>
-      {availability.slots.map((slot) => {
-        const key = slotKey(slot);
-        const isSelected = selectedSlot !== null && slotKey(selectedSlot) === key;
-        return (
-          <Pressable
-            key={key}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isSelected }}
-            onPress={() => onSelectSlot(slot)}
-            style={[styles.slot, styles.capacitySlot, isSelected && styles.slotSelected]}
-          >
-            <ThemedText variant="bodyMedium" color={isSelected ? 'textOnBrand' : 'textPrimary'}>
-              {slot.time_slot_str}
+    <View style={styles.groups}>
+      {groups.map((group) => (
+        <View key={group.part} style={styles.group}>
+          {groups.length > 1 ? (
+            <ThemedText variant="captionStrong" color="textSecondary">
+              {DAY_PART_LABEL[group.part]}
             </ThemedText>
-            {slot.capacity_remaining !== null ? (
-              <ThemedText variant="caption" color={isSelected ? 'textOnBrand' : 'textSecondary'}>
-                {/* TODO i18n */}
-                {slot.capacity_remaining} left
-              </ThemedText>
-            ) : null}
-          </Pressable>
-        );
-      })}
+          ) : null}
+          <View style={styles.grid}>
+            {chunk(group.slots, COLUMNS).map((row, rowIndex) => (
+              <View key={rowIndex} style={styles.row}>
+                {Array.from({ length: COLUMNS }, (_, col) => row[col]).map((slot, col) => {
+                  if (!slot)
+                    return (
+                      <View
+                        key={`pad-${col}`}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                        style={[styles.slot, styles.pad]}
+                      />
+                    );
+                  const key = slotKey(slot);
+                  const isSelected = selectedSlot !== null && slotKey(selectedSlot) === key;
+                  const showCapacity =
+                    availability.booking_mode === 'capacity' && slot.capacity_remaining !== null;
+                  return (
+                    <PressableScale
+                      key={key}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      accessibilityLabel={
+                        showCapacity
+                          ? `${slot.time_slot_str}, ${slot.capacity_remaining} left` // TODO i18n
+                          : slot.time_slot_str
+                      }
+                      onPress={() => onSelectSlot(slot)}
+                      scaleTo={0.95}
+                      style={[
+                        styles.slot,
+                        isSelected
+                          ? { backgroundColor: colors.brand, borderColor: colors.brand }
+                          : { backgroundColor: colors.surface, borderColor: colors.border },
+                      ]}
+                    >
+                      <ThemedText
+                        variant="bodyMedium"
+                        numberOfLines={1}
+                        color={isSelected ? 'textOnBrand' : 'textPrimary'}
+                      >
+                        {slot.time_slot_str}
+                      </ThemedText>
+                      {showCapacity ? (
+                        <ThemedText
+                          variant="captionSmall"
+                          color={isSelected ? 'textOnBrand' : 'textTertiary'}
+                        >
+                          {slot.capacity_remaining} left {/* TODO i18n */}
+                        </ThemedText>
+                      ) : null}
+                    </PressableScale>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
     </View>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-  spinner: { marginVertical: spacing.lg },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+const styles = StyleSheet.create({
+  groups: { gap: spacing.md },
+  group: { gap: spacing.xs },
+  grid: { gap: GAP },
+  row: { flexDirection: 'row', gap: GAP },
+  cell: { flex: 1 },
+  pad: { opacity: 0 },
   slot: {
-    // Fixed 3-column grid (per design) rather than a min-width wrap, which
-    // could lay out 2 or 4 per row depending on screen width.
-    flexBasis: '31%',
-    flexGrow: 0,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    flex: 1,
+    minHeight: 48,
+    paddingHorizontal: spacing.xs,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
+    borderWidth: StyleSheet.hairlineWidth * 2,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  capacitySlot: { minHeight: 52, justifyContent: 'center' },
-  slotSelected: { backgroundColor: colors.brandAccent, borderColor: colors.brandAccent },
 });

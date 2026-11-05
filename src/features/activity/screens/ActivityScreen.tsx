@@ -1,9 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
@@ -11,65 +10,23 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { ThemedText } from '@/components/ThemedText';
 import type { BookingRead } from '@/features/booking/api/schemas';
 import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
-import { iconForCategory, pinColorForCategory } from '@/features/home/utils/categoryIcon';
-import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
-import { fontFamily, radius, shadows, spacing, useColors, type ColorToken, type Colors } from '@/theme';
+import { enter, spacing } from '@/theme';
 
-// customer-app-api-map.md §8 — Active = confirmed + pending, merged
-// client-side (no combined-status query param exists); Past = completed +
-// cancelled + no_show. A simple local-state segmented control stands in for a nested
-// navigator since there's no independent state to preserve per tab.
+import { BookingCard, BookingCardSkeleton } from '../components/BookingCard';
+import { groupActiveBookings, groupPastBookings } from '../utils/bookingDisplay';
+import { monthHeading } from '../utils/dateLabels';
+
+// customer-app-api-map.md §8: Active = confirmed + pending, merged client-side (there is no combined-status
+// query param); Past = completed + cancelled + no_show. A local segmented control stands in for a nested
+// navigator since the two lists share no state worth preserving.
 type Tab = 'active' | 'past';
 
-// Design ground truth (03-activity.png) shows a third, capacity-mode-only
-// status ("IN QUEUE") beyond CONFIRMED/IN PROGRESS, driven by a live queue
-// position. Per customer-app-api-map.md §0.3, Live Queue is explicitly
-// dropped from scope ("do not build"), and there is no backend field for it
-// anyway — active bookings are only ever pending/confirmed. So every
-// non-confirmed active booking reads as "IN PROGRESS" (capacity/order-type
-// bookings, e.g. tailoring drop-off) or "PENDING" (specialist bookings
-// awaiting store confirmation) instead of a fabricated queue position.
-//
-// `booking_type` — VERIFIED against live /openapi.json + response shapes
-// (2026-09-20): replaces the old every-service-has-no-employee_id inference.
-function isCapacityBooking(booking: BookingRead): boolean {
-  return booking.booking_type === 'drop_off';
-}
-
-function activeStatusMeta(booking: BookingRead): { label: string; color: Extract<ColorToken, 'success' | 'warning'> } {
-  if (booking.booking_status === 'confirmed') {
-    // TODO i18n
-    return { label: 'CONFIRMED', color: 'success' };
-  }
-  // TODO i18n
-  return isCapacityBooking(booking)
-    ? { label: 'IN PROGRESS', color: 'warning' }
-    : { label: 'PENDING', color: 'warning' };
-}
-
-// Past rows stay unbadged when completed; the two unsuccessful outcomes get
-// the same ALL-CAPS label style as the active cards.
-function pastStatusLabel(status: BookingRead['booking_status']): string | null {
-  // TODO i18n
-  if (status === 'cancelled') return 'CANCELLED';
-  if (status === 'no_show') return 'NO SHOW';
-  return null;
-}
-
-function activeSubtitle(booking: BookingRead): string {
-  const hourStr = formatHour(booking.booking_date, booking.timezone);
-  if (isCapacityBooking(booking)) {
-    const count = booking.booking_services.length;
-    // TODO i18n
-    return `${count} item${count === 1 ? '' : 's'} · since ${hourStr}`;
-  }
-  return `${formatDateTitle(booking.booking_date, booking.timezone)} · ${hourStr}`;
-}
+type Row =
+  | { type: 'heading'; key: string; title: string }
+  | { type: 'booking'; key: string; booking: BookingRead };
 
 export function ActivityScreen() {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [tab, setTab] = useState<Tab>('active');
 
   const confirmed = useMyBookings('confirmed');
@@ -78,15 +35,14 @@ export function ActivityScreen() {
   const cancelled = useMyBookings('cancelled');
   const noShow = useMyBookings('no_show');
 
-  const activeBookings = useMemo(() => {
-    const merged = [...(confirmed.data ?? []), ...(pending.data ?? [])];
-    return merged.sort((a, b) => Date.parse(a.booking_date) - Date.parse(b.booking_date));
-  }, [confirmed.data, pending.data]);
-
-  const pastBookings = useMemo(() => {
-    const merged = [...(completed.data ?? []), ...(cancelled.data ?? []), ...(noShow.data ?? [])];
-    return merged.sort((a, b) => Date.parse(b.booking_date) - Date.parse(a.booking_date));
-  }, [completed.data, cancelled.data, noShow.data]);
+  const activeBookings = useMemo(
+    () => [...(confirmed.data ?? []), ...(pending.data ?? [])],
+    [confirmed.data, pending.data],
+  );
+  const pastBookings = useMemo(
+    () => [...(completed.data ?? []), ...(cancelled.data ?? []), ...(noShow.data ?? [])],
+    [completed.data, cancelled.data, noShow.data],
+  );
 
   const isActive = tab === 'active';
   const isLoading = isActive
@@ -95,7 +51,6 @@ export function ActivityScreen() {
   const isError = isActive
     ? confirmed.isError || pending.isError
     : completed.isError || cancelled.isError || noShow.isError;
-  const data = isActive ? activeBookings : pastBookings;
   const refetch = () => {
     if (isActive) {
       confirmed.refetch();
@@ -107,183 +62,108 @@ export function ActivityScreen() {
     }
   };
 
-  return (
-    <Screen edges={['top']} style={styles.screen}>
-      <View style={styles.header}>
-        <ThemedText variant="h1">
-          {/* TODO i18n */}
-          Activity
-        </ThemedText>
-      </View>
+  // One flat list of headings and cards, so the list stays virtualised.
+  const rows = useMemo<Row[]>(() => {
+    if (isActive) {
+      return groupActiveBookings(activeBookings).flatMap((group) => [
+        {
+          type: 'heading' as const,
+          key: `h-${group.key}`,
+          title: t(`activity.group.${group.key}`),
+        },
+        ...group.bookings.map((booking) => ({
+          type: 'booking' as const,
+          key: booking.id,
+          booking,
+        })),
+      ]);
+    }
+    return groupPastBookings(pastBookings).flatMap((group) => [
+      {
+        type: 'heading' as const,
+        key: `h-${group.month}`,
+        title: monthHeading(group.sample.booking_date, group.sample.timezone, i18n.language),
+      },
+      ...group.bookings.map((booking) => ({ type: 'booking' as const, key: booking.id, booking })),
+    ]);
+  }, [isActive, activeBookings, pastBookings, t, i18n.language]);
 
-      <View style={styles.segmentRow}>
+  const openBooking = (booking: BookingRead) => router.push(`/(tabs)/activity/${booking.id}`);
+
+  return (
+    <Screen edges={['top']}>
+      <Animated.View entering={enter(0)} style={styles.header}>
+        <ThemedText variant="h1">{t('activity.title')}</ThemedText>
+      </Animated.View>
+
+      <Animated.View entering={enter(1)} style={styles.segment}>
         <SegmentedControl
           options={[
-            { key: 'active', label: /* TODO i18n */ 'Active' },
-            { key: 'past', label: /* TODO i18n */ 'Past' },
+            { key: 'active', label: t('activity.tabActive') },
+            { key: 'past', label: t('activity.tabPast') },
           ]}
           value={tab}
           onChange={setTab}
         />
-      </View>
+      </Animated.View>
 
       {isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.brand} />
+        <View style={styles.list}>
+          {[0, 1, 2, 3].map((i) => (
+            <BookingCardSkeleton key={i} />
+          ))}
         </View>
       ) : isError ? (
-        <View style={styles.center}>
-          <EmptyState title={t('common.errorGeneric')} actionLabel={t('common.retry')} onAction={refetch} />
-        </View>
-      ) : !data.length ? (
-        <View style={styles.center}>
+        <View style={styles.flex}>
           <EmptyState
-            title={
-              /* TODO i18n */
-              isActive ? 'No upcoming bookings' : 'No past bookings yet'
-            }
-            body={
-              /* TODO i18n */
-              isActive ? 'Book a service to see it here.' : "Bookings you've completed or cancelled show up here."
-            }
+            icon="cloud-offline-outline"
+            title={t('common.errorGeneric')}
+            actionLabel={t('common.retry')}
+            onAction={refetch}
+          />
+        </View>
+      ) : !rows.length ? (
+        <View style={styles.flex}>
+          <EmptyState
+            icon="calendar-outline"
+            title={isActive ? t('activity.empty.activeTitle') : t('activity.empty.pastTitle')}
+            body={isActive ? t('activity.empty.activeBody') : t('activity.empty.pastBody')}
+            actionLabel={isActive ? t('activity.empty.activeAction') : undefined}
+            onAction={isActive ? () => router.push('/(tabs)/explore') : undefined}
           />
         </View>
       ) : (
-        <FlatList<BookingRead>
-          data={data}
-          keyExtractor={(item) => item.id}
+        <FlatList<Row>
+          data={rows}
+          keyExtractor={(row) => row.key}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (isActive ? <ActiveBookingCard booking={item} /> : <PastBookingRow booking={item} />)}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item, index }) =>
+            item.type === 'heading' ? (
+              <ThemedText
+                variant="h3"
+                accessibilityRole="header"
+                style={index === 0 ? styles.firstHeading : styles.heading}
+              >
+                {item.title}
+              </ThemedText>
+            ) : (
+              <Animated.View entering={enter(Math.min(index, 6))}>
+                <BookingCard booking={item.booking} onPress={() => openBooking(item.booking)} />
+              </Animated.View>
+            )
+          }
         />
       )}
     </Screen>
   );
 }
 
-// Active card: colored left accent bar + circular photo thumbnail with a
-// small status-icon badge + ALL-CAPS colored status label, per
-// 03-activity.png. Status color always comes from `colors.success` /
-// `colors.warning`, never a hardcoded hex.
-function ActiveBookingCard({ booking }: { booking: BookingRead }) {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  const meta = activeStatusMeta(booking);
-  const badgeIcon = booking.booking_status === 'confirmed' ? 'checkmark' : 'time';
-
-  return (
-    <Pressable style={styles.card} onPress={() => router.push(`/(tabs)/activity/${booking.id}`)}>
-      <View style={[styles.accentBar, { backgroundColor: colors[meta.color] }]} />
-      <View style={styles.cardBody}>
-        <View style={styles.thumbWrap}>
-          {booking.store_logo ? (
-            <Image source={{ uri: booking.store_logo }} style={styles.thumb} contentFit="cover" />
-          ) : (
-            <View style={[styles.thumb, styles.thumbFallback]} />
-          )}
-          <View style={[styles.statusBadge, { backgroundColor: colors[meta.color] }]}>
-            <Ionicons name={badgeIcon} size={10} color={colors.textOnBrand} />
-          </View>
-        </View>
-        <View style={styles.cardInfo}>
-          <ThemedText variant="caption" color={meta.color} style={styles.statusLabel} numberOfLines={1}>
-            {meta.label}
-          </ThemedText>
-          <ThemedText variant="h3" numberOfLines={1}>
-            {booking.store_name}
-          </ThemedText>
-          <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
-            {activeSubtitle(booking)}
-          </ThemedText>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-// Past row: flat list style, no card/accent-bar chrome — a category-tinted
-// icon avatar (reusing home's category-icon heuristic, since a booking
-// carries no structured category field) instead of a photo, per
-// 11-activity-past.png.
-function PastBookingRow({ booking }: { booking: BookingRead }) {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  const icon = iconForCategory(booking.store_name);
-  const tint = pinColorForCategory(booking.store_name, colors);
-  const statusLabel = pastStatusLabel(booking.booking_status);
-
-  return (
-    <Pressable style={styles.pastRow} onPress={() => router.push(`/(tabs)/activity/${booking.id}`)}>
-      <View style={[styles.pastIconWrap, { backgroundColor: `${tint}1F` }]}>
-        <Ionicons name={icon} size={20} color={tint} />
-      </View>
-      <View style={styles.rowInfo}>
-        {statusLabel ? (
-          <ThemedText variant="caption" color="danger" style={styles.statusLabel} numberOfLines={1}>
-            {statusLabel}
-          </ThemedText>
-        ) : null}
-        <ThemedText variant="h3" numberOfLines={1}>
-          {booking.store_name}
-        </ThemedText>
-        <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
-          {booking.booking_services_str} · {formatDate(booking.booking_date, booking.timezone)}
-        </ThemedText>
-      </View>
-    </Pressable>
-  );
-}
-
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-  screen: { padding: 0 },
-  header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.sm },
-  segmentRow: { marginHorizontal: spacing.md, marginBottom: spacing.sm },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
-
-  // Active cards
-  card: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    marginBottom: spacing.sm,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  accentBar: { width: 4 },
-  cardBody: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: spacing.sm },
-  thumbWrap: { width: 48, height: 48 },
-  thumb: { width: 48, height: 48, borderRadius: 24 },
-  thumbFallback: { backgroundColor: colors.backgroundMuted },
-  statusBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-  cardInfo: { flex: 1, marginLeft: spacing.sm, marginRight: spacing.xs },
-  statusLabel: { fontFamily: fontFamily.bodySemiBold, letterSpacing: 0.4, marginBottom: 1 },
-
-  // Past rows
-  pastRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.divider,
-  },
-  pastIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowInfo: { flex: 1, marginLeft: spacing.sm, marginRight: spacing.xs },
-  });
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  header: { paddingHorizontal: spacing.gutter, paddingTop: spacing.sm, paddingBottom: spacing.sm },
+  segment: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.md },
+  list: { paddingHorizontal: spacing.gutter, paddingBottom: 120, gap: spacing.sm },
+  heading: { marginTop: spacing.md },
+  firstHeading: { marginTop: 4 },
+});

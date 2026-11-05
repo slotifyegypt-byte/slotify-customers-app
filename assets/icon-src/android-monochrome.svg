@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><defs></defs><g transform="translate(218.00 213.10) scale(0.98)">
+  <defs>
+    <clipPath id="bodye"><rect x="30" y="100" width="540" height="470" rx="104"/></clipPath>
+  </defs>
+  <g fill="#000000">
+    <rect x="47" y="117" width="506" height="436" rx="87" fill="none" stroke="#000000" stroke-width="34"/>
+    <g clip-path="url(#bodye)"><rect x="30" y="100" width="540" height="150"/></g>
+    <rect x="165" y="38" width="58" height="124" rx="29"/>
+    <rect x="377" y="38" width="58" height="124" rx="29"/>
+    <g transform="translate(376 388) rotate(-30)">
+      <rect x="-142" y="-70" width="284" height="140" rx="52"/>
+      <line x1="-256" y1="-32" x2="-180" y2="-32" stroke="#000000" stroke-width="22" stroke-linecap="round"/>
+      <line x1="-218" y1="34" x2="-180" y2="34" stroke="#000000" stroke-width="22" stroke-linecap="round"/>
+    </g>
+  </g></g></svg>

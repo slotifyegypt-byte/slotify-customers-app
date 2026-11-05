@@ -6,8 +6,15 @@ import { bookingKeys } from '../api/queryKeys';
 export function useCreateBooking() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ branchId, items, customerNote }: { branchId: string; items: CreateBookingItem[]; customerNote?: string }) =>
-      createBooking(branchId, items, customerNote),
+    mutationFn: ({
+      branchId,
+      items,
+      customerNote,
+    }: {
+      branchId: string;
+      items: CreateBookingItem[];
+      customerNote?: string;
+    }) => createBooking(branchId, items, customerNote),
     // `bookings.all` covers my-bookings, details and availability (the
     // booked slots are no longer free).
     onSuccess: () => {

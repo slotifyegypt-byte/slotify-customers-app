@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 // expo-linear-gradient needs a native module rebuild to work, which isn't
 // always available mid-iteration — this fakes a 2-stop gradient with stacked
 // translucent bands (pure Views, no native dependency) instead.
-const BAND_COUNT = 10;
+const BAND_COUNT = 48;
 
 interface SoftGradientProps {
   /** [r,g,b] shared by both stops. */
@@ -16,7 +16,13 @@ interface SoftGradientProps {
   rampStart?: number;
 }
 
-export function SoftGradient({ rgb, fromAlpha, toAlpha, direction, rampStart = 0 }: SoftGradientProps) {
+export function SoftGradient({
+  rgb,
+  fromAlpha,
+  toAlpha,
+  direction,
+  rampStart = 0,
+}: SoftGradientProps) {
   const [r, g, b] = rgb;
   const bands = Array.from({ length: BAND_COUNT }, (_, i) => {
     const t = i / (BAND_COUNT - 1);
@@ -26,7 +32,9 @@ export function SoftGradient({ rgb, fromAlpha, toAlpha, direction, rampStart = 0
   });
 
   return (
-    <View style={[StyleSheet.absoluteFill, direction === 'horizontal' ? styles.row : styles.column]}>
+    <View
+      style={[StyleSheet.absoluteFill, direction === 'horizontal' ? styles.row : styles.column]}
+    >
       {bands.map((color, i) => (
         <View key={i} style={[styles.band, { backgroundColor: color }]} />
       ))}

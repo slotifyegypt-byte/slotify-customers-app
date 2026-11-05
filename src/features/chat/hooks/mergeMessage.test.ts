@@ -2,7 +2,11 @@ import type { BookingMessage } from '../api/schemas';
 
 import { mergeMessage } from './mergeMessage';
 
-const msg = (id: string, created_at: string, overrides: Partial<BookingMessage> = {}): BookingMessage => ({
+const msg = (
+  id: string,
+  created_at: string,
+  overrides: Partial<BookingMessage> = {},
+): BookingMessage => ({
   id,
   booking_id: 'bk1',
   sender: 'customer',

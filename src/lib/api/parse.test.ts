@@ -27,7 +27,9 @@ describe('parseOrReport', () => {
   });
 
   it('throws in dev when the data drifts from the schema', () => {
-    expect(() => parseOrReport(schema, { id: 1 }, 'GET thing')).toThrow(/\[API contract drift\] GET thing/);
+    expect(() => parseOrReport(schema, { id: 1 }, 'GET thing')).toThrow(
+      /\[API contract drift\] GET thing/,
+    );
     expect(mockCaptureMessage).not.toHaveBeenCalled();
   });
 

@@ -10,7 +10,9 @@ jest.mock('@/lib/supabase', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
     storage: {
       from: (bucket: string) => ({
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${path}` } }),
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
       }),
     },
   },

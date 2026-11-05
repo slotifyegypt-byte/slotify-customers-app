@@ -28,7 +28,10 @@ export function useAppleSignIn() {
       // Apple embeds the SHA-256 of the nonce in the identity token; Supabase
       // re-hashes the raw nonce to check it, which prevents token replay.
       const rawNonce = Crypto.randomUUID();
-      const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce,
+      );
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -42,7 +45,10 @@ export function useAppleSignIn() {
 
       const { givenName, familyName } = credential.fullName ?? {};
       if (givenName || familyName) {
-        setPendingProfileName({ first_name: givenName ?? undefined, last_name: familyName ?? undefined });
+        setPendingProfileName({
+          first_name: givenName ?? undefined,
+          last_name: familyName ?? undefined,
+        });
       }
 
       const { error: signInError } = await supabase.auth.signInWithIdToken({

@@ -23,7 +23,12 @@ const service = (overrides: Partial<Service> = {}): Service => ({
   ...overrides,
 });
 
-const slot = (start: string, end: string, employee: string | null, remaining: number | null = null): AvailabilitySlot => ({
+const slot = (
+  start: string,
+  end: string,
+  employee: string | null,
+  remaining: number | null = null,
+): AvailabilitySlot => ({
   start_time: start,
   end_time: end,
   employee_id: employee,
@@ -32,7 +37,9 @@ const slot = (start: string, end: string, employee: string | null, remaining: nu
   time_slot_str: start,
 });
 
-const specialistAvailability = (employees: Record<string, AvailabilitySlot[]>): AvailabilityResponse => ({
+const specialistAvailability = (
+  employees: Record<string, AvailabilitySlot[]>,
+): AvailabilityResponse => ({
   store_id: 'branch-1',
   service_id: 'svc-haircut',
   date: '2026-11-04',
@@ -73,7 +80,12 @@ const blowDryEntry: BookingDraftEntry = {
 };
 
 const washEntry: BookingDraftEntry = {
-  service: service({ id: 'svc-wash', name: 'Express wash', requires_specialist: false, max_concurrent_bookings: 4 }),
+  service: service({
+    id: 'svc-wash',
+    name: 'Express wash',
+    requires_specialist: false,
+    max_concurrent_bookings: 4,
+  }),
   employeeId: null,
   date: '2026-11-04',
   slot: slot('2026-11-04T10:00:00.000Z', '2026-11-04T10:30:00.000Z', null, 4),
@@ -89,15 +101,22 @@ describe('withDraftHolds', () => {
       sam: [slot('2026-11-04T08:15:00.000Z', '2026-11-04T09:00:00.000Z', 'sam')],
     });
 
-    const held = withDraftHolds(availability, getDraftBlockedIntervals([haircutEntry], '2026-11-04'));
+    const held = withDraftHolds(
+      availability,
+      getDraftBlockedIntervals([haircutEntry], '2026-11-04'),
+    );
 
-    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual(['2026-11-04T09:00:00.000Z']);
+    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual([
+      '2026-11-04T09:00:00.000Z',
+    ]);
     expect(held?.employees[1].available_slots).toHaveLength(1);
   });
 
   it('leaves capacity availability and other dates alone', () => {
     const capacity = capacityAvailability([washEntry.slot]);
-    expect(withDraftHolds(capacity, getDraftBlockedIntervals([haircutEntry], '2026-11-04'))).toBe(capacity);
+    expect(withDraftHolds(capacity, getDraftBlockedIntervals([haircutEntry], '2026-11-04'))).toBe(
+      capacity,
+    );
     expect(getDraftBlockedIntervals([haircutEntry], '2026-11-05')).toEqual([]);
   });
 });
@@ -127,9 +146,14 @@ describe('buffer holds', () => {
       sam: [slot('2026-11-04T10:45:00.000Z', '2026-11-04T11:15:00.000Z', 'sam')],
     });
 
-    const held = withDraftHolds(availability, getDraftBlockedIntervals([haircutWithBuffer], '2026-11-04'));
+    const held = withDraftHolds(
+      availability,
+      getDraftBlockedIntervals([haircutWithBuffer], '2026-11-04'),
+    );
 
-    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual(['2026-11-04T11:00:00.000Z']);
+    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual([
+      '2026-11-04T11:00:00.000Z',
+    ]);
     expect(held?.employees[1].available_slots).toHaveLength(1);
   });
 
@@ -142,9 +166,15 @@ describe('buffer holds', () => {
       ],
     });
 
-    const held = withDraftHolds(availability, getDraftBlockedIntervals([haircutWithBuffer], '2026-11-04'), 15);
+    const held = withDraftHolds(
+      availability,
+      getDraftBlockedIntervals([haircutWithBuffer], '2026-11-04'),
+      15,
+    );
 
-    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual(['2026-11-04T09:15:00.000Z']);
+    expect(held?.employees[0].available_slots.map((s) => s.start_time)).toEqual([
+      '2026-11-04T09:15:00.000Z',
+    ]);
   });
 });
 
@@ -161,14 +191,18 @@ describe('availabilityParamsFor', () => {
       date: '2026-11-04',
       employee_id: 'sam',
     });
-    expect(availabilityParamsFor('branch-1', { ...haircutEntry, excludeItemId: 'item-1' })).toEqual({
-      store_id: 'branch-1',
-      service_id: 'svc-haircut',
-      date: '2026-11-04',
-      exclude_item_id: 'item-1',
-    });
+    expect(availabilityParamsFor('branch-1', { ...haircutEntry, excludeItemId: 'item-1' })).toEqual(
+      {
+        store_id: 'branch-1',
+        service_id: 'svc-haircut',
+        date: '2026-11-04',
+        exclude_item_id: 'item-1',
+      },
+    );
     // Capacity services never send employee_id.
-    expect(availabilityParamsFor('branch-1', { ...washEntry, employeeId: 'x' })).not.toHaveProperty('employee_id');
+    expect(availabilityParamsFor('branch-1', { ...washEntry, employeeId: 'x' })).not.toHaveProperty(
+      'employee_id',
+    );
   });
 });
 
@@ -182,18 +216,26 @@ describe('findConflictingEntries', () => {
       'svc-blowdry': specialistAvailability({
         sam: [slot('2026-11-04T09:00:00.000Z', '2026-11-04T09:30:00.000Z', 'sam')],
       }),
-      'svc-wash': capacityAvailability([slot('2026-11-04T10:00:00.000Z', '2026-11-04T10:30:00.000Z', null, 1)]),
+      'svc-wash': capacityAvailability([
+        slot('2026-11-04T10:00:00.000Z', '2026-11-04T10:30:00.000Z', null, 1),
+      ]),
     };
 
-    expect(findConflictingEntries([haircutEntry, blowDryEntry, washEntry], fresh)).toEqual([haircutEntry]);
+    expect(findConflictingEntries([haircutEntry, blowDryEntry, washEntry], fresh)).toEqual([
+      haircutEntry,
+    ]);
   });
 
   it('matches capacity slots by instant, whatever the string format', () => {
     const fresh = {
-      'svc-wash': capacityAvailability([slot('2026-11-04T12:00:00+02:00', '2026-11-04T12:30:00+02:00', null, 2)]),
+      'svc-wash': capacityAvailability([
+        slot('2026-11-04T12:00:00+02:00', '2026-11-04T12:30:00+02:00', null, 2),
+      ]),
     };
     expect(findConflictingEntries([washEntry], fresh)).toEqual([]);
-    expect(findConflictingEntries([washEntry], { 'svc-wash': capacityAvailability([]) })).toEqual([washEntry]);
+    expect(findConflictingEntries([washEntry], { 'svc-wash': capacityAvailability([]) })).toEqual([
+      washEntry,
+    ]);
   });
 
   it("doesn't blame an entry whose availability couldn't be refetched", () => {

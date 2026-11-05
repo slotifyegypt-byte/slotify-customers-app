@@ -24,7 +24,10 @@ export function isSlotConflict(error: unknown): boolean {
  * services whose slot was found gone (other draft entries may be the
  * culprit, not the one on screen).
  */
-export function slotConflictMessage(error: unknown, conflicting: { service: { name: string } }[]): string {
+export function slotConflictMessage(
+  error: unknown,
+  conflicting: { service: { name: string } }[],
+): string {
   const names = conflicting.map((entry) => entry.service.name).join(', ');
   if (isApiError(error, 'time_in_past')) {
     const base = getBookingErrorMessage(error, 'That time has already passed — pick another'); // TODO i18n

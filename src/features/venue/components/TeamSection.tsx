@@ -1,8 +1,9 @@
-import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
+import { SectionHeader } from '@/components/SectionHeader';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, spacing, useColors } from '@/theme';
+import { spacing } from '@/theme';
 
 import type { TeamMember } from '../api/schemas';
 
@@ -10,48 +11,43 @@ interface TeamSectionProps {
   members: TeamMember[];
 }
 
-// Small, white-text-safe palette — cycled by a hash of the member's id so
-// each avatar fallback gets a stable-but-distinct color instead of every
-// member rendering the same brand tint (matches the design's lavender/pink
-// per-person avatars).
-function avatarColorFor(id: string, palette: readonly string[]) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i += 1) {
-    hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  }
-  return palette[Math.abs(hash) % palette.length];
-}
-
+/** "Meet the team": tidy round avatars with first name and role, in a row that bleeds to the screen edge. */
 export function TeamSection({ members }: TeamSectionProps) {
-  const colors = useColors();
-  const avatarPalette = [colors.brand, colors.accentSecondary, colors.brandAccent, colors.success, colors.warning, colors.danger];
-
   if (members.length === 0) return null;
 
   return (
-    <View style={styles.container}>
-      <ThemedText variant="h3" style={styles.title}>
-        Meet the team {/* TODO i18n */}
-      </ThemedText>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <View>
+      <SectionHeader title="Meet the team" /* TODO i18n */ />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.bleed}
+        contentContainerStyle={styles.row}
+      >
         {members.map((member) => {
           const fullName = [member.first_name, member.last_name].filter(Boolean).join(' ');
           return (
-            <View key={member.id} style={styles.member}>
-              {member.profile_picture ? (
-                <Image source={{ uri: member.profile_picture }} style={styles.avatar} contentFit="cover" />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: avatarColorFor(member.id, avatarPalette) }]}>
-                  <ThemedText variant="h3" color="textInverse">
-                    {member.first_name.charAt(0).toUpperCase()}
-                  </ThemedText>
-                </View>
-              )}
+            <View
+              key={member.id}
+              style={styles.member}
+              accessible
+              accessibilityLabel={member.role_name ? `${fullName}, ${member.role_name}` : fullName}
+            >
+              <Avatar
+                uri={member.profile_picture}
+                label={member.first_name.charAt(0).toUpperCase()}
+                size={64}
+              />
               <ThemedText variant="bodyMedium" numberOfLines={1} style={styles.name}>
-                {fullName}
+                {member.first_name}
               </ThemedText>
               {member.role_name ? (
-                <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
+                <ThemedText
+                  variant="caption"
+                  color="textSecondary"
+                  numberOfLines={2}
+                  style={styles.name}
+                >
                   {member.role_name}
                 </ThemedText>
               ) : null}
@@ -64,10 +60,8 @@ export function TeamSection({ members }: TeamSectionProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
-  title: { marginBottom: spacing.sm },
-  member: { width: 88, marginRight: spacing.sm, alignItems: 'center' },
-  avatar: { width: 64, height: 64, borderRadius: radius.pill, marginBottom: spacing.xxs },
-  avatarFallback: { alignItems: 'center', justifyContent: 'center' },
-  name: { textAlign: 'center' },
+  bleed: { marginHorizontal: -spacing.gutter },
+  row: { paddingHorizontal: spacing.gutter, gap: spacing.md },
+  member: { width: 84, alignItems: 'center', gap: 2 },
+  name: { textAlign: 'center', alignSelf: 'stretch' },
 });

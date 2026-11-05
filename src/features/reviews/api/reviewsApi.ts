@@ -34,7 +34,10 @@ export async function createReview(payload: CreateReviewPayload): Promise<VenueR
 
 // RLS hides rows that aren't the customer's own, so such an update matches
 // nothing and succeeds with zero rows — surface that as forbidden.
-export async function updateReview(reviewId: string, payload: UpdateReviewPayload): Promise<VenueReview> {
+export async function updateReview(
+  reviewId: string,
+  payload: UpdateReviewPayload,
+): Promise<VenueReview> {
   const { data, error } = await supabase
     .from('reviews')
     .update(payload)
@@ -80,7 +83,9 @@ export async function getCustomerReviews(customerId: string): Promise<CustomerRe
   const branchIds = [...new Set(rows.map((row) => row.branch_id))];
   const cards = await supabase.from('branch_cards').select('*').in('id', branchIds);
   if (cards.error) throw fromPostgrest(cards.error);
-  const stores = new Map(((cards.data ?? []) as BranchCardRow[]).map((card) => [card.id, toStore(card)]));
+  const stores = new Map(
+    ((cards.data ?? []) as BranchCardRow[]).map((card) => [card.id, toStore(card)]),
+  );
 
   return rows.map((row) => ({
     ...toReview(row),

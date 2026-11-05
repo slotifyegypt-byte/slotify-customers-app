@@ -3,10 +3,19 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useTranslation } from 'react-i18next';
 import type { ColorValue } from 'react-native';
 
+import { FloatingTabBar } from '@/components/FloatingTabBar';
 import { useColors } from '@/theme';
 
 function makeTabIcon(outline: SymbolViewProps['name'], filled: SymbolViewProps['name']) {
-  function TabIcon({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) {
+  function TabIcon({
+    color,
+    size,
+    focused,
+  }: {
+    color: ColorValue;
+    size: number;
+    focused: boolean;
+  }) {
     return <SymbolView name={focused ? filled : outline} tintColor={color} size={size} />;
   }
   return TabIcon;
@@ -18,19 +27,11 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.tabActive,
         tabBarInactiveTintColor: colors.tabInactive,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopWidth: 0,
-          shadowColor: '#000000',
-          shadowOpacity: 0.06,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: -2 },
-        },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       }}
     >
       <Tabs.Screen

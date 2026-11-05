@@ -1,13 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
 import type { AvailabilityParams } from '@/features/booking/api/bookingApi';
 import { bookingKeys } from '@/features/booking/api/queryKeys';
@@ -17,11 +21,16 @@ import { SlotGrid } from '@/features/booking/components/SlotGrid';
 import { useAvailability } from '@/features/booking/hooks/useAvailability';
 import { useBookingDetail, useRescheduleBooking } from '@/features/booking/hooks/useBookingDetail';
 import { useSingleFlight } from '@/features/booking/hooks/useSingleFlight';
-import { getBookingErrorMessage, isSlotConflict, slotConflictMessage } from '@/features/booking/utils/bookingErrors';
+import {
+  getBookingErrorMessage,
+  isSlotConflict,
+  slotConflictMessage,
+} from '@/features/booking/utils/bookingErrors';
 import { isApiError } from '@/lib/api/errors';
-import { branchToday } from '@/lib/time/branchTime';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { branchToday, formatHour } from '@/lib/time/branchTime';
+import { enter, radius, spacing, useColors } from '@/theme';
 
+import { dayLabel } from '../utils/dateLabels';
 import { rescheduleAvailabilityParams } from '../utils/rescheduleParams';
 
 /**
@@ -38,10 +47,12 @@ import { rescheduleAvailabilityParams } from '../utils/rescheduleParams';
  */
 export function RescheduleBookingScreen() {
   const colors = useColors();
-  const styles = createStyles(colors);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
-  const { bookingId, bookingServiceId } = useLocalSearchParams<{ bookingId: string; bookingServiceId: string }>();
+  const { bookingId, bookingServiceId } = useLocalSearchParams<{
+    bookingId: string;
+    bookingServiceId: string;
+  }>();
   const booking = useBookingDetail(bookingId);
   const reschedule = useRescheduleBooking();
   // A second tap before the button disables must not send a second PATCH.
@@ -76,7 +87,10 @@ export function RescheduleBookingScreen() {
       setFormError(null);
       try {
         // The slot's UTC instant goes up as-is; the server derives the end.
-        await reschedule.mutateAsync({ itemId: bookingService.id, starts_at: selectedSlot.start_time });
+        await reschedule.mutateAsync({
+          itemId: bookingService.id,
+          starts_at: selectedSlot.start_time,
+        });
         router.back();
       } catch (error) {
         // slot_taken / slot_unavailable: someone got there first; time_in_past:
@@ -86,7 +100,9 @@ export function RescheduleBookingScreen() {
           setSelectedSlot(null);
           setFormError(slotConflictMessage(error, []));
           if (availabilityParams) {
-            queryClient.invalidateQueries({ queryKey: bookingKeys.availability(availabilityParams) });
+            queryClient.invalidateQueries({
+              queryKey: bookingKeys.availability(availabilityParams),
+            });
           }
           return;
         }
@@ -94,12 +110,29 @@ export function RescheduleBookingScreen() {
       }
     });
 
+  const relative = {
+    today: t('activity.relative.today'),
+    tomorrow: t('activity.relative.tomorrow'),
+    yesterday: t('activity.relative.yesterday'),
+  };
+
   if (booking.isLoading) {
     return (
-      <Screen style={styles.container}>
-        <ScreenHeader title={/* TODO i18n */ 'Reschedule'} />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.brand} />
+      <Screen edges={['top']}>
+        <ScreenHeader title={t('activity.reschedule.title')} />
+        <View style={styles.content}>
+          <Skeleton height={72} radius={radius.lg} />
+          <Skeleton width="40%" height={20} />
+          <View style={styles.row}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} width={52} height={64} radius={radius.md} />
+            ))}
+          </View>
+          <View style={styles.grid}>
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} width="31%" height={42} radius={radius.md} />
+            ))}
+          </View>
         </View>
       </Screen>
     );
@@ -107,10 +140,11 @@ export function RescheduleBookingScreen() {
 
   if (booking.isError || !booking.data || !bookingService || !selectedDate) {
     return (
-      <Screen style={styles.container}>
-        <ScreenHeader title={/* TODO i18n */ 'Reschedule'} />
-        <View style={styles.centered}>
+      <Screen edges={['top']}>
+        <ScreenHeader title={t('activity.reschedule.title')} />
+        <View style={styles.flex}>
           <EmptyState
+            icon="cloud-offline-outline"
             title={t('common.errorGeneric')}
             actionLabel={t('common.retry')}
             onAction={() => booking.refetch()}
@@ -120,64 +154,137 @@ export function RescheduleBookingScreen() {
     );
   }
 
+  const current = `${dayLabel(booking.data.booking_date, booking.data.timezone, i18n.language, relative)} · ${formatHour(
+    booking.data.booking_date,
+    booking.data.timezone,
+  )}`;
+
   return (
-    <Screen style={styles.container}>
-      <ScreenHeader title={/* TODO i18n */ 'Reschedule'} subtitle={bookingService.service_name ?? undefined} />
-      <View style={styles.content}>
-        <ThemedText variant="bodyMedium" style={styles.label}>
-          {/* TODO i18n */}
-          Date & Time
-        </ThemedText>
-        <DateStrip selectedDate={selectedDate} timezone={booking.data.timezone} onSelectDate={handleSelectDate} />
-        <View style={styles.slotGridWrap}>
-          <SlotGrid
-            availability={availability.data}
-            isLoading={availability.isLoading}
-            isError={availability.isError}
-            error={availability.error}
-            selectedSlot={selectedSlot}
-            onSelectSlot={setSelectedSlot}
+    <Screen edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScreenHeader
+          title={t('activity.reschedule.title')}
+          subtitle={bookingService.service_name ?? undefined}
+        />
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={enter(0)} style={styles.block}>
+            <Card>
+              <View style={styles.currentRow}>
+                <View style={[styles.well, { backgroundColor: colors.brandTint }]}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.brandAccent} />
+                </View>
+                <View style={styles.flex}>
+                  <ThemedText variant="caption" color="textTertiary">
+                    {t('activity.reschedule.current')}
+                  </ThemedText>
+                  <ThemedText variant="bodyMedium">{current}</ThemedText>
+                </View>
+              </View>
+            </Card>
+            <ThemedText variant="caption" color="textSecondary">
+              {t('activity.reschedule.reassure')}
+            </ThemedText>
+          </Animated.View>
+
+          <Animated.View entering={enter(1)} style={styles.block}>
+            <ThemedText variant="h3" accessibilityRole="header">
+              {t('activity.reschedule.pickTime')}
+            </ThemedText>
+            <DateStrip
+              selectedDate={selectedDate}
+              timezone={booking.data.timezone}
+              onSelectDate={handleSelectDate}
+            />
+          </Animated.View>
+
+          <Animated.View entering={enter(2)}>
+            <SlotGrid
+              availability={availability.data}
+              isLoading={availability.isLoading}
+              isError={availability.isError}
+              error={availability.error}
+              selectedSlot={selectedSlot}
+              onSelectSlot={setSelectedSlot}
+            />
+          </Animated.View>
+
+          {formError ? (
+            <View style={[styles.errorBanner, { backgroundColor: colors.dangerTint }]}>
+              <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+              <ThemedText variant="caption" color="danger" style={styles.flex}>
+                {formError}
+              </ThemedText>
+            </View>
+          ) : null}
+        </ScrollView>
+
+        <View
+          style={[
+            styles.footer,
+            { backgroundColor: colors.surface, borderTopColor: colors.border },
+          ]}
+        >
+          <ThemedText variant="caption" color="textSecondary" style={styles.summary}>
+            {selectedSlot
+              ? `${t('activity.reschedule.newTime')}: ${dayLabel(
+                  selectedSlot.start_time,
+                  booking.data.timezone,
+                  i18n.language,
+                  relative,
+                )} · ${selectedSlot.time_slot_str}`
+              : t('activity.reschedule.pickToContinue')}
+          </ThemedText>
+          <Button
+            label={t('activity.reschedule.confirm')}
+            onPress={handleConfirm}
+            loading={reschedule.isPending}
+            disabled={!selectedSlot}
           />
         </View>
-        {formError ? (
-          <View style={styles.errorBanner}>
-            <ThemedText variant="caption" color="danger">
-              {formError}
-            </ThemedText>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.footer}>
-        <Button
-          label={/* TODO i18n */ 'Confirm New Time'}
-          variant="accent"
-          onPress={handleConfirm}
-          loading={reschedule.isPending}
-          disabled={!selectedSlot}
-        />
-      </View>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { flex: 1, padding: spacing.md },
-  label: { marginBottom: spacing.xs },
-  slotGridWrap: { marginTop: spacing.sm },
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.lg,
+    gap: spacing.lg,
+  },
+  block: { gap: spacing.sm },
+  currentRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2 },
+  well: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  row: { flexDirection: 'row', gap: spacing.xs },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   errorBanner: {
-    backgroundColor: colors.backgroundMuted,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
     borderRadius: radius.md,
-    padding: spacing.sm,
-    marginTop: spacing.sm,
+    padding: spacing.sm + 2,
   },
   footer: {
-    padding: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
   },
-  });
+  summary: { textAlign: 'center' },
+});

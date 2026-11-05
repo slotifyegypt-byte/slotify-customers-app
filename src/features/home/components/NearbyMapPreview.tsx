@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
+import { PressableScale } from '@/components/PressableScale';
 import { ThemedText } from '@/components/ThemedText';
 import { ANDROID_MAP_STYLE_DARK, ANDROID_MAP_STYLE_LIGHT, MAP_PROVIDER } from '@/lib/maps';
 import { radius, shadows, spacing, useColors, useTheme, type Colors } from '@/theme';
@@ -32,7 +33,13 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
   const styles = createStyles(colors);
 
   return (
-    <Pressable onPress={onPress} style={styles.card}>
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('home.nearbyMapLabel')}
+      scaleTo={0.99}
+      style={styles.card}
+    >
       {region ? (
         <MapView
           // `initialRegion` only applies on first mount — remount when the
@@ -57,8 +64,17 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
           }}
         >
           {pins.map((pin) => (
-            <Marker key={pin.id} coordinate={{ latitude: pin.latitude, longitude: pin.longitude }} anchor={{ x: 0.5, y: 0.5 }}>
-              <MapPin categorySlug={pin.categorySlug} color={pinColorForCategory(pin.categorySlug, colors)} isOpen={pin.isOpen} size={26} />
+            <Marker
+              key={pin.id}
+              coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <MapPin
+                categorySlug={pin.categorySlug}
+                color={pinColorForCategory(pin.categorySlug, colors)}
+                isOpen={pin.isOpen}
+                size={26}
+              />
             </Marker>
           ))}
         </MapView>
@@ -73,22 +89,30 @@ export function NearbyMapPreview({ pins, region, onPress }: NearbyMapPreviewProp
         <ThemedText variant="captionStrong">{t('home.nearbyMapLabel')}</ThemedText>
       </View>
       <View style={styles.expandButton}>
-        <Ionicons name="expand-outline" size={16} color={colors.textPrimary} />
+        <View style={styles.expandDisc}>
+          <Ionicons name="expand-outline" size={17} color={colors.textPrimary} />
+        </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
     card: {
-      height: 140,
+      height: 152,
       borderRadius: radius.lg,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: colors.border,
       overflow: 'hidden',
       position: 'relative',
       ...shadows.md,
     },
-    fallback: { backgroundColor: colors.backgroundMuted, alignItems: 'center', justifyContent: 'center' },
+    fallback: {
+      backgroundColor: colors.backgroundMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     labelPill: {
       position: 'absolute',
       left: spacing.xs + 2,
@@ -105,16 +129,14 @@ const createStyles = (colors: Colors) =>
       paddingVertical: spacing.xxs + 2,
       borderRadius: radius.pill,
     },
-    expandButton: {
-      position: 'absolute',
-      right: spacing.xs + 2,
-      bottom: spacing.xs + 2,
-      width: 34,
-      height: 34,
-      borderRadius: radius.pill,
+    expandButton: { position: 'absolute', right: spacing.xs + 2, bottom: spacing.xs + 2 },
+    expandDisc: {
       backgroundColor: colors.surface,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      ...shadows.sm,
+      ...shadows.md,
     },
   });

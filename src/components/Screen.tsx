@@ -8,13 +8,16 @@ interface ScreenProps extends ViewProps {
   background?: ColorToken;
 }
 
-export function Screen({ children, style, edges = ['top', 'bottom'], background = 'background', ...rest }: ScreenProps) {
+export function Screen({
+  children,
+  style,
+  edges = ['top', 'bottom'],
+  background = 'background',
+  ...rest
+}: ScreenProps) {
   const colors = useColors();
   return (
-    <SafeAreaView
-      edges={edges}
-      style={[styles.flex, { backgroundColor: colors[background] }]}
-    >
+    <SafeAreaView edges={edges} style={[styles.flex, { backgroundColor: colors[background] }]}>
       <View style={[styles.flex, style]} {...rest}>
         {children}
       </View>

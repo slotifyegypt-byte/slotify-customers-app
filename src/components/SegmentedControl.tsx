@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
+import { radius, shadows, spacing, useColors } from '@/theme';
 
+import { PressableScale } from './PressableScale';
 import { ThemedText } from './ThemedText';
 
 interface SegmentOption<T extends string> {
@@ -13,17 +14,11 @@ interface SegmentedControlProps<T extends string> {
   options: SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
-  // 'accent' (bright purple) is the default, used for primary view-switch
-  // controls (venue tab bar, Activity Active/Past). The reviews sort toggle
-  // ("Most recent" / "Highest rated") is the one place the mockups use the
-  // deep-navy `brand` fill instead — a secondary/lower-emphasis control
-  // sharing a screen with an `accent`-filled control above it.
+  /** accent: a white thumb on the track (the default). brand: a filled brand thumb. */
   tone?: 'accent' | 'brand';
 }
 
-// Shared pill-style segmented control — one implementation backing the
-// Services/About/Reviews tab bar, the Reviews sort toggle, and the
-// Activity Active/Past switch, instead of three near-identical one-offs.
+/** Two to four choices in one pill: the chosen one sits on a raised thumb. */
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -31,51 +26,47 @@ export function SegmentedControl<T extends string>({
   tone = 'accent',
 }: SegmentedControlProps<T>) {
   const colors = useColors();
-  const styles = createStyles(colors);
   return (
-    <View style={styles.track}>
+    <View style={[styles.track, { backgroundColor: colors.backgroundMuted }]}>
       {options.map((option) => {
         const selected = option.key === value;
+        const filled = selected && tone === 'brand';
         return (
-          <Pressable
+          <PressableScale
             key={option.key}
             onPress={() => onChange(option.key)}
-            style={[styles.segment, selected && (tone === 'brand' ? styles.segmentSelectedBrand : styles.segmentSelected)]}
             accessibilityRole="tab"
+            accessibilityLabel={option.label}
             accessibilityState={{ selected }}
+            scaleTo={0.97}
+            style={[
+              styles.segment,
+              selected
+                ? [shadows.sm, { backgroundColor: filled ? colors.brand : colors.surface }]
+                : null,
+            ]}
           >
             <ThemedText
-              variant="bodyMedium"
-              color={selected ? 'textOnBrand' : 'textSecondary'}
-              style={selected && styles.labelSelected}
+              variant={selected ? 'captionStrong' : 'caption'}
+              color={filled ? 'textOnBrand' : selected ? 'textPrimary' : 'textTertiary'}
+              style={styles.label}
             >
               {option.label}
             </ThemedText>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    track: {
-      flexDirection: 'row',
-      backgroundColor: colors.backgroundMuted,
-      borderRadius: radius.pill,
-      padding: 4,
-    },
-    segment: {
-      flex: 1,
-      paddingVertical: spacing.xs,
-      borderRadius: radius.pill,
-      alignItems: 'center',
-    },
-    // Bright-purple "selected" fill from the mockups (colors.brandAccent) —
-    // `colors.brand` is the deep-navy tone reserved for dark header/hero
-    // surfaces, not interactive selected states.
-    segmentSelected: { backgroundColor: colors.brandAccent },
-    segmentSelectedBrand: { backgroundColor: colors.brand },
-    labelSelected: { fontFamily: fontFamily.bodySemiBold },
-  });
+const styles = StyleSheet.create({
+  track: { flexDirection: 'row', borderRadius: radius.pill, padding: 4 },
+  segment: {
+    flex: 1,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+  },
+  label: { fontSize: 14, lineHeight: 18 },
+});

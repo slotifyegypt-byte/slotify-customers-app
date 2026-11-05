@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
-import { useColors, type Colors } from '@/theme';
+import { hueFor, useColors, type Colors } from '@/theme';
 
 import { ThemedText } from './ThemedText';
 
@@ -10,20 +11,21 @@ interface AvatarProps {
   /** Fallback initial shown when there's no photo yet. */
   label: string;
   size?: number;
-  /** Shows the small purple camera badge in the bottom-right corner. */
+  /** Shows the small camera badge in the bottom-right corner. */
   editable?: boolean;
   onPressEdit?: () => void;
 }
 
 /**
- * Circular profile photo + optional camera-badge affordance, shared by the
- * Profile header (small) and Edit Profile (large) so both reuse the exact
- * same visual pattern instead of two separate implementations.
+ * A round profile photo, or the person's initial on a soft wash of their own hue, plus the optional camera
+ * badge. Shared by the Profile header (small) and Edit Profile (large).
  */
 export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarProps) {
+  const { t } = useTranslation();
   const colors = useColors();
   const styles = createStyles(colors);
-  const badgeSize = Math.max(22, Math.round(size * 0.34));
+  const badgeSize = Math.max(24, Math.round(size * 0.34));
+  const hue = hueFor(label);
 
   return (
     <View style={{ width: size, height: size }}>
@@ -33,10 +35,10 @@ export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarP
         <View
           style={[
             styles.fallback,
-            { width: size, height: size, borderRadius: size / 2 },
+            { width: size, height: size, borderRadius: size / 2, backgroundColor: `${hue}22` },
           ]}
         >
-          <ThemedText variant={size >= 80 ? 'h1' : 'h3'} color="textOnBrand">
+          <ThemedText variant={size >= 80 ? 'h1' : 'h3'} style={{ color: hue }}>
             {label}
           </ThemedText>
         </View>
@@ -44,7 +46,7 @@ export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarP
       {editable ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Change profile photo" // TODO i18n
+          accessibilityLabel={t('editProfile.changePhoto')}
           hitSlop={8}
           onPress={onPressEdit}
           style={[
@@ -67,10 +69,10 @@ export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarP
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
-    fallback: { backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
+    fallback: { alignItems: 'center', justifyContent: 'center' },
     badge: {
       position: 'absolute',
-      backgroundColor: colors.brandAccent,
+      backgroundColor: colors.brand,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 2,

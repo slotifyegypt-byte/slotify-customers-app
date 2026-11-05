@@ -2,19 +2,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { PressableScale } from '@/components/PressableScale';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { TextField } from '@/components/TextField';
 import { ThemedText } from '@/components/ThemedText';
 import { formatMoney } from '@/lib/money';
 import { branchToday } from '@/lib/time/branchTime';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { enter, radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import type { AvailabilitySlot, Service } from '../api/schemas';
 import { useAvailability } from '../hooks/useAvailability';
 import { useConfirmBooking } from '../hooks/useConfirmBooking';
-import { useBookingDraftStore, useDraftEntries, type BookingDraftEntry } from '../state/bookingDraftStore';
-import { availabilityParamsFor, getDraftBlockedIntervals, withDraftHolds } from '../utils/draftConflicts';
+import {
+  useBookingDraftStore,
+  useDraftEntries,
+  type BookingDraftEntry,
+} from '../state/bookingDraftStore';
+import { formatDraftDateLabel } from '../utils/dates';
+import {
+  availabilityParamsFor,
+  getDraftBlockedIntervals,
+  withDraftHolds,
+} from '../utils/draftConflicts';
 
 import { DateStrip } from './DateStrip';
 import { SlotGrid } from './SlotGrid';
@@ -31,6 +45,8 @@ interface BookingFlowProps {
   initialEmployeeId?: string | null;
   initialDate?: string;
   initialSlot?: AvailabilitySlot | null;
+  /** A heads-up shown above the service summary (rebook uses it when the original had several services). */
+  notice?: string;
   /** Gets the new booking's id; read the full booking with `getBooking`. */
   onBooked: (booking: { id: string }) => void;
 }
@@ -55,10 +71,11 @@ export function BookingFlow({
   initialEmployeeId = null,
   initialDate,
   initialSlot = null,
+  notice,
   onBooked,
 }: BookingFlowProps) {
   const colors = useColors();
-  const styles = createStyles(colors);
+  const styles = { ...baseStyles, ...createStyles(colors) };
   const { t } = useTranslation();
   const [employeeId, setEmployeeId] = useState<string | null>(initialEmployeeId);
   const [selectedDate, setSelectedDate] = useState(() => initialDate ?? branchToday(timezone));
@@ -84,7 +101,8 @@ export function BookingFlow({
     () => Object.values(draftEntries).filter((entry) => entry.service.id !== service.id),
     [draftEntries, service.id],
   );
-  const totalPrice = service.price + otherEntries.reduce((sum, entry) => sum + entry.service.price, 0);
+  const totalPrice =
+    service.price + otherEntries.reduce((sum, entry) => sum + entry.service.price, 0);
 
   // Specialist/time slots already claimed by this service's siblings in the
   // current draft — invisible to the server's availability since they aren't
@@ -139,7 +157,10 @@ export function BookingFlow({
   const handleConfirm = async () => {
     if (!selectedSlot) return;
     setFormError(null);
-    const outcome = await confirm([currentEntry(selectedSlot), ...otherEntries], t('common.errorGeneric'));
+    const outcome = await confirm(
+      [currentEntry(selectedSlot), ...otherEntries],
+      t('common.errorGeneric'),
+    );
     if (outcome.status === 'busy') return; // double tap while the first confirm runs
     if (outcome.status === 'booked') {
       onBooked({ id: outcome.id });
@@ -151,83 +172,116 @@ export function BookingFlow({
     // was the culprit — or when the culprit couldn't be pinpointed, since
     // this is the slot the customer is looking at.
     const { conflicting } = outcome;
-    if (conflicting && (conflicting.length === 0 || conflicting.some((entry) => entry.service.id === service.id))) {
+    if (
+      conflicting &&
+      (conflicting.length === 0 || conflicting.some((entry) => entry.service.id === service.id))
+    ) {
       setSelectedSlot(null);
     }
   };
 
+  const hasSpecialistStep = service.requires_specialist;
+  const summaryLine = selectedSlot
+    ? [
+        formatDraftDateLabel(selectedDate, timezone),
+        selectedSlot.time_slot_str,
+        otherEntries.length > 0 ? `+${otherEntries.length} more` /* TODO i18n */ : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : 'Choose a time to continue'; // TODO i18n
+
   return (
     <View style={styles.flex}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-          <Ionicons name="chevron-back" size={18} color={colors.brand} />
-        </Pressable>
-        <View style={styles.headerText}>
-          <ThemedText variant="h2" numberOfLines={1}>
-            {service.name}
-          </ThemedText>
-          {storeName ? (
-            <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
-              {storeName}
-            </ThemedText>
-          ) : null}
-        </View>
-      </View>
+      <ScreenHeader title={service.name} subtitle={storeName} />
 
-      <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.infoCard}>
-          <View style={styles.infoItem}>
-            <View style={styles.infoIcon}>
-              <Ionicons name="pricetag-outline" size={16} color={colors.brandAccent} />
-            </View>
-            <View>
-              <ThemedText variant="caption" color="textSecondary">
-                {/* TODO i18n */}
-                Price
-              </ThemedText>
-              <ThemedText variant="bodyMedium">
-                {formatMoney(service.price, service.currency)}
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.infoItem}>
-            <View style={styles.infoIcon}>
-              <Ionicons name="time-outline" size={16} color={colors.brandAccent} />
-            </View>
-            <View>
-              <ThemedText variant="caption" color="textSecondary">
-                {/* TODO i18n */}
-                Duration
-              </ThemedText>
-              <ThemedText variant="bodyMedium">
-                {/* TODO i18n */}
-                {service.duration_minutes} min
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-
-        {service.requires_specialist ? (
-          <View style={styles.section}>
-            <ThemedText variant="bodyMedium" style={styles.label}>
-              {/* TODO i18n */}
-              Specialist
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {notice ? (
+          <Animated.View entering={enter(0)} style={styles.notice}>
+            <Ionicons name="information-circle-outline" size={20} color={colors.warning} />
+            <ThemedText variant="caption" color="textPrimary" style={styles.noticeText}>
+              {notice}
             </ThemedText>
+          </Animated.View>
+        ) : null}
+
+        <Animated.View entering={enter(0)}>
+          <Card>
+            {service.description ? (
+              <ThemedText variant="body" color="textSecondary" style={styles.description}>
+                {service.description}
+              </ThemedText>
+            ) : null}
+            <View style={styles.facts}>
+              <View style={styles.fact}>
+                <View style={[styles.factIcon, { backgroundColor: colors.brandTint }]}>
+                  <Ionicons name="time-outline" size={17} color={colors.brandAccent} />
+                </View>
+                <View>
+                  <ThemedText variant="caption" color="textTertiary">
+                    {/* TODO i18n */}
+                    Duration
+                  </ThemedText>
+                  <ThemedText variant="bodyMedium">
+                    {/* TODO i18n */}
+                    {service.duration_minutes} min
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.fact}>
+                <View style={[styles.factIcon, { backgroundColor: colors.brandTint }]}>
+                  <Ionicons name="pricetag-outline" size={17} color={colors.brandAccent} />
+                </View>
+                <View>
+                  <ThemedText variant="caption" color="textTertiary">
+                    {/* TODO i18n */}
+                    Price
+                  </ThemedText>
+                  <ThemedText variant="bodyMedium">
+                    {formatMoney(service.price, service.currency)}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+          </Card>
+        </Animated.View>
+
+        {hasSpecialistStep ? (
+          <Animated.View entering={enter(1)} style={styles.section}>
+            <StepHeading
+              number={1}
+              title="Choose a professional" /* TODO i18n */
+              done
+              aside={employeeId === null ? 'Any' /* TODO i18n */ : undefined}
+            />
             <SpecialistPicker
               storeId={storeId}
               serviceId={service.id}
               selectedEmployeeId={employeeId}
               onSelect={handleSelectEmployee}
+              bleed={spacing.gutter}
             />
-          </View>
+          </Animated.View>
         ) : null}
 
-        <View style={styles.section}>
-          <ThemedText variant="bodyMedium" style={styles.label}>
-            {/* TODO i18n */}
-            Date & Time
-          </ThemedText>
-          <DateStrip selectedDate={selectedDate} timezone={timezone} onSelectDate={handleSelectDate} />
+        <Animated.View entering={enter(2)} style={styles.section}>
+          <StepHeading
+            number={hasSpecialistStep ? 2 : 1}
+            title="Pick a day and time" /* TODO i18n */
+            done={selectedSlot !== null}
+            aside={formatDraftDateLabel(selectedDate, timezone)}
+          />
+          <DateStrip
+            selectedDate={selectedDate}
+            timezone={timezone}
+            onSelectDate={handleSelectDate}
+            bleed={spacing.gutter}
+          />
           <View style={styles.slotGridWrap}>
             <SlotGrid
               availability={availabilityWithHolds}
@@ -238,161 +292,191 @@ export function BookingFlow({
               onSelectSlot={handleSelectSlot}
             />
           </View>
-        </View>
+        </Animated.View>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setNoteOpen((open) => !open)}
-          style={styles.noteRow}
-        >
-          <Ionicons name="document-text-outline" size={18} color={colors.brandAccent} />
-          <ThemedText variant="bodyMedium" color="brandAccent" style={styles.noteLabel}>
-            {/* TODO i18n */}
-            Add a note (optional)
-          </ThemedText>
-          <Ionicons name={noteOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
-        </Pressable>
-        {noteOpen ? (
-          <TextInput
-            value={note}
-            onChangeText={setNote}
-            placeholder="Anything the specialist should know?" // TODO i18n
-            placeholderTextColor={colors.textSecondary}
-            style={styles.noteInput}
-            multiline
+        <Animated.View entering={enter(3)} style={styles.section}>
+          <Card padding="none">
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityLabel="Add a note (optional)" // TODO i18n
+              accessibilityState={{ expanded: noteOpen }}
+              onPress={() => setNoteOpen((open) => !open)}
+              scaleTo={0.99}
+              style={styles.noteRow}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.brandAccent} />
+              <ThemedText variant="bodyMedium" style={styles.noteLabel}>
+                {/* TODO i18n */}
+                Add a note (optional)
+              </ThemedText>
+              <Ionicons
+                name={noteOpen ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={colors.textTertiary}
+              />
+            </PressableScale>
+            {noteOpen ? (
+              <View style={styles.noteBody}>
+                <TextField
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Anything the specialist should know?" // TODO i18n
+                  multiline
+                  style={styles.noteInput}
+                />
+              </View>
+            ) : null}
+          </Card>
+
+          <Button
+            label={/* TODO i18n */ 'Add another service'}
+            variant="ghost"
+            icon="add"
+            disabled={!selectedSlot}
+            onPress={handleAddService}
           />
-        ) : null}
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !selectedSlot }}
-          disabled={!selectedSlot}
-          onPress={handleAddService}
-          style={styles.addServiceButton}
-        >
-          <ThemedText
-            variant="bodyMedium"
-            color={selectedSlot ? 'brandAccent' : 'textSecondary'}
-            style={styles.addServiceLabel}
-          >
-            {/* TODO i18n */}+ Add Service
-          </ThemedText>
-        </Pressable>
+        </Animated.View>
       </ScrollView>
 
-      {formError ? (
-        <View style={styles.errorBanner}>
-          <ThemedText variant="caption" color="danger">
-            {formError}
-          </ThemedText>
+      <View style={styles.bar}>
+        {formError ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+            <ThemedText variant="caption" color="danger" style={styles.errorText}>
+              {formError}
+            </ThemedText>
+          </View>
+        ) : null}
+        <View style={styles.barRow}>
+          <View style={styles.barSummary}>
+            <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
+              {summaryLine}
+            </ThemedText>
+            <ThemedText variant="h3">{formatMoney(totalPrice, service.currency)}</ThemedText>
+          </View>
+          <Button
+            label={/* TODO i18n */ 'Confirm booking'}
+            fullWidth={false}
+            style={styles.confirmButton}
+            onPress={handleConfirm}
+            loading={isPending}
+            disabled={!selectedSlot}
+          />
         </View>
-      ) : null}
-
-      <View style={styles.footer}>
-        <View>
-          <ThemedText variant="caption" color="textSecondary">
-            {/* TODO i18n */}
-            Total
-          </ThemedText>
-          <ThemedText variant="h3">
-            {formatMoney(totalPrice, service.currency)}
-          </ThemedText>
-        </View>
-        <Button
-          label={/* TODO i18n */ 'Confirm Booking'}
-          variant="accent"
-          fullWidth={false}
-          style={styles.confirmButton}
-          onPress={handleConfirm}
-          loading={isPending}
-          disabled={!selectedSlot}
-        />
       </View>
+    </View>
+  );
+}
+
+/** A numbered section title; the number becomes a brand check once the step has a choice. */
+function StepHeading({
+  number,
+  title,
+  done,
+  aside,
+}: {
+  number: number;
+  title: string;
+  done: boolean;
+  aside?: string;
+}) {
+  const colors = useColors();
+  return (
+    <View style={baseStyles.stepRow}>
+      <View
+        style={[baseStyles.stepBadge, { backgroundColor: done ? colors.brand : colors.brandTint }]}
+      >
+        {done ? (
+          <Ionicons name="checkmark" size={15} color={colors.textOnBrand} />
+        ) : (
+          <ThemedText variant="captionStrong" color="brandAccent">
+            {number}
+          </ThemedText>
+        )}
+      </View>
+      <ThemedText variant="h3" style={baseStyles.stepTitle} numberOfLines={1}>
+        {title}
+      </ThemedText>
+      {aside ? (
+        <ThemedText variant="caption" color="textSecondary">
+          {aside}
+        </ThemedText>
+      ) : null}
     </View>
   );
 }
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
+    notice: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.warningTint,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+    },
+    noticeText: { flex: 1 },
+    bar: {
+      backgroundColor: colors.surface,
+      borderTopWidth: StyleSheet.hairlineWidth * 2,
+      borderTopColor: colors.border,
+      paddingHorizontal: spacing.gutter,
+      paddingVertical: spacing.sm,
+      gap: spacing.xs,
+      ...shadows.md,
+    },
+    errorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.dangerTint,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+    },
+  });
+
+const baseStyles = StyleSheet.create({
   flex: { flex: 1 },
-  header: {
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xl,
+    gap: 28,
+  },
+  description: { marginBottom: spacing.sm },
+  facts: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.lg, rowGap: spacing.sm },
+  fact: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
+  factIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  section: { gap: spacing.sm },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
+  stepBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepTitle: { flex: 1 },
+  slotGridWrap: { marginTop: spacing.xs },
+  noteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.divider,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerText: { flex: 1, minWidth: 0 },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.divider,
-    padding: spacing.sm,
-    marginBottom: spacing.lg,
-    gap: spacing.lg,
-  },
-  infoItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  infoIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  section: { marginBottom: spacing.lg },
-  label: { marginBottom: spacing.xs },
-  slotGridWrap: { marginTop: spacing.sm },
-  noteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.divider,
+    minHeight: 56,
   },
   noteLabel: { flex: 1 },
-  noteInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    color: colors.textPrimary,
-    minHeight: 64,
-    textAlignVertical: 'top',
-    marginBottom: spacing.sm,
-  },
-  addServiceButton: { alignSelf: 'center', paddingVertical: spacing.sm },
-  addServiceLabel: { textDecorationLine: 'underline' },
-  errorBanner: {
-    backgroundColor: colors.backgroundMuted,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.xs,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  confirmButton: { paddingHorizontal: spacing.lg, minWidth: 168 },
+  noteBody: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
+  noteInput: { minHeight: 88, textAlignVertical: 'top' },
+  errorText: { flex: 1 },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  barSummary: { flex: 1, minWidth: 0 },
+  confirmButton: { minWidth: 160 },
 });

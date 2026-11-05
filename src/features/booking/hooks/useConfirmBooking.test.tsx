@@ -32,7 +32,12 @@ const slot = (start: string, employee: string): AvailabilitySlot => ({
   time_slot_str: start,
 });
 
-const entry = (serviceId: string, start: string, employee: string, note?: string): BookingDraftEntry => ({
+const entry = (
+  serviceId: string,
+  start: string,
+  employee: string,
+  note?: string,
+): BookingDraftEntry => ({
   service: { id: serviceId, name: serviceId, requires_specialist: true } as Service,
   employeeId: null,
   date: '2026-11-04',
@@ -43,7 +48,10 @@ const entry = (serviceId: string, start: string, employee: string, note?: string
 const haircut = entry('Haircut', '2026-11-04T08:00:00.000Z', 'mona', 'Short');
 const blowDry = entry('Blow-dry', '2026-11-04T09:00:00.000Z', 'sam');
 
-const availability = (serviceId: string, slots: Record<string, AvailabilitySlot[]>): AvailabilityResponse => ({
+const availability = (
+  serviceId: string,
+  slots: Record<string, AvailabilitySlot[]>,
+): AvailabilityResponse => ({
   store_id: 'branch-1',
   service_id: serviceId,
   date: '2026-11-04',
@@ -52,7 +60,11 @@ const availability = (serviceId: string, slots: Record<string, AvailabilitySlot[
   step_minutes: 15,
   price: 300,
   booking_mode: 'specialist',
-  employees: Object.entries(slots).map(([id, s]) => ({ employee_id: id, employee_name: id, available_slots: s })),
+  employees: Object.entries(slots).map(([id, s]) => ({
+    employee_id: id,
+    employee_name: id,
+    available_slots: s,
+  })),
   slots: [],
 });
 
@@ -65,7 +77,10 @@ let queryClient: QueryClient;
 async function setup() {
   // gcTime Infinity: no garbage-collection timers left running after a test.
   queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
   });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -107,7 +122,9 @@ describe('useConfirmBooking', () => {
   });
 
   it('on slot_taken drops only the conflicting entry, keeps the others and settles the spinner', async () => {
-    mockCreateBooking.mockRejectedValue(new ApiError('slot_taken', 409, 'Someone just booked this time.'));
+    mockCreateBooking.mockRejectedValue(
+      new ApiError('slot_taken', 409, 'Someone just booked this time.'),
+    );
     mockGetAvailability.mockImplementation(async (params) =>
       params.service_id === 'Haircut'
         ? availability('Haircut', { mona: [] })
@@ -141,7 +158,11 @@ describe('useConfirmBooking', () => {
     });
 
     expect(router.push).toHaveBeenCalledWith('/(tabs)/profile/edit');
-    expect(outcome).toEqual({ status: 'failed', message: 'Complete your profile before booking.', conflicting: null });
+    expect(outcome).toEqual({
+      status: 'failed',
+      message: 'Complete your profile before booking.',
+      conflicting: null,
+    });
     // Nothing removed from the draft for a non-slot error.
     expect(Object.keys(useBookingDraftStore.getState().entries)).toEqual(['Haircut', 'Blow-dry']);
   });
@@ -157,13 +178,18 @@ describe('useConfirmBooking', () => {
       outcome = await result.current.confirm([haircut], 'fallback');
     });
 
-    expect(outcome).toMatchObject({ message: 'This person does not offer this service here.', conflicting: null });
+    expect(outcome).toMatchObject({
+      message: 'This person does not offer this service here.',
+      conflicting: null,
+    });
     expect(mockGetAvailability).not.toHaveBeenCalled();
   });
 
   it('refuses more than 10 services before calling the server', async () => {
     const { result } = await setup();
-    const many = Array.from({ length: 11 }, (_, i) => entry(`s${i}`, '2026-11-04T08:00:00.000Z', 'mona'));
+    const many = Array.from({ length: 11 }, (_, i) =>
+      entry(`s${i}`, '2026-11-04T08:00:00.000Z', 'mona'),
+    );
 
     let outcome: ConfirmOutcome | undefined;
     await act(async () => {
@@ -216,7 +242,9 @@ describe('useConfirmBooking', () => {
   it('stays guarded during slot-conflict recovery', async () => {
     mockCreateBooking.mockRejectedValueOnce(new ApiError('slot_taken', 409, 'Taken.'));
     let finishRecovery!: (value: AvailabilityResponse) => void;
-    mockGetAvailability.mockImplementationOnce(() => new Promise((resolve) => (finishRecovery = resolve)));
+    mockGetAvailability.mockImplementationOnce(
+      () => new Promise((resolve) => (finishRecovery = resolve)),
+    );
     const { result } = await setup();
 
     let first!: Promise<ConfirmOutcome>;

@@ -57,7 +57,9 @@ export function useBookingChat(bookingId: string) {
   const sendMutation = useMutation({
     mutationFn: (message: string) => sendBookingMessage(bookingId, message),
     onSuccess: (sent) => {
-      queryClient.setQueryData<BookingMessage[]>(chatKeys.messages(bookingId), (prev) => mergeMessage(prev, sent));
+      queryClient.setQueryData<BookingMessage[]>(chatKeys.messages(bookingId), (prev) =>
+        mergeMessage(prev, sent),
+      );
     },
   });
 
@@ -76,7 +78,12 @@ export function useBookingChat(bookingId: string) {
       .channel(`booking-${bookingId}-${subscriptionSeq}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'booking_messages', filter: `booking_id=eq.${bookingId}` },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'booking_messages',
+          filter: `booking_id=eq.${bookingId}`,
+        },
         (payload) => {
           const incoming = toBookingMessage(payload.new as MessageRow);
           queryClient.setQueryData<BookingMessage[]>(chatKeys.messages(bookingId), (prev) =>

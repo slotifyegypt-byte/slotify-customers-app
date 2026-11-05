@@ -1,6 +1,10 @@
 import type { AvailabilitySlot, Service } from '../api/schemas';
 
-import { formatDraftSummary, useBookingDraftStore, type BookingDraftEntry } from './bookingDraftStore';
+import {
+  formatDraftSummary,
+  useBookingDraftStore,
+  type BookingDraftEntry,
+} from './bookingDraftStore';
 
 const entry = (id: string, overrides: Partial<BookingDraftEntry> = {}): BookingDraftEntry => ({
   service: { id, name: id, requires_specialist: true } as Service,
@@ -44,9 +48,15 @@ describe('removeEntries', () => {
 describe('formatDraftSummary', () => {
   it('labels the day relative to the branch zone', () => {
     const now = new Date('2026-11-02T23:30:00Z'); // already 3 Nov in Warsaw
-    expect(formatDraftSummary(entry('a', { date: '2026-11-03' }), 'Europe/Warsaw', now)).toBe('Any pro · Today · 10:00 AM');
+    expect(formatDraftSummary(entry('a', { date: '2026-11-03' }), 'Europe/Warsaw', now)).toBe(
+      'Any pro · Today · 10:00 AM',
+    );
     expect(
-      formatDraftSummary(entry('a', { date: '2026-11-04', employeeId: 'mona' }), 'Europe/Warsaw', now),
+      formatDraftSummary(
+        entry('a', { date: '2026-11-04', employeeId: 'mona' }),
+        'Europe/Warsaw',
+        now,
+      ),
     ).toBe('Mona Hassan · Tomorrow · 10:00 AM');
   });
 });

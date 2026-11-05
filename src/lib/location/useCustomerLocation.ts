@@ -56,7 +56,11 @@ function resolveLocation(): Promise<void> {
     // of blocking on a fresh GPS fix below.
     const cached = await Location.getLastKnownPositionAsync().catch(() => null);
     if (cached) {
-      publish({ latitude: cached.coords.latitude, longitude: cached.coords.longitude, status: 'granted' });
+      publish({
+        latitude: cached.coords.latitude,
+        longitude: cached.coords.longitude,
+        status: 'granted',
+      });
     }
 
     // Then get (or wait for) a fresh, more accurate fix, bounded by a
@@ -68,7 +72,11 @@ function resolveLocation(): Promise<void> {
         Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
         FRESH_FIX_TIMEOUT_MS,
       );
-      publish({ latitude: fresh.coords.latitude, longitude: fresh.coords.longitude, status: 'granted' });
+      publish({
+        latitude: fresh.coords.latitude,
+        longitude: fresh.coords.longitude,
+        status: 'granted',
+      });
     } catch {
       if (!cached) publish({ ...FALLBACK, status: 'denied' });
     }

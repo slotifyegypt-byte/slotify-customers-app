@@ -1,27 +1,38 @@
-import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import type { PressableProps } from 'react-native';
 
 import { radius, spacing, useColors, type ColorToken, type Colors } from '@/theme';
 
+import { PressableScale } from './PressableScale';
 import { ThemedText } from './ThemedText';
 
+// primary / accent: the deep-indigo filled action (one per screen). secondary: a soft tinted action.
+// ghost: a quiet outlined action. `accent` is kept for call sites written before the redesign; it looks like primary.
 type Variant = 'primary' | 'secondary' | 'ghost' | 'accent';
-// Opt-in override for destructive actions (e.g. "Cancel appointment") — kept
-// separate from `variant` so every existing call site is unaffected by
-// default (`tone` defaults to 'default', which is a no-op).
+// Opt-in override for destructive actions (e.g. "Cancel appointment").
 type Tone = 'default' | 'danger';
+type Size = 'md' | 'sm';
+type IconName = ComponentProps<typeof Ionicons>['name'];
 
-interface ButtonProps extends Omit<PressableProps, 'children'> {
+interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
   label: string;
   variant?: Variant;
   tone?: Tone;
+  size?: Size;
+  icon?: IconName;
   loading?: boolean;
   fullWidth?: boolean;
+  style?: object;
 }
 
 export function Button({
   label,
   variant = 'primary',
   tone = 'default',
+  size = 'md',
+  icon,
   loading,
   fullWidth = true,
   disabled,
@@ -29,80 +40,79 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const colors = useColors();
-  const variantStyles = createVariantStyles(colors);
-  const dangerStyles = createDangerStyles(colors);
+  const look = lookFor(colors, variant, tone);
   const isDisabled = disabled || loading;
+  const filled = variant === 'primary' || variant === 'accent';
+  const textColor: ColorToken = isDisabled && filled ? 'disabledText' : look.text;
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!isDisabled }}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      scaleTo={0.975}
+      style={[
         styles.base,
-        variantStyles[variant],
-        tone === 'danger' && dangerStyles[variant],
+        size === 'sm' ? styles.small : styles.medium,
+        { backgroundColor: isDisabled && filled ? colors.disabled : look.background },
+        look.border
+          ? { borderWidth: StyleSheet.hairlineWidth * 2, borderColor: look.border }
+          : null,
         fullWidth && styles.fullWidth,
-        isDisabled && styles.disabled,
-        pressed && !isDisabled && styles.pressed,
-        style as never,
+        isDisabled && !filled && styles.dimmed,
+        style,
       ]}
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.brand : colors.accent} />
+        <ActivityIndicator color={colors[look.text]} />
       ) : (
-        <ThemedText variant="button" color={tone === 'danger' ? dangerTextColor[variant] : textColor[variant]}>
-          {label}
-        </ThemedText>
+        <View style={styles.content}>
+          {icon ? (
+            <Ionicons name={icon} size={size === 'sm' ? 16 : 18} color={colors[textColor]} />
+          ) : null}
+          <ThemedText
+            variant="button"
+            color={textColor}
+            style={size === 'sm' ? styles.smallText : undefined}
+          >
+            {label}
+          </ThemedText>
+        </View>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
-const textColor: Record<Variant, 'brand' | 'textOnBrand'> = {
-  primary: 'brand',
-  secondary: 'textOnBrand',
-  ghost: 'brand',
-  accent: 'textOnBrand',
-};
-
-const dangerTextColor: Record<Variant, ColorToken> = {
-  primary: 'textOnBrand',
-  secondary: 'textOnBrand',
-  ghost: 'danger',
-  accent: 'textOnBrand',
-};
+function lookFor(
+  colors: Colors,
+  variant: Variant,
+  tone: Tone,
+): { background: string; text: ColorToken; border?: string } {
+  if (tone === 'danger') {
+    if (variant === 'ghost')
+      return { background: colors.surface, text: 'danger', border: colors.danger };
+    if (variant === 'secondary') return { background: colors.dangerTint, text: 'danger' };
+    return { background: colors.danger, text: 'textInverse' };
+  }
+  if (variant === 'secondary') return { background: colors.brandTint, text: 'brand' };
+  if (variant === 'ghost')
+    return { background: colors.surface, text: 'textPrimary', border: colors.border };
+  return { background: colors.brand, text: 'textOnBrand' };
+}
 
 const styles = StyleSheet.create({
-  base: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.pill,
+  base: { borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  medium: { minHeight: 52, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  small: { minHeight: 40, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  smallText: { fontSize: 14, lineHeight: 18 },
+  content: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    gap: spacing.xs,
   },
   fullWidth: { alignSelf: 'stretch' },
-  pressed: { opacity: 0.85 },
-  disabled: { opacity: 0.5 },
+  dimmed: { opacity: 0.5 },
 });
-
-const createVariantStyles = (colors: Colors) =>
-  StyleSheet.create({
-    primary: { backgroundColor: colors.accent },
-    secondary: { backgroundColor: colors.brand },
-    ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-    // Bright-purple CTA used for the booking flow's primary action (Confirm
-    // Booking) — matches the mockups' "selected/CTA accent" purple (see
-    // colors.brandAccent), distinct from `secondary`'s dark navy brand color.
-    accent: { backgroundColor: colors.brandAccent },
-  });
-
-const createDangerStyles = (colors: Colors) =>
-  StyleSheet.create({
-    primary: { backgroundColor: colors.danger },
-    secondary: { backgroundColor: colors.danger },
-    accent: { backgroundColor: colors.danger },
-    ghost: { borderColor: colors.danger },
-  });

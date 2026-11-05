@@ -1,8 +1,11 @@
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { Photo } from '@/components/Photo';
+import { PressableScale } from '@/components/PressableScale';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
+import { spacing } from '@/theme';
 
 interface BookAgainCardProps {
   name: string;
@@ -13,53 +16,43 @@ interface BookAgainCardProps {
   onCtaPress: () => void;
 }
 
-export function BookAgainCard({ name, logo, serviceLabel, ctaLabel, onPress, onCtaPress }: BookAgainCardProps) {
-  const colors = useColors();
-  const styles = createStyles(colors);
+/** A place you have been to, with the service you had, and one tap to book it again. */
+export function BookAgainCard({
+  name,
+  logo,
+  serviceLabel,
+  ctaLabel,
+  onPress,
+  onCtaPress,
+}: BookAgainCardProps) {
   return (
-    <View style={styles.card}>
-      <Pressable onPress={onPress}>
-        {logo ? (
-          <Image source={{ uri: logo }} style={styles.image} contentFit="cover" />
-        ) : (
-          <View style={[styles.image, styles.imageFallback]} />
-        )}
-        <View style={styles.textWrap}>
+    <Card padding="none" style={styles.card}>
+      <PressableScale
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={name}
+        scaleTo={0.99}
+      >
+        <Photo uri={logo} name={name} style={styles.photo} initialSize={32} />
+        <View style={styles.text}>
           <ThemedText variant="captionStrong" numberOfLines={1}>
             {name}
           </ThemedText>
-          <ThemedText variant="captionSmall" color="textSecondary" numberOfLines={1}>
+          <ThemedText variant="captionSmall" color="textTertiary" numberOfLines={1}>
             {serviceLabel}
           </ThemedText>
         </View>
-      </Pressable>
-      <Pressable onPress={onCtaPress} style={styles.cta}>
-        <ThemedText variant="label" color="brandAccent">
-          {ctaLabel}
-        </ThemedText>
-      </Pressable>
-    </View>
+      </PressableScale>
+      <View style={styles.cta}>
+        <Button label={ctaLabel} variant="secondary" size="sm" onPress={onCtaPress} />
+      </View>
+    </Card>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    card: {
-      width: 132,
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
-      padding: spacing.xs,
-      gap: spacing.xs,
-      marginRight: spacing.xs,
-      ...shadows.sm,
-    },
-    image: { width: '100%', height: 78, borderRadius: radius.sm },
-    imageFallback: { backgroundColor: colors.backgroundMuted },
-    textWrap: { marginTop: spacing.xxs, gap: 2 },
-    cta: {
-      backgroundColor: colors.brandTint,
-      paddingVertical: 6,
-      borderRadius: radius.pill,
-      alignItems: 'center',
-    },
-  });
+const styles = StyleSheet.create({
+  card: { width: 156, marginRight: spacing.sm },
+  photo: { width: '100%', height: 88 },
+  text: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm, gap: 2 },
+  cta: { padding: spacing.sm },
+});

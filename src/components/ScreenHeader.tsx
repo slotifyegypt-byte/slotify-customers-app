@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { spacing } from '@/theme';
 
+import { IconButton } from './IconButton';
 import { ThemedText } from './ThemedText';
 
 interface ScreenHeaderProps {
@@ -16,26 +16,24 @@ interface ScreenHeaderProps {
 }
 
 /**
- * The back-button + title header used throughout the app (Explore, Venue,
- * Notifications, Chat, the booking flow, and every Profile subpage) —
- * circular light-purple-tinted back button, brand-purple bold title. A
- * shared component so this doesn't get re-implemented slightly differently
- * screen by screen.
+ * The back-button + title header used throughout the app (Explore, Venue, Notifications, Chat, the booking flow
+ * and every Profile subpage): a round back button, a plain title, an optional quieter line beneath it. One
+ * shared component so it never drifts screen by screen.
  */
 export function ScreenHeader({ title, subtitle, onBack, right }: ScreenHeaderProps) {
-  const colors = useColors();
-  const styles = createStyles(colors);
   return (
     <View style={styles.row}>
-      <Pressable onPress={onBack ?? (() => router.back())} style={styles.backButton} hitSlop={8}>
-        <Ionicons name="chevron-back" size={18} color={colors.brand} />
-      </Pressable>
+      <IconButton
+        icon="chevron-back"
+        accessibilityLabel="Back"
+        onPress={onBack ?? (() => router.back())}
+      />
       <View style={styles.textCol}>
-        <ThemedText variant="h2" color="brand" numberOfLines={1}>
+        <ThemedText variant="h2" numberOfLines={1}>
           {title}
         </ThemedText>
         {subtitle ? (
-          <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
+          <ThemedText variant="caption" color="textTertiary" numberOfLines={1}>
             {subtitle}
           </ThemedText>
         ) : null}
@@ -45,23 +43,14 @@ export function ScreenHeader({ title, subtitle, onBack, right }: ScreenHeaderPro
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      paddingHorizontal: spacing.md,
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.sm,
-    },
-    backButton: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.pill,
-      backgroundColor: colors.brandTint,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    textCol: { flex: 1, minWidth: 0 },
-  });
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  textCol: { flex: 1, minWidth: 0 },
+});

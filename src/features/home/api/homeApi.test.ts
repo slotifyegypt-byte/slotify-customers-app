@@ -9,7 +9,9 @@ jest.mock('@/lib/supabase', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
     storage: {
       from: (bucket: string) => ({
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${path}` } }),
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
       }),
     },
   },
@@ -44,18 +46,11 @@ describe('getCategories', () => {
   });
 });
 
-const branch = {
-  business_name: 'Warsaw Barbers',
-  branch_name: 'Mokotow',
-  logo_path: null,
-  rating_avg: 4.6,
-  currency: 'PLN',
-  category_slugs: ['barber'],
-};
-
+// A row of the `promoted_offer_cards` view: the offer and its branch card columns, flat.
 const offerRow = {
   id: 'o1',
   branch_id: 'branch-1',
+  business_id: 'biz-1',
   category_id: 'oc1',
   title: 'Fade + beard',
   description: 'Haircut and beard trim',
@@ -64,19 +59,25 @@ const offerRow = {
   offer_price: 240,
   starts_on: '2026-11-01',
   ends_on: '2026-11-30',
-  branch,
+  business_name: 'Warsaw Barbers',
+  branch_name: 'Mokotow',
+  rating_avg: 4.6,
+  currency: 'PLN',
+  category_slugs: ['barber'],
+  promotion_sort_order: null,
 };
 
 describe('getHomeOffers', () => {
-  it('selects offers with the branch card embed and maps them to the view model', async () => {
+  it('reads the promoted deals view, in placement order, and maps rows to the view model', async () => {
     const { builder, calls } = mockQuery({ data: [offerRow], error: null });
     mockFrom.mockReturnValue(builder);
 
     const offers = await getHomeOffers();
 
-    expect(mockFrom).toHaveBeenCalledWith('offers');
+    expect(mockFrom).toHaveBeenCalledWith('promoted_offer_cards');
     const select = calls.find(([method]) => method === 'select');
-    expect(String(select?.[1][0])).toContain('branch:branch_cards(');
+    expect(String(select?.[1][0])).toContain('business_name');
+    expect(calls).toContainEqual(['order', ['promotion_sort_order', { ascending: true, nullsFirst: false }]]);
     expect(offers).toEqual([
       {
         id: 'o1',
@@ -99,7 +100,10 @@ describe('getHomeOffers', () => {
   });
 
   it('rounds the discount percentage', async () => {
-    const { builder } = mockQuery({ data: [{ ...offerRow, original_price: 300, offer_price: 200 }], error: null });
+    const { builder } = mockQuery({
+      data: [{ ...offerRow, original_price: 300, offer_price: 200 }],
+      error: null,
+    });
     mockFrom.mockReturnValue(builder);
     const [offer] = await getHomeOffers();
     expect(offer.discount_percentage).toBe(33);
@@ -130,7 +134,7 @@ describe('getHomeOffers', () => {
 
   it('skips offers whose branch is no longer visible', async () => {
     const { builder } = mockQuery({
-      data: [{ ...offerRow, id: 'gone', branch: null }, offerRow],
+      data: [{ ...offerRow, id: 'gone', business_name: null }, offerRow],
       error: null,
     });
     mockFrom.mockReturnValue(builder);

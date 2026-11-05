@@ -1,32 +1,38 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { ThemedText } from '@/components/ThemedText';
+import { Skeleton } from '@/components/Skeleton';
+import { TextField } from '@/components/TextField';
 import { isApiError } from '@/lib/api/errors';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { enter, radius, spacing, useColors } from '@/theme';
 
 import { isE164 } from '../api/profileApi';
 import type { CustomerProfile } from '../api/schemas';
 import { useMyProfile, useUpdateMyProfile } from '../hooks/useProfile';
 
 export function EditProfileScreen() {
-  const colors = useColors();
-  const styles = createStyles(colors);
+  const { t } = useTranslation();
   const { data: profile, isLoading } = useMyProfile();
 
   if (isLoading || !profile) {
     return (
       <Screen>
-        <ScreenHeader title="Edit Profile" />
-        <View style={styles.padded}>
-          <ThemedText variant="body" color="textSecondary">
-            Loading...
-          </ThemedText>
+        <ScreenHeader title={t('editProfile.title')} />
+        <View style={styles.loading}>
+          <Skeleton width={96} height={96} radius={48} />
+          <View style={styles.loadingCard}>
+            <Skeleton height={52} radius={radius.md} />
+            <Skeleton height={52} radius={radius.md} />
+            <Skeleton height={52} radius={radius.md} />
+          </View>
         </View>
       </Screen>
     );
@@ -48,8 +54,8 @@ function splitFullName(fullName: string): { first_name: string; last_name: strin
 }
 
 function EditProfileForm({ profile }: { profile: CustomerProfile }) {
+  const { t } = useTranslation();
   const colors = useColors();
-  const styles = createStyles(colors);
   const updateProfile = useUpdateMyProfile();
 
   const initialFullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
@@ -68,7 +74,7 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
     if (!isDirty) return;
     const { first_name, last_name } = splitFullName(fullName);
     if (!first_name) {
-      Alert.alert('Full name is required', 'Please enter your name.'); // TODO i18n
+      Alert.alert(t('editProfile.nameRequiredTitle'), t('editProfile.nameRequiredBody'));
       return;
     }
 
@@ -76,7 +82,7 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
     // typed for readability are stripped before validating.
     const phoneValue = phone.replace(/[\s-]+/g, '');
     if (phoneValue && !isE164(phoneValue)) {
-      setPhoneError('Enter your number with the country code, e.g. +201001234567.'); // TODO i18n
+      setPhoneError(t('editProfile.phoneFormat'));
       return;
     }
     setPhoneError(null);
@@ -90,101 +96,110 @@ function EditProfileForm({ profile }: { profile: CustomerProfile }) {
       router.back();
     } catch (err) {
       if (isApiError(err, 'invalid_field')) {
-        setPhoneError('That phone number isn\'t valid. Use the format +201001234567.'); // TODO i18n
+        setPhoneError(t('editProfile.phoneInvalid'));
         return;
       }
-      Alert.alert('Could not save changes', 'Please check your details and try again.'); // TODO i18n
+      Alert.alert(t('editProfile.saveFailedTitle'), t('editProfile.saveFailedBody'));
     }
   };
 
   return (
     <Screen>
-      <ScreenHeader title="Edit Profile" />
-      <ScrollView contentContainerStyle={styles.padded}>
-        <View style={styles.avatarRow}>
-          <Avatar
-            uri={profile.avatar_url}
-            label={(initialFullName || profile.email || '?').trim().charAt(0).toUpperCase()}
-            size={96}
-            editable
-            onPressEdit={() =>
-              Alert.alert('Not available yet', 'Changing your profile photo isn\'t supported yet.') // TODO i18n
-            }
+      <ScreenHeader title={t('editProfile.title')} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={enter(0)} style={styles.avatarRow}>
+            <Avatar
+              uri={profile.avatar_url}
+              label={(initialFullName || profile.email || '?').trim().charAt(0).toUpperCase()}
+              size={96}
+              editable
+              onPressEdit={() =>
+                Alert.alert(
+                  t('editProfile.photoUnavailableTitle'),
+                  t('editProfile.photoUnavailableBody'),
+                )
+              }
+            />
+          </Animated.View>
+
+          <Animated.View entering={enter(1)}>
+            <Card style={styles.form}>
+              <TextField
+                label={t('editProfile.fullName')}
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder={t('editProfile.fullNamePlaceholder')}
+                autoCapitalize="words"
+                textContentType="name"
+              />
+              <TextField
+                label={t('editProfile.email')}
+                value={profile.email ?? ''}
+                editable={false}
+                hint={t('editProfile.emailHint')}
+                style={{ color: colors.textTertiary }}
+              />
+              <TextField
+                label={t('editProfile.phone')}
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  if (phoneError) setPhoneError(null);
+                }}
+                placeholder="+201001234567"
+                keyboardType="phone-pad"
+                textContentType="telephoneNumber"
+                error={phoneError}
+                hint={t('editProfile.phoneHint')}
+              />
+            </Card>
+          </Animated.View>
+        </ScrollView>
+
+        <View
+          style={[styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}
+        >
+          <Button
+            label={t('editProfile.save')}
+            onPress={handleSave}
+            disabled={!isDirty}
+            loading={updateProfile.isPending}
           />
         </View>
-
-        <ThemedText variant="caption" color="textSecondary" style={styles.label}>
-          FULL NAME
-        </ThemedText>
-        <TextInput
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="Full name" // TODO i18n
-          placeholderTextColor={colors.textSecondary}
-          style={styles.input}
-        />
-
-        <ThemedText variant="caption" color="textSecondary" style={styles.label}>
-          EMAIL
-        </ThemedText>
-        <TextInput
-          value={profile.email ?? ''}
-          editable={false}
-          style={[styles.input, styles.inputDisabled]}
-        />
-
-        <ThemedText variant="caption" color="textSecondary" style={styles.label}>
-          PHONE
-        </ThemedText>
-        <TextInput
-          value={phone}
-          onChangeText={(text) => {
-            setPhone(text);
-            if (phoneError) setPhoneError(null);
-          }}
-          placeholder="+201001234567" // TODO i18n
-          placeholderTextColor={colors.textSecondary}
-          style={[styles.input, phoneError ? styles.inputError : null]}
-          keyboardType="phone-pad"
-        />
-        {phoneError ? (
-          <ThemedText variant="caption" color="danger" style={styles.note}>
-            {phoneError}
-          </ThemedText>
-        ) : null}
-        <ThemedText variant="caption" color="textSecondary" style={styles.note}>
-          {/* The phone number is overwritten directly, no OTP/verification step on this backend. */}
-          Changes to your phone number are saved immediately and are not verified.
-        </ThemedText>
-
-        <Button
-          label="Save Changes" // TODO i18n
-          onPress={handleSave}
-          disabled={!isDirty}
-          loading={updateProfile.isPending}
-          style={styles.saveButton}
-        />
-      </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    padded: { padding: spacing.lg },
-    title: { marginBottom: spacing.lg },
-    avatarRow: { alignItems: 'center', marginBottom: spacing.lg },
-    label: { marginBottom: spacing.xxs, marginTop: spacing.md },
-    input: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.sm,
-      color: colors.textPrimary,
-    },
-    inputError: { borderColor: colors.danger },
-    inputDisabled: { color: colors.textSecondary, backgroundColor: colors.backgroundMuted },
-    note: { marginTop: spacing.sm },
-    saveButton: { marginTop: spacing.xl },
-  });
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+    gap: spacing.lg,
+  },
+  avatarRow: { alignItems: 'center', paddingVertical: spacing.xs },
+  form: { gap: spacing.md },
+  loading: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+    gap: spacing.lg,
+    alignItems: 'center',
+  },
+  loadingCard: { alignSelf: 'stretch', gap: spacing.md },
+  bar: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
+  },
+});

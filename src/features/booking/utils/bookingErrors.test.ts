@@ -20,7 +20,9 @@ describe('getBookingErrorMessage', () => {
 
   it('falls back when the message is just the machine code', () => {
     // e.g. errorResponse(404, 'branch_not_found') has message === code.
-    expect(getBookingErrorMessage(new ApiError('branch_not_found', 404), 'fallback')).toBe('fallback');
+    expect(getBookingErrorMessage(new ApiError('branch_not_found', 404), 'fallback')).toBe(
+      'fallback',
+    );
     expect(getBookingErrorMessage(new ApiError('network_error', 0), 'fallback')).toBe('fallback');
   });
 
@@ -31,7 +33,11 @@ describe('getBookingErrorMessage', () => {
 });
 
 describe('slotConflictMessage', () => {
-  const taken = new ApiError('slot_taken', 409, 'Someone just booked this time. Please pick another.');
+  const taken = new ApiError(
+    'slot_taken',
+    409,
+    'Someone just booked this time. Please pick another.',
+  );
 
   it('says the time was just taken, naming the services that lost their slot', () => {
     expect(slotConflictMessage(taken, [])).toBe('That time was just taken — pick another');
@@ -54,6 +60,8 @@ describe('slotConflictMessage', () => {
   it("uses the server's text for time_in_past", () => {
     const past = new ApiError('time_in_past', 422, 'Choose a time in the future.');
     expect(slotConflictMessage(past, [])).toBe('Choose a time in the future.');
-    expect(slotConflictMessage(past, [{ service: { name: 'Haircut' } }])).toBe('Haircut: Choose a time in the future.');
+    expect(slotConflictMessage(past, [{ service: { name: 'Haircut' } }])).toBe(
+      'Haircut: Choose a time in the future.',
+    );
   });
 });

@@ -24,9 +24,15 @@ const store = {
 } as unknown as StoreDetail;
 
 const week = (overrides: Partial<Record<number, HoursDay['intervals']>>): HoursDay[] =>
-  ([1, 2, 3, 4, 5, 6, 7] as const).map((day_of_week) => ({ day_of_week, intervals: overrides[day_of_week] ?? [] }));
+  ([1, 2, 3, 4, 5, 6, 7] as const).map((day_of_week) => ({
+    day_of_week,
+    intervals: overrides[day_of_week] ?? [],
+  }));
 
-const renderTab = (calendarDays: HoursDay[], specialDays = [] as React.ComponentProps<typeof AboutTab>['specialDays']) =>
+const renderTab = (
+  calendarDays: HoursDay[],
+  specialDays = [] as React.ComponentProps<typeof AboutTab>['specialDays'],
+) =>
   render(
     <ThemeProvider>
       <AboutTab
@@ -60,10 +66,25 @@ describe('AboutTab hours', () => {
   });
 
   it('renders upcoming exceptions with their reason', async () => {
-    await renderTab(week({ 1: [{ opens_at: '09:00:00', closes_at: '17:00:00', crosses_midnight: false }] }), [
-      { date: '2026-12-25', is_closed: true, opens_at: null, closes_at: null, reason: 'Christmas' },
-      { date: '2026-12-31', is_closed: false, opens_at: '10:00:00', closes_at: '14:00:00', reason: null },
-    ]);
+    await renderTab(
+      week({ 1: [{ opens_at: '09:00:00', closes_at: '17:00:00', crosses_midnight: false }] }),
+      [
+        {
+          date: '2026-12-25',
+          is_closed: true,
+          opens_at: null,
+          closes_at: null,
+          reason: 'Christmas',
+        },
+        {
+          date: '2026-12-31',
+          is_closed: false,
+          opens_at: '10:00:00',
+          closes_at: '14:00:00',
+          reason: null,
+        },
+      ],
+    );
 
     expect(screen.getByText('2026-12-25')).toBeOnTheScreen();
     expect(screen.getByText('Christmas')).toBeOnTheScreen();

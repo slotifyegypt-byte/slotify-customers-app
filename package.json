@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/instrument-sans": "^0.4.2",
     "@expo-google-fonts/montserrat": "^0.4.2",
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
@@ -25,6 +26,7 @@
     "expo-localization": "~57.0.2",
     "expo-location": "~57.0.19",
     "expo-notifications": "~57.0.20",
+    "expo-glass-effect": "~57.0.3",
     "expo-router": "~57.0.22",
     "expo-secure-store": "~57.0.4",
     "expo-splash-screen": "~57.0.9",
@@ -81,7 +83,8 @@
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)"
     ],
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^react-native-reanimated$": "<rootDir>/src/test/reanimatedMock.tsx"
     },
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",

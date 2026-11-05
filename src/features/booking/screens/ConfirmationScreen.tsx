@@ -1,17 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { Divider } from '@/components/Divider';
 import { EmptyState } from '@/components/EmptyState';
+import { Photo } from '@/components/Photo';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
+import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreTeam } from '@/features/activity/hooks/useStoreTeam';
 import { formatMoney } from '@/lib/money';
-import { formatDateTitle, formatHour } from '@/lib/time/branchTime';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
+import { enter, radius, shadows, spacing, useColors } from '@/theme';
 
+import { DrawnCheck } from '../components/DrawnCheck';
 import { useBookingDetail } from '../hooks/useBookingDetail';
 
 // Converts an ISO timestamp (booking_start_time/end_time are UTC) into the
@@ -24,14 +32,11 @@ function toGoogleCalendarStamp(iso: string): string {
 // summary is the BookingRead re-fetched here via `getBooking(bookingId)`
 // rather than serialized through navigation params.
 //
-// Design ref 27-booking-confirmation.png: green check + title/subtitle, a
-// summary card (venue label, service, specialist, date/time), a dark
-// "Total" bar, a small map preview with a time callout, then a dark "Add to
-// calendar" button with a plain "Back to home" link underneath (not another
-// button).
+// A small celebration on the deep-indigo hero surface (a tick that draws
+// itself), then one clean card with everything the customer needs: where,
+// when, what, with whom and the total. Next actions sit in a bar at the bottom.
 export function ConfirmationScreen() {
   const colors = useColors();
-  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const booking = useBookingDetail(bookingId);
@@ -49,7 +54,7 @@ export function ConfirmationScreen() {
 
   // There's no expo-calendar dependency in this app yet, so rather than pull
   // in a new native module for one button, this opens a pre-filled Google
-  // Calendar "create event" page — a real, working affordance without a new
+  // Calendar "create event" page: a real, working affordance without a new
   // native dependency. Swap for a native calendar write if/when expo-calendar
   // is added.
   const handleAddToCalendar = async (data: NonNullable<typeof booking.data>) => {
@@ -69,8 +74,11 @@ export function ConfirmationScreen() {
 
   if (booking.isLoading) {
     return (
-      <Screen style={styles.centered}>
-        <ActivityIndicator color={colors.brand} />
+      <Screen style={styles.container}>
+        <View style={styles.content}>
+          <Skeleton height={248} radius={radius.xl} />
+          <Skeleton height={300} radius={radius.lg} />
+        </View>
       </Screen>
     );
   }
@@ -79,6 +87,7 @@ export function ConfirmationScreen() {
     return (
       <Screen style={styles.centered}>
         <EmptyState
+          icon="cloud-offline-outline"
           title={t('common.errorGeneric')}
           actionLabel={t('common.retry')}
           onAction={() => booking.refetch()}
@@ -88,6 +97,7 @@ export function ConfirmationScreen() {
   }
 
   const data = booking.data;
+  const isPending = data.booking_status === 'pending';
 
   const employeeName = (employeeId: string) => {
     const member = team.data?.find((m) => m.id === employeeId);
@@ -95,167 +105,243 @@ export function ConfirmationScreen() {
     return [member.first_name, member.last_name].filter(Boolean).join(' ');
   };
 
+  // BookingRead carries the address but no coordinates, so directions search by address.
+  const handleOpenMaps = () => {
+    Linking.openURL(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${data.store_name}, ${data.store_address}`,
+      )}`,
+    );
+  };
+
   return (
     <Screen style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.checkCircle}>
-          <Ionicons name="checkmark" size={30} color={colors.success} />
-        </View>
-        <ThemedText variant="h1" style={styles.center}>
-          {/* TODO i18n */}
-          Booking confirmed
-        </ThemedText>
-        <ThemedText variant="body" color="textSecondary" style={[styles.center, styles.subtitle]}>
-          {/* TODO i18n */}
-          {data.booking_status === 'pending'
-            ? "We'll notify you once the store confirms."
-            : "You'll get a reminder 1 hour before"}
-        </ThemedText>
-
-        <View style={styles.card}>
-          <ThemedText variant="caption" color="textSecondary" style={styles.storeLabel}>
-            {data.store_name.toUpperCase()}
-          </ThemedText>
-
-          {data.booking_services.map((service, index) => (
-            <View key={service.id} style={index > 0 ? styles.serviceBlockBorder : undefined}>
-              <ThemedText variant="bodyMedium" style={styles.serviceName}>
-                {service.service_name}
-              </ThemedText>
-              {/* Capacity-mode services have employee_id === null and skip this
-                  row entirely (§0.2) — no specialist to name. */}
-              {service.employee_id ? (
-                <View style={styles.metaRow}>
-                  <Ionicons name="star" size={14} color={colors.ratingStar} />
-                  <ThemedText variant="caption" color="textSecondary">
-                    {/* TODO i18n */}
-                    {service.employee_name ?? employeeName(service.employee_id) ?? 'Any professional'}
-                  </ThemedText>
-                </View>
-              ) : null}
-            </View>
-          ))}
-
-          <View style={styles.metaRow}>
-            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-            <ThemedText variant="caption" color="textSecondary">
-              {formatDateTitle(data.booking_date, data.timezone)} · {formatHour(data.booking_date, data.timezone)}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <Animated.View
+          entering={enter(0)}
+          style={[styles.hero, shadows.md, { backgroundColor: colors.hero }]}
+        >
+          <View
+            pointerEvents="none"
+            style={[styles.ring, styles.ringBig, { borderColor: colors.onHeroTint }]}
+          />
+          <View
+            pointerEvents="none"
+            style={[styles.ring, styles.ringSmall, { borderColor: colors.onHeroTint }]}
+          />
+          <DrawnCheck />
+          <View style={styles.heroText}>
+            <ThemedText variant="h1" color="onHero" style={styles.center}>
+              {/* TODO i18n */}
+              {isPending ? 'Request sent' : 'Booking confirmed'}
+            </ThemedText>
+            <ThemedText variant="bodyLarge" color="onHeroMuted" style={styles.center}>
+              {/* TODO i18n */}
+              {isPending
+                ? "We'll let you know once the venue confirms."
+                : "You'll get a reminder 1 hour before."}
             </ThemedText>
           </View>
-        </View>
-
-        <View style={styles.totalBar}>
-          <ThemedText variant="bodyMedium" color="textInverse">
-            {/* TODO i18n */}
-            Total
-          </ThemedText>
-          <ThemedText variant="h3" color="textInverse">
-            {formatMoney(data.total_price, data.currency)}
-          </ThemedText>
-        </View>
-
-        {/* BookingRead carries no store lat/lng, so this is a static, non-
-            interactive preview rather than a real map — the pin + time
-            callout are still real booking data (formatHour). */}
-        <View style={styles.mapPreview}>
-          <Ionicons name="map-outline" size={28} color={colors.textSecondary} style={styles.mapFallbackIcon} />
-          <View style={styles.pinColumn} pointerEvents="none">
-            <View style={styles.timeCallout}>
-              <ThemedText variant="caption" color="textInverse">
-                {formatHour(data.booking_date, data.timezone)}
-              </ThemedText>
-            </View>
-            <Ionicons name="caret-down" size={12} color={colors.brand} style={styles.calloutArrow} />
-            <Ionicons name="location" size={22} color={colors.brandAccent} />
+          <View style={[styles.when, { backgroundColor: colors.onHeroTint }]}>
+            <Ionicons name="calendar-outline" size={16} color={colors.onHero} />
+            <ThemedText variant="bodyMedium" color="onHero">
+              {formatDateTitle(data.booking_date, data.timezone)} ·{' '}
+              {formatHour(data.booking_date, data.timezone)}
+            </ThemedText>
           </View>
-        </View>
+        </Animated.View>
+
+        <Animated.View entering={enter(1)}>
+          <Card padding="none">
+            <View style={styles.venue}>
+              <Photo
+                uri={data.store_logo}
+                name={data.store_name}
+                style={styles.venuePhoto}
+                initialSize={20}
+              />
+              <View style={styles.flex}>
+                <ThemedText variant="h3" numberOfLines={1}>
+                  {data.store_name}
+                </ThemedText>
+                {data.store_address ? (
+                  <ThemedText variant="caption" color="textSecondary" numberOfLines={2}>
+                    {data.store_address}
+                  </ThemedText>
+                ) : null}
+              </View>
+            </View>
+            <Divider />
+
+            <View style={styles.block}>
+              {data.booking_services.map((service) => {
+                const specialist = service.employee_id
+                  ? (service.employee_name ?? employeeName(service.employee_id))
+                  : null;
+                return (
+                  <View key={service.id} style={styles.serviceRow}>
+                    <View style={styles.flex}>
+                      <ThemedText variant="bodyMedium">{service.service_name}</ThemedText>
+                      {/* Capacity-mode services have employee_id === null and skip the person (§0.2). */}
+                      <ThemedText variant="caption" color="textSecondary">
+                        {formatHour(service.booking_start_time, data.timezone)}
+                        {service.employee_id
+                          ? ` · ${specialist ?? 'Any professional' /* TODO i18n */}`
+                          : ''}
+                      </ThemedText>
+                    </View>
+                    <ThemedText variant="bodyMedium">
+                      {formatMoney(service.total_price, data.currency)}
+                    </ThemedText>
+                  </View>
+                );
+              })}
+            </View>
+            <Divider />
+
+            <Fact
+              icon="calendar-outline"
+              title={formatDate(data.booking_date, data.timezone)}
+              subtitle={formatHour(data.booking_date, data.timezone)}
+            />
+            <Divider />
+            <Fact
+              icon="location-outline"
+              title={data.store_address}
+              subtitle="Get directions" /* TODO i18n */
+              onPress={handleOpenMaps}
+            />
+            <Divider />
+
+            <View style={[styles.total, { backgroundColor: colors.backgroundMuted }]}>
+              <ThemedText variant="bodyMedium" color="textSecondary">
+                {/* TODO i18n */}
+                Total
+              </ThemedText>
+              <ThemedText variant="h2">{formatMoney(data.total_price, data.currency)}</ThemedText>
+            </View>
+          </Card>
+        </Animated.View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <Animated.View
+        entering={enter(2)}
+        style={[
+          styles.bar,
+          { backgroundColor: colors.surface, borderTopColor: colors.border },
+          shadows.md,
+        ]}
+      >
         <Button
           label={/* TODO i18n */ 'Add to calendar'}
-          variant="secondary"
+          icon="calendar-outline"
           onPress={() => handleAddToCalendar(data)}
         />
-        <Pressable accessibilityRole="button" onPress={handleBackHome} style={styles.backHomeLink}>
-          <ThemedText variant="bodyMedium" color="brandAccent">
-            {/* TODO i18n */}
-            Back to home
-          </ThemedText>
-        </Pressable>
-      </View>
+        <Button label={/* TODO i18n */ 'Back to home'} variant="ghost" onPress={handleBackHome} />
+      </Animated.View>
     </Screen>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
+function Fact({
+  icon,
+  title,
+  subtitle,
+  onPress,
+}: {
+  icon: ComponentProps<typeof Ionicons>['name'];
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+}) {
+  const colors = useColors();
+  const body = (
+    <View style={styles.fact}>
+      <View style={[styles.factIcon, { backgroundColor: colors.brandTint }]}>
+        <Ionicons name={icon} size={18} color={colors.brandAccent} />
+      </View>
+      <View style={styles.flex}>
+        <ThemedText variant="bodyMedium">{title}</ThemedText>
+        {subtitle ? (
+          <ThemedText variant="caption" color={onPress ? 'brandAccent' : 'textSecondary'}>
+            {subtitle}
+          </ThemedText>
+        ) : null}
+      </View>
+      {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} /> : null}
+    </View>
+  );
+  if (!onPress) return body;
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${subtitle ?? ''} ${title}`.trim()}
+      scaleTo={0.99}
+    >
+      {body}
+    </PressableScale>
+  );
+}
+
+const styles = StyleSheet.create({
   container: { flex: 1 },
+  flex: { flex: 1, minWidth: 0 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: spacing.md, paddingBottom: spacing.xl, alignItems: 'stretch' },
-  checkCircle: {
-    alignSelf: 'center',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.successTint,
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  hero: {
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.md,
+    overflow: 'hidden',
+  },
+  ring: { position: 'absolute', borderWidth: 1.5, borderRadius: 999 },
+  ringBig: { width: 260, height: 260, right: -90, top: -100 },
+  ringSmall: { width: 150, height: 150, right: -40, top: -40 },
+  heroText: { gap: spacing.xs, alignItems: 'center' },
+  center: { textAlign: 'center' },
+  when: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.pill,
+  },
+  venue: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md },
+  venuePhoto: { width: 48, height: 48, borderRadius: radius.md },
+  block: { padding: spacing.md, gap: spacing.sm },
+  serviceRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  fact: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md },
+  factIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
   },
-  center: { textAlign: 'center' },
-  subtitle: { marginBottom: spacing.lg },
-  card: {
-    backgroundColor: colors.background,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.divider,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  storeLabel: { letterSpacing: 1, marginBottom: spacing.xs },
-  serviceBlockBorder: {
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.divider,
-  },
-  serviceName: { marginBottom: spacing.xxs },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxs, marginTop: spacing.xxs },
-  totalBar: {
+  total: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.brand,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  mapPreview: {
-    height: 120,
-    borderRadius: radius.lg,
-    backgroundColor: colors.backgroundMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  mapFallbackIcon: { position: 'absolute' },
-  pinColumn: { alignItems: 'center' },
-  timeCallout: {
-    backgroundColor: colors.brand,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-  },
-  calloutArrow: { marginTop: -2 },
-  footer: {
     padding: spacing.md,
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
   },
-  backHomeLink: { paddingVertical: spacing.xs },
+  bar: {
+    paddingHorizontal: spacing.gutter,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
+  },
 });

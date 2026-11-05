@@ -43,7 +43,8 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 jest.mock('@/features/auth/store/authStore', () => ({
-  useAuthStore: (select: (s: { accessToken: string | null }) => unknown) => select({ accessToken: mockAccessToken }),
+  useAuthStore: (select: (s: { accessToken: string | null }) => unknown) =>
+    select({ accessToken: mockAccessToken }),
 }));
 jest.mock('../api/chatApi', () => ({
   ...jest.requireActual('../api/chatApi'),
@@ -81,12 +82,18 @@ let queryClient: QueryClient;
 
 async function setup(bookingId = 'bk1') {
   queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
   });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return renderHook(({ id }: { id: string }) => useBookingChat(id), { wrapper, initialProps: { id: bookingId } });
+  return renderHook(({ id }: { id: string }) => useBookingChat(id), {
+    wrapper,
+    initialProps: { id: bookingId },
+  });
 }
 
 beforeEach(() => {
@@ -128,11 +135,15 @@ describe('useBookingChat', () => {
     const { result } = await setup();
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
 
-    await act(async () => mockChannels[0].handler?.({ new: realtimeRow('b', '2026-11-01T10:05:00Z') }));
+    await act(async () =>
+      mockChannels[0].handler?.({ new: realtimeRow('b', '2026-11-01T10:05:00Z') }),
+    );
     expect(result.current.messages.map((m) => m.id)).toEqual(['a', 'b']);
     expect(result.current.messages[1]).toEqual(msg('b', '2026-11-01T10:05:00Z'));
 
-    await act(async () => mockChannels[0].handler?.({ new: realtimeRow('b', '2026-11-01T10:05:00Z') }));
+    await act(async () =>
+      mockChannels[0].handler?.({ new: realtimeRow('b', '2026-11-01T10:05:00Z') }),
+    );
     expect(result.current.messages).toHaveLength(2);
   });
 
@@ -194,7 +205,10 @@ describe('useBookingChat', () => {
 
     it('marks read once per focus when markRead sits in an effect dependency list (as the screen does)', async () => {
       queryClient = new QueryClient({
-        defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } },
+        defaultOptions: {
+          queries: { retry: false, gcTime: Infinity },
+          mutations: { retry: false, gcTime: Infinity },
+        },
       });
       const wrapper = ({ children }: { children: ReactNode }) => (
         <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

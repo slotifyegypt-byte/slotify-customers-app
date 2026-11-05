@@ -1,4 +1,9 @@
-import { differenceInCalendarDays, differenceInHours, differenceInMinutes, isYesterday } from 'date-fns';
+import {
+  differenceInCalendarDays,
+  differenceInHours,
+  differenceInMinutes,
+  isYesterday,
+} from 'date-fns';
 
 // Compact relative-time labels ("2h ago", "Yesterday", "6d ago") to match
 // the notifications design (Design.html). Kept centralized here rather than

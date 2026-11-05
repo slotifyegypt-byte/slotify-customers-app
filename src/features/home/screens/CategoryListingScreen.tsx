@@ -1,36 +1,48 @@
-import { useLocalSearchParams, router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { EmptyState } from '@/components/EmptyState';
+import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
-import { StoreCard } from '@/components/StoreCard';
 import { ThemedText } from '@/components/ThemedText';
 import { type NearbyStore } from '@/features/explore-search/api/schemas';
+import { VenueCard } from '@/features/explore-search/components/VenueCard';
+import { VenueListSkeleton } from '@/features/explore-search/components/VenueCardSkeleton';
+import { useCategoryNames } from '@/features/explore-search/hooks/useCategoryNames';
 import { useNearbyStores } from '@/features/explore-search/hooks/useNearbyStores';
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
-import { spacing, useColors } from '@/theme';
+import { enter, spacing } from '@/theme';
 
 // `categoryKey` is a category slug (e.g. `hair-salon`). The label comes from
 // the categories query, falling back to a humanised slug while it loads/fails.
-const humanizeSlug = (slug: string) => slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
-
-const CARD_WIDTH = Dimensions.get('window').width - spacing.md * 2;
+const humanizeSlug = (slug: string) =>
+  slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
 
 export function CategoryListingScreen() {
-  const colors = useColors();
+  const { t } = useTranslation();
   const { categoryKey } = useLocalSearchParams<{ categoryKey: string }>();
   const location = useCustomerLocation();
   const categories = useCategories();
+  const categoryNames = useCategoryNames();
 
   const resolved = useMemo(() => {
     if (!categoryKey) return null;
-    const label = categories.data?.find((category) => category.slug === categoryKey)?.name ?? humanizeSlug(categoryKey);
+    const label =
+      categories.data?.find((category) => category.slug === categoryKey)?.name ??
+      humanizeSlug(categoryKey);
     return { slug: categoryKey, label };
   }, [categoryKey, categories.data]);
 
-  const nearbyParams = { latitude: location.latitude, longitude: location.longitude, radius_km: 15, limit: 50 };
+  const nearbyParams = {
+    latitude: location.latitude,
+    longitude: location.longitude,
+    radius_km: 15,
+    limit: 50,
+  };
   const nearby = useNearbyStores(nearbyParams);
 
   const stores = useMemo(() => {
@@ -39,52 +51,69 @@ export function CategoryListingScreen() {
     return nearby.data.filter((store) => store.category_slugs.includes(resolved.slug));
   }, [nearby.data, resolved]);
 
-  const title = resolved?.label ?? categoryKey ?? 'Stores'; // TODO i18n
+  const label = resolved?.label ?? categoryKey ?? t('category.fallbackTitle');
+
+  const header = (
+    <Animated.View entering={enter(0)} style={styles.header}>
+      <View style={styles.backRow}>
+        <IconButton icon="chevron-back" accessibilityLabel="Back" onPress={() => router.back()} />
+      </View>
+      <ThemedText variant="h1" accessibilityRole="header">
+        {t('category.nearYou', { category: label })}
+      </ThemedText>
+      {!nearby.isLoading && !nearby.isError && stores.length > 0 ? (
+        <ThemedText variant="body" color="textSecondary">
+          {t('category.count', { count: stores.length })}
+        </ThemedText>
+      ) : null}
+    </Animated.View>
+  );
+
+  const empty = nearby.isLoading ? (
+    <VenueListSkeleton count={4} />
+  ) : nearby.isError ? (
+    <EmptyState
+      icon="cloud-offline-outline"
+      title={t('category.errorTitle')}
+      body={t('category.errorBody')}
+      actionLabel={t('common.retry')}
+      onAction={() => nearby.refetch()}
+    />
+  ) : (
+    <EmptyState
+      icon="storefront-outline"
+      title={t('category.emptyTitle')}
+      body={t('category.emptyBody', { category: label.toLowerCase() })}
+      actionLabel={t('category.emptyAction')}
+      onAction={() => router.push('/(tabs)/explore')}
+    />
+  );
 
   return (
-    <Screen edges={['top']} style={styles.screen}>
-      <View style={styles.header}>
-        <ThemedText variant="h1">{title} near you</ThemedText>
-      </View>
-
-      {nearby.isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.brandAccent} />
-        </View>
-      ) : nearby.isError ? (
-        <View style={styles.center}>
-          <EmptyState title="Couldn't load stores" body="Check your connection and try again." />
-        </View>
-      ) : stores.length === 0 ? (
-        <View style={styles.center}>
-          <EmptyState title="Nothing here yet" body={`No ${title.toLowerCase()} found near you.`} />
-        </View>
-      ) : (
-        <FlatList<NearbyStore>
-          data={stores}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <StoreCard
-              name={item.name}
-              logo={item.logo}
-              address={item.address}
-              rating={item.rating}
-              distanceKm={item.distance_km}
-              isOpen={item.status === 'open'}
-              width={CARD_WIDTH}
+    <Screen edges={['top']}>
+      <FlatList<NearbyStore>
+        data={nearby.isLoading || nearby.isError ? [] : stores}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={header}
+        ListEmptyComponent={empty}
+        renderItem={({ item, index }) => (
+          <Animated.View entering={enter(index + 1)}>
+            <VenueCard
+              store={item}
+              categoryName={categoryNames.get(item.category_slugs[0] ?? '')}
               onPress={() => router.push(`/venue/${item.id}`)}
             />
-          )}
-        />
-      )}
+          </Animated.View>
+        )}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: 0 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.md },
-  list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
+  list: { flexGrow: 1, paddingHorizontal: spacing.gutter, paddingBottom: 120, gap: spacing.sm },
+  header: { gap: spacing.xxs, paddingTop: spacing.sm, paddingBottom: spacing.md },
+  backRow: { flexDirection: 'row', marginBottom: spacing.sm },
 });

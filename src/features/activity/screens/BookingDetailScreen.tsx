@@ -1,64 +1,62 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import type { ComponentProps } from 'react';
-import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
+import { ListRow } from '@/components/ListRow';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
-import type { BookingRead, BookingStatus } from '@/features/booking/api/schemas';
+import type { BookingRead } from '@/features/booking/api/schemas';
 import { useBookingDetail } from '@/features/booking/hooks/useBookingDetail';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
-import { formatCountdown } from '@/features/home/utils/countdown';
-import { formatMoney } from '@/lib/money';
-import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
-import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
+import { formatDate } from '@/lib/time/branchTime';
+import { enter, radius, spacing } from '@/theme';
 
+import { BookingHero } from '../components/BookingHero';
+import { ServicesCard, WhereWithCard } from '../components/BookingSummary';
+import { OrderTracker } from '../components/OrderTracker';
 import { useStoreTeam } from '../hooks/useStoreTeam';
-
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
+import { isOrderBooking } from '../utils/bookingDisplay';
 
 export function BookingDetailScreen() {
-  const colors = useColors();
-  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const booking = useBookingDetail(bookingId);
 
-  // Only fetched when at least one service is specialist-mode, to resolve
-  // `employee_id` -> a display name (§9; see venue/api/venueApi.ts getStoreTeam for why this
-  // lookup is needed instead of a field already on the booking).
+  // Only fetched when at least one service is specialist-mode, to resolve `employee_id` -> a display name (§9;
+  // see venue/api/venueApi.ts getStoreTeam for why this lookup is needed instead of a field already on the booking).
   const hasSpecialistService = booking.data?.booking_services.some((s) => s.employee_id) ?? false;
-  const team = useStoreTeam(hasSpecialistService && booking.data?.venue_available ? booking.data.store_id : undefined);
-  // Directions (real lat/lng) and Call (real phone) both need the full store
-  // record — BookingRead only carries store_name/address/logo — so this is
-  // fetched the same way WriteReviewScreen/VenueDetailScreen already do.
+  const team = useStoreTeam(
+    hasSpecialistService && booking.data?.venue_available ? booking.data.store_id : undefined,
+  );
+  // Directions (real lat/lng) and Call (real phone) both need the full store record: BookingRead only carries
+  // store_name/address/logo.
   const store = useStoreDetail(booking.data?.store_id ?? '', {
     enabled: Boolean(booking.data?.store_id) && booking.data?.venue_available === true,
   });
 
   if (booking.isLoading) {
     return (
-      <Screen>
+      <Screen edges={['top']}>
         <ScreenHeader title="" />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.brand} />
-        </View>
+        <DetailSkeleton />
       </Screen>
     );
   }
 
   if (booking.isError || !booking.data) {
     return (
-      <Screen>
+      <Screen edges={['top']}>
         <ScreenHeader title="" />
-        <View style={styles.centered}>
+        <View style={styles.flex}>
           <EmptyState
+            icon="cloud-offline-outline"
             title={t('common.errorGeneric')}
             actionLabel={t('common.retry')}
             onAction={() => booking.refetch()}
@@ -69,22 +67,26 @@ export function BookingDetailScreen() {
   }
 
   const data = booking.data;
-  // §0.1/§0.2 — VERIFIED against live /openapi.json + response shapes
-  // (2026-09-20): BookingRead now returns a server-computed `booking_type`,
-  // replacing the old "every service has no employee_id" inference.
-  // "drop_off" = capacity mode (tailoring, car wash/repair, detailing);
-  // "appointment" = specialist mode (barber/salon/spa).
-  const isOrder = data.booking_type === 'drop_off';
-  const canCancel = data.booking_status === 'pending' || data.booking_status === 'confirmed';
+  // §0.1/§0.2: BookingRead returns a server-computed `booking_type`. "drop_off" = capacity mode (tailoring, car
+  // wash/repair, detailing); "appointment" = specialist mode (barber/salon/spa).
+  const isOrder = isOrderBooking(data);
+  const isActive = data.booking_status === 'pending' || data.booking_status === 'confirmed';
   // One review per booking: once reviewed, the button goes away.
   const canReview = data.booking_status === 'completed' && !data.has_review && data.venue_available;
 
   const employeeName = (employeeId: string) => {
     const member = team.data?.find((m) => m.id === employeeId);
     if (member) return [member.first_name, member.last_name].filter(Boolean).join(' ');
-    // Team lookup missing/failed — fall back to the name snapshotted on the booking.
+    // Team lookup missing/failed: fall back to the name snapshotted on the booking.
     return data.booking_services.find((s) => s.employee_id === employeeId)?.employee_name ?? null;
   };
+  const specialists = [
+    ...new Set(
+      data.booking_services
+        .map((s) => (s.employee_id ? employeeName(s.employee_id) : null))
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ];
 
   const handleDirections = () => {
     if (!store.data) return;
@@ -93,11 +95,8 @@ export function BookingDetailScreen() {
     );
   };
 
-  // New endpoint — VERIFIED against live /openapi.json + response shapes
-  // (2026-09-20): PUT /bookings/services/{booking_service_id}/reschedule/my-booking.
-  // Time-only (same assigned specialist), so this only ever targets the
-  // specialist-mode service on the booking — the same one whose
-  // employee_id resolves `employeeLabel` in AppointmentDetail below.
+  // PUT /bookings/services/{booking_service_id}/reschedule/my-booking: time-only (same assigned specialist), so
+  // this only ever targets the specialist-mode service on the booking.
   const specialistServiceForReschedule = data.booking_services.find((s) => s.employee_id);
   const handleReschedule = () => {
     if (!specialistServiceForReschedule) return;
@@ -112,619 +111,241 @@ export function BookingDetailScreen() {
       pathname: '/(modal)/write-review',
       params: {
         storeId: data.store_id,
-        // `canReview` above already gates this handler behind
-        // `booking_status === 'completed'`, which is exactly the
-        // eligibility the backend enforces for `ReviewCreate.booking_id`
-        // (VERIFIED against live /openapi.json, 2026-09-20) — so `data.id`
-        // is always a valid value to forward here.
+        // `canReview` already gates this handler behind `booking_status === 'completed'`, which is exactly the
+        // eligibility the backend enforces for `ReviewCreate.booking_id`, so `data.id` is always valid here.
         bookingId: data.id,
         serviceName: data.booking_services.map((s) => s.service_name).join(', '),
         date: formatDate(data.booking_date, data.timezone),
       },
     });
 
+  const handleCancel = () => router.push(`/(modal)/cancel-booking?bookingId=${data.id}`);
+  const handleMessage = () => router.push(`/chat/${data.id}`);
+  const handleCall = () => {
+    if (!store.data?.phone) return;
+    Linking.openURL(`tel:${store.data.phone}`);
+  };
+  const handleViewPlace = () => router.push(`/venue/${data.store_id}`);
+
+  const canDirections = Boolean(store.data);
+  const canReschedule =
+    isActive && !isOrder && Boolean(specialistServiceForReschedule) && data.venue_available;
+  const canMessage = isActive && data.venue_available;
+  const hasPhone = Boolean(store.data?.phone);
+
   return (
-    <Screen style={styles.container}>
-      <ScreenHeader title={isOrder ? 'Your Order' : 'Appointment'} /* TODO i18n */ />
-      <ScrollView contentContainerStyle={styles.content}>
+    <Screen edges={['top']}>
+      <ScreenHeader
+        title={isOrder ? t('activity.detail.titleOrder') : t('activity.detail.titleAppointment')}
+      />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Animated.View entering={enter(0)}>
+          <BookingHero booking={data} />
+        </Animated.View>
+
         {isOrder ? (
-          <OrderDetail
-            data={data}
-            store={store.data}
-            onWriteReview={canReview ? handleWriteReview : undefined}
-          />
-        ) : (
-          <AppointmentDetail
-            data={data}
-            employeeName={employeeName}
-            canDirections={Boolean(store.data)}
-            canReschedule={Boolean(specialistServiceForReschedule) && data.venue_available}
-            canCancel={canCancel}
-            canReview={canReview}
-            onDirections={handleDirections}
-            onReschedule={handleReschedule}
-            onCancel={() => router.push(`/(modal)/cancel-booking?bookingId=${data.id}`)}
-            onWriteReview={handleWriteReview}
-          />
-        )}
+          <Animated.View entering={enter(1)}>
+            <OrderTracker status={data.booking_status} />
+          </Animated.View>
+        ) : null}
+
+        <Animated.View entering={enter(2)}>
+          <WhereWithCard booking={data} specialists={isOrder ? [] : specialists} />
+        </Animated.View>
+
+        <Animated.View entering={enter(3)}>
+          <ServicesCard booking={data} />
+        </Animated.View>
+
+        {!data.venue_available ? (
+          <Animated.View entering={enter(4)}>
+            <Card>
+              <ThemedText variant="body" color="textSecondary">
+                {t('activity.detail.venueUnavailable')}
+              </ThemedText>
+            </Card>
+          </Animated.View>
+        ) : null}
+
+        <Animated.View entering={enter(4)} style={styles.actions}>
+          {isActive ? (
+            <>
+              <Button
+                label={t('activity.detail.directions')}
+                icon="navigate-outline"
+                onPress={handleDirections}
+                disabled={!canDirections}
+              />
+              {isOrder ? (
+                <View style={styles.pair}>
+                  <Button
+                    label={t('activity.detail.message')}
+                    icon="chatbubble-outline"
+                    variant="secondary"
+                    onPress={handleMessage}
+                    disabled={!canMessage}
+                    style={styles.half}
+                  />
+                  <Button
+                    label={t('activity.detail.call')}
+                    icon="call-outline"
+                    variant="secondary"
+                    onPress={handleCall}
+                    disabled={!hasPhone}
+                    style={styles.half}
+                  />
+                </View>
+              ) : (
+                <View style={styles.pair}>
+                  {canReschedule ? (
+                    <Button
+                      label={t('activity.detail.reschedule')}
+                      icon="calendar-outline"
+                      variant="secondary"
+                      onPress={handleReschedule}
+                      style={styles.half}
+                    />
+                  ) : null}
+                  <Button
+                    label={t('activity.detail.message')}
+                    icon="chatbubble-outline"
+                    variant="secondary"
+                    onPress={handleMessage}
+                    disabled={!canMessage}
+                    style={styles.half}
+                  />
+                </View>
+              )}
+              {!isOrder ? (
+                <>
+                  <ThemedText variant="caption" color="textTertiary" style={styles.note}>
+                    {t('activity.detail.freeCancel')}
+                  </ThemedText>
+                  <PressableScale
+                    onPress={handleCancel}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('activity.detail.cancelAppointment')}
+                    scaleTo={0.97}
+                    style={styles.cancel}
+                  >
+                    <ThemedText variant="bodyMedium" color="danger">
+                      {t('activity.detail.cancelAppointment')}
+                    </ThemedText>
+                  </PressableScale>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <CompletedActions
+              data={data}
+              canReview={canReview}
+              canDirections={canDirections}
+              onWriteReview={handleWriteReview}
+              onDirections={handleDirections}
+              onViewPlace={handleViewPlace}
+            />
+          )}
+        </Animated.View>
+
+        {data.has_review ? (
+          <Animated.View entering={enter(5)}>
+            <Card padding="none">
+              <ListRow
+                icon="star"
+                title={t('activity.detail.reviewed')}
+                onPress={() => router.push('/(tabs)/profile/my-reviews')}
+              />
+            </Card>
+          </Animated.View>
+        ) : null}
       </ScrollView>
     </Screen>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Appointment (confirmed, specialist-mode) — 06-venue-detail.png
-// ---------------------------------------------------------------------------
-
-// Reuses the Home "Next Up" card's countdown formatter (In 45 min / In 2h)
-// so the same pill reads identically wherever a confirmed booking's start
-// time is shown. `formatCountdown` falls back to its second argument once
-// the appointment is more than a few hours out or already started — an
-// empty-string fallback means "hide the pill" here.
-// ALL-CAPS label for the hero card. `no_show` would otherwise read "NO_SHOW".
-function bookingStatusLabel(status: BookingStatus): string {
-  // TODO i18n
-  return status === 'no_show' ? 'NO SHOW' : status.toUpperCase();
-}
-
-function appointmentCountdown(dateIso: string, status: BookingStatus): string | null {
-  if (status !== 'confirmed') return null;
-  const label = formatCountdown(dateIso, '');
-  return label || null;
-}
-
-function AppointmentDetail({
+// Once a booking is over the actions are about the next step: review it, find it again, or go back to the place.
+function CompletedActions({
   data,
-  employeeName,
-  canDirections,
-  canReschedule,
-  canCancel,
   canReview,
-  onDirections,
-  onReschedule,
-  onCancel,
+  canDirections,
   onWriteReview,
+  onDirections,
+  onViewPlace,
 }: {
   data: BookingRead;
-  employeeName: (id: string) => string | null;
-  canDirections: boolean;
-  canReschedule: boolean;
-  canCancel: boolean;
   canReview: boolean;
-  onDirections: () => void;
-  onReschedule: () => void;
-  onCancel: () => void;
+  canDirections: boolean;
   onWriteReview: () => void;
+  onDirections: () => void;
+  onViewPlace: () => void;
 }) {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  const countdown = appointmentCountdown(data.booking_date, data.booking_status);
-  const specialistService = data.booking_services.find((s) => s.employee_id);
-  const employeeLabel = specialistService?.employee_id
-    ? employeeName(specialistService.employee_id)
-    : null;
-
+  const { t } = useTranslation();
+  const canViewPlace = data.venue_available;
   return (
     <>
-      <View style={styles.heroCard}>
-        <ThemedText variant="caption" color="textInverse" style={styles.heroStatusLabel}>
-          {/* TODO i18n */}
-          {bookingStatusLabel(data.booking_status)}
-        </ThemedText>
-        <ThemedText variant="h2" color="textInverse">
-          {data.store_name}
-        </ThemedText>
-        <View style={styles.heroSubRow}>
-          {data.store_logo ? (
-            <Image source={{ uri: data.store_logo }} style={styles.heroAvatar} contentFit="cover" />
-          ) : (
-            <View style={[styles.heroAvatar, styles.heroAvatarFallback]} />
-          )}
-          <ThemedText variant="body" color="textInverse" style={styles.heroSubText}>
-            {formatDateTitle(data.booking_date, data.timezone)} · {formatHour(data.booking_date, data.timezone)}
-            {employeeLabel ? ` · ${employeeLabel}` : ''}
-          </ThemedText>
-        </View>
-        {countdown ? (
-          <View style={styles.countdownPill}>
-            <ThemedText variant="caption" color="textOnBrand" style={styles.countdownLabel}>
-              {countdown}
-            </ThemedText>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.infoCard}>
-        <InfoRow
-          icon="location-outline"
-          label={/* TODO i18n */ 'Location'}
-          value={data.store_address}
-        />
-        <InfoRow
-          icon="briefcase-outline"
-          label={/* TODO i18n */ 'Service'}
-          value={data.booking_services_str}
-        />
-        <InfoRow
-          icon="pricetag-outline"
-          label={/* TODO i18n */ 'Price'}
-          value={formatMoney(data.total_price, data.currency)}
-        />
-      </View>
-
-      <View style={styles.actionRow}>
-        <Pressable style={styles.outlineButton} onPress={onDirections} disabled={!canDirections}>
-          <Ionicons
-            name="navigate-outline"
-            size={16}
-            color={canDirections ? colors.brand : colors.disabledText}
-          />
-          <ThemedText
-            variant="button"
-            color={canDirections ? 'brand' : 'disabledText'}
-            style={styles.outlineButtonLabel}
-          >
-            {/* TODO i18n */}
-            Directions
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={[styles.outlineButton, styles.outlineButtonSpacing]}
-          onPress={onReschedule}
-          disabled={!canReschedule}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={16}
-            color={canReschedule ? colors.brand : colors.disabledText}
-          />
-          <ThemedText
-            variant="button"
-            color={canReschedule ? 'brand' : 'disabledText'}
-            style={styles.outlineButtonLabel}
-          >
-            {/* TODO i18n */}
-            Reschedule
-          </ThemedText>
-        </Pressable>
-      </View>
-
-      {canCancel ? (
-        <ThemedText variant="caption" color="textSecondary" style={styles.freeCancelNote}>
-          {/* TODO i18n */}
-          Free cancellation up to 2 hours before your appointment.
-        </ThemedText>
-      ) : null}
-
       {canReview ? (
         <Button
-          label={/* TODO i18n */ 'Write a review'}
-          variant="ghost"
-          style={styles.reviewButton}
+          label={t('activity.detail.writeReview')}
+          icon="star-outline"
           onPress={onWriteReview}
         />
       ) : null}
-
-      {canCancel ? (
-        <Pressable onPress={onCancel} style={styles.cancelLink} hitSlop={8}>
-          <ThemedText variant="bodyMedium" color="danger">
-            {/* TODO i18n */}
-            Cancel appointment
-          </ThemedText>
-        </Pressable>
-      ) : null}
-    </>
-  );
-}
-
-function InfoRow({ icon, label, value }: { icon: IoniconName; label: string; value: string }) {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  return (
-    <View style={styles.infoRow}>
-      <View style={styles.infoRowLeft}>
-        <Ionicons name={icon} size={16} color={colors.textSecondary} />
-        <ThemedText variant="body" color="textSecondary" style={styles.infoLabel}>
-          {label}
-        </ThemedText>
-      </View>
-      <ThemedText variant="bodyMedium" numberOfLines={1} style={styles.infoValue}>
-        {value}
-      </ThemedText>
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Order (in-progress, capacity-mode drop-off) — 12-activity-detail-inprogress.png
-// ---------------------------------------------------------------------------
-
-// customer-app-api-map.md §0.3 — there is no backend field for which of
-// these 4 design stages a drop-off order is in, and Live Queue/per-stage
-// tracking is explicitly out of scope ("do not build"). These 4 steps are
-// therefore a best-effort projection of the 3 real `booking_status` values
-// onto the design's stage labels — "Fitting" can never be the *current*
-// step from status alone, only ever passed-through once the order
-// completes. That's an honest reflection of the real data, not a bug.
-const ORDER_STEPS: { label: string; icon: IoniconName }[] = [
-  { label: 'Dropped Off', icon: 'cube-outline' }, // TODO i18n
-  { label: 'In Progress', icon: 'pencil-outline' }, // TODO i18n
-  { label: 'Fitting', icon: 'body-outline' }, // TODO i18n
-  { label: 'Ready for Pickup', icon: 'bag-check-outline' }, // TODO i18n
-];
-
-function orderStepIndex(status: BookingStatus): number {
-  switch (status) {
-    case 'pending':
-      return 0;
-    case 'confirmed':
-      return 1;
-    case 'completed':
-      return ORDER_STEPS.length;
-    case 'cancelled':
-    case 'no_show':
-    default:
-      return -1;
-  }
-}
-
-function OrderDetail({
-  data,
-  store,
-  onWriteReview,
-}: {
-  data: BookingRead;
-  store: { phone: string | null } | undefined;
-  onWriteReview: (() => void) | undefined;
-}) {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  const currentIndex = orderStepIndex(data.booking_status);
-  const isCancelled = data.booking_status === 'cancelled';
-  const isNoShow = data.booking_status === 'no_show';
-  const statusLabel = isCancelled
-    ? 'Cancelled' /* TODO i18n */
-    : isNoShow
-      ? 'No show' /* TODO i18n */
-      : ORDER_STEPS[Math.min(currentIndex, ORDER_STEPS.length - 1)].label;
-  const showHelpRow = data.booking_status === 'pending' || data.booking_status === 'confirmed';
-
-  const hasPhone = Boolean(store?.phone);
-  const handleCall = () => {
-    if (!store?.phone) return;
-    Linking.openURL(`tel:${store.phone}`);
-  };
-  const handleMessage = () => router.push(`/chat/${data.id}`);
-
-  return (
-    <>
-      <View style={styles.orderHeaderRow}>
-        {data.store_logo ? (
-          <Image
-            source={{ uri: data.store_logo }}
-            style={styles.orderHeaderAvatar}
-            contentFit="cover"
-          />
-        ) : (
-          <View style={[styles.orderHeaderAvatar, styles.heroAvatarFallback]} />
-        )}
-        <ThemedText
-          variant="body"
-          color="textSecondary"
-          style={styles.orderHeaderText}
-          numberOfLines={2}
-        >
-          {data.booking_services_str} · {data.store_name}
-        </ThemedText>
-      </View>
-
-      <View style={styles.trackerCard}>
-        <View style={styles.trackerIconsRow}>
-          {ORDER_STEPS.map((step, index) => (
-            <Fragment key={step.label}>
-              {index > 0 ? (
-                <View style={[styles.connector, index <= currentIndex && styles.connectorDone]} />
-              ) : null}
-              <StepCircle
-                step={step}
-                state={
-                  index < currentIndex ? 'done' : index === currentIndex ? 'current' : 'future'
-                }
-              />
-            </Fragment>
-          ))}
-        </View>
-        <View style={styles.trackerLabelsRow}>
-          {ORDER_STEPS.map((step, index) => (
-            <Fragment key={step.label}>
-              {index > 0 ? <View style={styles.connectorGap} /> : null}
-              <View style={styles.stepLabelBox}>
-                <ThemedText
-                  variant="caption"
-                  color={index === currentIndex ? 'textPrimary' : 'textSecondary'}
-                  numberOfLines={2}
-                  style={index === currentIndex && styles.stepLabelActive}
-                >
-                  {step.label}
-                </ThemedText>
-              </View>
-            </Fragment>
-          ))}
-        </View>
-      </View>
-
-      <ThemedText
-        variant="bodyMedium"
-        color={isCancelled || isNoShow ? 'danger' : 'textPrimary'}
-        style={styles.orderStatusLine}
-      >
-        {/* TODO i18n */}
-        {`Status: ${statusLabel}`}
-      </ThemedText>
-
-      <View style={styles.infoCard}>
-        <View style={styles.whenWhereRow}>
-          <View style={styles.whenWhereCol}>
-            <ThemedText variant="caption" color="textSecondary" style={styles.whenWhereLabel}>
-              {/* TODO i18n */}
-              WHEN
-            </ThemedText>
-            <ThemedText variant="bodyMedium">{formatDateTitle(data.booking_date, data.timezone)}</ThemedText>
-          </View>
-          <View style={styles.whenWhereCol}>
-            <ThemedText variant="caption" color="textSecondary" style={styles.whenWhereLabel}>
-              {/* TODO i18n */}
-              WHERE
-            </ThemedText>
-            <ThemedText variant="bodyMedium" numberOfLines={1}>
-              {data.store_address}
-            </ThemedText>
-          </View>
-        </View>
-        {/* Purely decorative strip echoing the design's simplified map
-            illustration — there's no store geometry/route to render here,
-            just a WHEN/WHERE summary, so this never claims to be a real map. */}
-        <View style={styles.mapStrip} pointerEvents="none">
-          <View style={[styles.mapStripBand, styles.mapStripSky]} />
-          <View style={[styles.mapStripBand, styles.mapStripLand]} />
-          <View style={[styles.mapStripBand, styles.mapStripGreen]} />
-          <View style={styles.mapStripDot} />
-        </View>
-      </View>
-
-      {showHelpRow ? (
-        <View style={styles.helpCard}>
-          {data.store_logo ? (
-            <Image source={{ uri: data.store_logo }} style={styles.helpAvatar} contentFit="cover" />
-          ) : (
-            <View style={[styles.helpAvatar, styles.heroAvatarFallback]} />
-          )}
-          <ThemedText variant="bodyMedium" style={styles.helpText}>
-            {/* TODO i18n */}
-            Need help with your order?
-          </ThemedText>
-          <Pressable style={styles.helpIconButton} onPress={handleMessage} hitSlop={8}>
-            <Ionicons name="chatbubble-outline" size={18} color={colors.brandAccent} />
-          </Pressable>
-          <Pressable
-            style={[styles.helpIconButton, styles.helpIconButtonSpacing]}
-            onPress={handleCall}
-            disabled={!hasPhone}
-            hitSlop={8}
-          >
-            <Ionicons
-              name="call-outline"
-              size={18}
-              color={hasPhone ? colors.brandAccent : colors.disabledText}
-            />
-          </Pressable>
-        </View>
-      ) : null}
-
-      {onWriteReview ? (
+      {canViewPlace ? (
         <Button
-          label={/* TODO i18n */ 'Write a review'}
+          label={t('activity.detail.viewPlace')}
+          icon="storefront-outline"
+          variant={canReview ? 'secondary' : 'primary'}
+          onPress={onViewPlace}
+        />
+      ) : null}
+      {canViewPlace && data.booking_status === 'completed' ? (
+        <Button
+          label={t('activity.detail.directions')}
+          icon="navigate-outline"
           variant="ghost"
-          style={styles.reviewButton}
-          onPress={onWriteReview}
+          onPress={onDirections}
+          disabled={!canDirections}
         />
       ) : null}
     </>
   );
 }
 
-function StepCircle({
-  step,
-  state,
-}: {
-  step: { icon: IoniconName };
-  state: 'done' | 'current' | 'future';
-}) {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  if (state === 'done') {
-    return (
-      <View style={[styles.stepCircle, styles.stepCircleDone]}>
-        <Ionicons name="checkmark" size={16} color={colors.textOnBrand} />
-      </View>
-    );
-  }
-  if (state === 'current') {
-    return (
-      <View style={[styles.stepCircle, styles.stepCircleCurrent]}>
-        <Ionicons name={step.icon} size={16} color={colors.brandAccent} />
-      </View>
-    );
-  }
+// The page's final layout in grey: the hero, the two cards and the action stack.
+function DetailSkeleton() {
   return (
-    <View style={[styles.stepCircle, styles.stepCircleFuture]}>
-      <Ionicons name={step.icon} size={16} color={colors.disabledText} />
+    <View style={styles.content}>
+      <Skeleton height={236} radius={radius.xl} />
+      <Skeleton height={132} radius={radius.lg} />
+      <Skeleton height={150} radius={radius.lg} />
+      <View style={styles.actions}>
+        <Skeleton height={52} radius={radius.pill} />
+        <Skeleton height={52} radius={radius.pill} />
+      </View>
     </View>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
-
-  // Appointment hero (dark, deep-purple — reserved for this kind of hero
-  // surface per colors.ts, distinct from the brighter brandAccent used for
-  // interactive/selected chrome elsewhere).
-  heroCard: {
-    backgroundColor: colors.brand,
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.xs,
+    paddingBottom: 120,
+    gap: spacing.md,
   },
-  heroStatusLabel: {
-    fontFamily: fontFamily.bodySemiBold,
-    letterSpacing: 0.6,
-    opacity: 0.8,
-    marginBottom: spacing.xxs,
-  },
-  heroSubRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
-  heroAvatar: { width: 24, height: 24, borderRadius: 12, marginRight: spacing.xs },
-  heroAvatarFallback: { backgroundColor: colors.backgroundMuted },
-  heroSubText: { opacity: 0.85, flexShrink: 1 },
-  countdownPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.brandAccent,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-    borderRadius: radius.pill,
-    marginTop: spacing.sm,
-  },
-  countdownLabel: { fontFamily: fontFamily.bodySemiBold },
-
-  infoCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xxs,
-  },
-  infoRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-    marginRight: spacing.sm,
-  },
-  infoLabel: { marginLeft: spacing.xs },
-  infoValue: { flexShrink: 1, textAlign: 'right' },
-
-  actionRow: { flexDirection: 'row' },
-  outlineButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  actions: { gap: spacing.sm, marginTop: spacing.xs },
+  pair: { flexDirection: 'row', gap: spacing.sm },
+  half: { flex: 1 },
+  note: { textAlign: 'center', marginTop: spacing.xs },
+  cancel: {
+    alignSelf: 'center',
+    minHeight: 44,
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
-  outlineButtonSpacing: { marginLeft: spacing.sm },
-  outlineButtonLabel: { marginLeft: spacing.xxs },
-
-  freeCancelNote: { textAlign: 'center', marginTop: spacing.md },
-  reviewButton: { marginTop: spacing.md },
-  cancelLink: { alignSelf: 'center', marginTop: spacing.md },
-
-  // Order ("Your Order") variant
-  orderHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
-  orderHeaderAvatar: { width: 28, height: 28, borderRadius: 14, marginRight: spacing.xs },
-  orderHeaderText: { flex: 1 },
-
-  trackerCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  trackerIconsRow: { flexDirection: 'row', alignItems: 'center' },
-  connector: { flex: 1, height: 2, backgroundColor: colors.border, marginHorizontal: 2 },
-  connectorDone: { backgroundColor: colors.brandAccent },
-  connectorGap: { flex: 1 },
-  stepCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepCircleDone: { backgroundColor: colors.brandAccent },
-  stepCircleCurrent: {
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.brandAccent,
-  },
-  stepCircleFuture: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  trackerLabelsRow: { flexDirection: 'row', marginTop: spacing.xs },
-  stepLabelBox: { width: 36, alignItems: 'center' },
-  stepLabelActive: { fontFamily: fontFamily.bodySemiBold },
-
-  orderStatusLine: { marginBottom: spacing.md },
-
-  whenWhereRow: { flexDirection: 'row', marginBottom: spacing.sm },
-  whenWhereCol: { flex: 1 },
-  whenWhereLabel: { letterSpacing: 0.6, marginBottom: 2 },
-  mapStrip: {
-    height: 56,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    flexDirection: 'row',
-  },
-  mapStripBand: { flex: 1, height: '100%' },
-  mapStripSky: { backgroundColor: '#CFE0F0' },
-  mapStripLand: { backgroundColor: '#EDE3CE' },
-  mapStripGreen: { backgroundColor: '#D9ECD8' },
-  mapStripDot: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginTop: -6,
-    marginLeft: -6,
-    backgroundColor: colors.brandAccent,
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-
-  helpCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.sm,
-  },
-  helpAvatar: { width: 36, height: 36, borderRadius: 18, marginRight: spacing.sm },
-  helpText: { flex: 1 },
-  helpIconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  helpIconButtonSpacing: { marginLeft: spacing.xs },
-  });
+});

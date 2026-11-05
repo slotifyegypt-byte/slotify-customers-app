@@ -170,7 +170,10 @@ describe('getAvailability', () => {
   it('maps a capacity document to flat slots with capacity_remaining', async () => {
     fetchMock.mockResolvedValue(json(capacityDoc));
 
-    const result = await getAvailability({ ...params, service_id: capacityDoc.meta.service_id as string });
+    const result = await getAvailability({
+      ...params,
+      service_id: capacityDoc.meta.service_id as string,
+    });
 
     expect(result.booking_mode).toBe('capacity');
     expect(result.price).toBe(150);
@@ -196,7 +199,9 @@ describe('getAvailability', () => {
   });
 
   it('throws an ApiError from the 404 body for an unknown or inactive branch', async () => {
-    fetchMock.mockResolvedValue(json({ code: 'branch_not_found', message: 'branch_not_found' }, 404));
+    fetchMock.mockResolvedValue(
+      json({ code: 'branch_not_found', message: 'branch_not_found' }, 404),
+    );
 
     const failure: unknown = await getAvailability(params).catch((e) => e);
 
@@ -215,7 +220,9 @@ describe('getAvailability', () => {
 
     const result = await getAvailability(params);
 
-    expect(result.employees).toEqual([{ employee_id: SAM, employee_name: 'Sam Adel', available_slots: [] }]);
+    expect(result.employees).toEqual([
+      { employee_id: SAM, employee_name: 'Sam Adel', available_slots: [] },
+    ]);
     expect(result.slots).toEqual([]);
   });
 

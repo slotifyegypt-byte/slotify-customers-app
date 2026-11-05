@@ -2,28 +2,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
+import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
 import { formatMoney } from '@/lib/money';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { enter, spacing, useColors } from '@/theme';
 
 import type { Service } from '../api/schemas';
 import { BookingFlow } from '../components/BookingFlow';
+import { BookingSkeleton } from '../components/BookingSkeleton';
 import { useStoreServices } from '../hooks/useStoreServices';
 import { useDraftEntries } from '../state/bookingDraftStore';
 
 // customer-app-api-map.md §6: "Service Booking Configuration & Booking Sheet
-// Overlay" — pick a service (if not already chosen from the venue's services
+// Overlay": pick a service (if not already chosen from the venue's services
 // tab), then specialist (specialist-mode only) -> date -> time -> confirm.
 export function ServiceBookingConfigScreen() {
   const colors = useColors();
-  const styles = createStyles(colors);
   const { t } = useTranslation();
-  const { storeId, serviceId: serviceIdParam } = useLocalSearchParams<{ storeId: string; serviceId?: string }>();
+  const { storeId, serviceId: serviceIdParam } = useLocalSearchParams<{
+    storeId: string;
+    serviceId?: string;
+  }>();
   const [pickedServiceId, setPickedServiceId] = useState<string | null>(null);
 
   const services = useStoreServices(storeId);
@@ -50,10 +56,7 @@ export function ServiceBookingConfigScreen() {
   if (services.isLoading || store.isLoading) {
     return (
       <Screen style={styles.container}>
-        <BackOnlyHeader />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.brand} />
-        </View>
+        <BookingSkeleton shape={serviceIdParam ? 'flow' : 'list'} />
       </Screen>
     );
   }
@@ -61,17 +64,16 @@ export function ServiceBookingConfigScreen() {
   if (services.isError || store.isError || !store.data) {
     return (
       <Screen style={styles.container}>
-        <BackOnlyHeader />
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('common.errorGeneric')}
-            actionLabel={t('common.retry')}
-            onAction={() => {
-              if (services.isError) services.refetch();
-              if (store.isError || !store.data) store.refetch();
-            }}
-          />
-        </View>
+        <ScreenHeader title="" />
+        <EmptyState
+          icon="cloud-offline-outline"
+          title={t('common.errorGeneric')}
+          actionLabel={t('common.retry')}
+          onAction={() => {
+            if (services.isError) services.refetch();
+            if (store.isError || !store.data) store.refetch();
+          }}
+        />
       </Screen>
     );
   }
@@ -79,40 +81,40 @@ export function ServiceBookingConfigScreen() {
   if (!selectedServiceId || !selectedService) {
     return (
       <Screen style={styles.container}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-            <Ionicons name="chevron-back" size={18} color={colors.brand} />
-          </Pressable>
-          <View style={styles.headerText}>
-            <ThemedText variant="h2" numberOfLines={1}>
-              {/* TODO i18n */}
-              Choose a service
-            </ThemedText>
-            {store.data?.name ? (
-              <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
-                {store.data.name}
-              </ThemedText>
-            ) : null}
-          </View>
-        </View>
+        <ScreenHeader title="Choose a service" /* TODO i18n */ subtitle={store.data.name} />
         <FlatList
           data={services.data ?? []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <Pressable style={styles.serviceRow} onPress={() => setPickedServiceId(item.id)}>
-              <View style={styles.serviceInfo}>
-                <ThemedText variant="bodyMedium">{item.name}</ThemedText>
-                <ThemedText variant="caption" color="textSecondary">
-                  {item.duration_minutes} min
-                </ThemedText>
-              </View>
-              <ThemedText variant="bodyMedium">
-                {formatMoney(item.price, item.currency)}
-              </ThemedText>
-            </Pressable>
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item, index }) => (
+            <Animated.View entering={enter(index)}>
+              <Card onPress={() => setPickedServiceId(item.id)} accessibilityLabel={item.name}>
+                <View style={styles.serviceRow}>
+                  <View style={styles.serviceInfo}>
+                    <ThemedText variant="h3">{item.name}</ThemedText>
+                    <View style={styles.meta}>
+                      <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
+                      <ThemedText variant="caption" color="textSecondary">
+                        {item.duration_minutes} min {/* TODO i18n */}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <ThemedText variant="h3">{formatMoney(item.price, item.currency)}</ThemedText>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+                </View>
+              </Card>
+            </Animated.View>
           )}
-          ListEmptyComponent={<EmptyState title="No services available" />} /* TODO i18n */
+          ListEmptyComponent={
+            <EmptyState
+              icon="cut-outline"
+              title="No services available" /* TODO i18n */
+              body="This place hasn't listed anything to book yet." /* TODO i18n */
+              actionLabel="Go back" /* TODO i18n */
+              onAction={() => router.back()}
+            />
+          }
         />
       </Screen>
     );
@@ -135,48 +137,15 @@ export function ServiceBookingConfigScreen() {
   );
 }
 
-// Minimal header (back button only) for the loading/error states, which
-// have no title/subtitle to show yet — still needs to replace the native
-// header's back affordance now that this route renders `headerShown: false`.
-function BackOnlyHeader() {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  return (
-    <View style={styles.header}>
-      <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-        <Ionicons name="chevron-back" size={18} color={colors.brand} />
-      </Pressable>
-    </View>
-  );
-}
-
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
+const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  list: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xl,
     gap: spacing.sm,
-    padding: spacing.md,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerText: { flex: 1, minWidth: 0 },
-  list: { padding: spacing.md, paddingTop: 0 },
-  serviceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.divider,
-  },
-  serviceInfo: { flex: 1 },
+  serviceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  serviceInfo: { flex: 1, minWidth: 0, gap: 4 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });

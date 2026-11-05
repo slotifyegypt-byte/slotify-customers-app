@@ -32,7 +32,11 @@ export function useToggleFavourite(storeId: string) {
     return { previous };
   };
 
-  const rollback = (_error: unknown, _vars: void, context: { previous: FavouriteCheck | undefined } | undefined) => {
+  const rollback = (
+    _error: unknown,
+    _vars: void,
+    context: { previous: FavouriteCheck | undefined } | undefined,
+  ) => {
     if (context?.previous) {
       queryClient.setQueryData(checkKey, context.previous);
     }

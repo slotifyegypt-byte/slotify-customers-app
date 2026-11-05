@@ -22,10 +22,16 @@ describe('createSupportTicket', () => {
     const { builder, calls } = mockQuery({ data: [row], error: null });
     mockFrom.mockReturnValue(builder);
 
-    const ticket = await createSupportTicket({ subject: 'Refund', message: 'Please refund my booking' });
+    const ticket = await createSupportTicket({
+      subject: 'Refund',
+      message: 'Please refund my booking',
+    });
 
     expect(mockFrom).toHaveBeenCalledWith('support_tickets');
-    expect(calls).toContainEqual(['insert', [{ app: 'customer', subject: 'Refund', message: 'Please refund my booking' }]]);
+    expect(calls).toContainEqual([
+      'insert',
+      [{ app: 'customer', subject: 'Refund', message: 'Please refund my booking' }],
+    ]);
     expect(ticket).toEqual(row);
   });
 
@@ -41,13 +47,17 @@ describe('createSupportTicket', () => {
   it('throws forbidden when the insert returns no row', async () => {
     const { builder } = mockQuery({ data: [], error: null });
     mockFrom.mockReturnValue(builder);
-    await expect(createSupportTicket({ subject: 'a', message: 'b' })).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(createSupportTicket({ subject: 'a', message: 'b' })).rejects.toMatchObject({
+      code: 'forbidden',
+    });
   });
 
   it('throws an ApiError on failure', async () => {
     const { builder } = mockQuery({ data: null, error: { code: '23514', message: 'check' } });
     mockFrom.mockReturnValue(builder);
-    await expect(createSupportTicket({ subject: 'a', message: 'b' })).rejects.toMatchObject({ status: expect.any(Number) });
+    await expect(createSupportTicket({ subject: 'a', message: 'b' })).rejects.toMatchObject({
+      status: expect.any(Number),
+    });
   });
 });
 

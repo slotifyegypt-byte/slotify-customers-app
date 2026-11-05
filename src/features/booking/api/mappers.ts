@@ -3,7 +3,13 @@ import type { BranchCardRow } from '@/features/explore-search/api/mappers';
 import type { Database } from '@/lib/database.types';
 import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
 
-import type { AvailabilityDoc, AvailabilityResponse, AvailabilitySlot, BookingRead, BookingServiceRead } from './schemas';
+import type {
+  AvailabilityDoc,
+  AvailabilityResponse,
+  AvailabilitySlot,
+  BookingRead,
+  BookingServiceRead,
+} from './schemas';
 
 type Tables = Database['public']['Tables'];
 
@@ -71,7 +77,10 @@ export function toBooking(row: BookingRow, now: Date = new Date()): BookingRead 
     // Capacity-mode services never get a specialist, so "no item has an
     // employee" is what marks a drop-off. A booking with no items at all is
     // not a drop-off.
-    booking_type: items.length > 0 && items.every((item) => item.employee_id === null) ? 'drop_off' : 'appointment',
+    booking_type:
+      items.length > 0 && items.every((item) => item.employee_id === null)
+        ? 'drop_off'
+        : 'appointment',
     total_price: row.total_price,
     // The booking's own currency column, not the (possibly missing) branch's.
     currency: row.currency,

@@ -3,7 +3,12 @@ import { isApiError, type ApiError } from '@/lib/api/errors';
 import type { BookingDraftEntry } from '../state/bookingDraftStore';
 import { getBookingErrorMessage, isSlotConflict } from '../utils/bookingErrors';
 
-import { createBooking, draftEntryToPayload, draftToBookingRequest, rescheduleBookingService } from './bookingApi';
+import {
+  createBooking,
+  draftEntryToPayload,
+  draftToBookingRequest,
+  rescheduleBookingService,
+} from './bookingApi';
 import type { AvailabilitySlot, Service } from './schemas';
 
 jest.mock('@/lib/config', () => ({
@@ -61,7 +66,12 @@ const haircut: BookingDraftEntry = {
 };
 
 const carWash: BookingDraftEntry = {
-  service: service({ id: 'svc-wash', name: 'Express wash', requires_specialist: false, max_concurrent_bookings: 4 }),
+  service: service({
+    id: 'svc-wash',
+    name: 'Express wash',
+    requires_specialist: false,
+    max_concurrent_bookings: 4,
+  }),
   employeeId: null,
   date: '2026-11-04',
   slot: slot({
@@ -76,10 +86,16 @@ const carWash: BookingDraftEntry = {
 
 describe('createBooking', () => {
   it('POSTs branch_id, items and customer_note with both auth headers and returns the new id', async () => {
-    fetchMock.mockResolvedValue(json({ booking: { id: 'bk-1', status: 'confirmed', items: [] } }, 201));
+    fetchMock.mockResolvedValue(
+      json({ booking: { id: 'bk-1', status: 'confirmed', items: [] } }, 201),
+    );
 
-    const items = [{ service_id: 'svc-haircut', employee_id: 'emp-mona', starts_at: '2026-11-04T08:00:00.000Z' }];
-    await expect(createBooking('branch-1', items, 'Haircut: Short on the sides')).resolves.toEqual({ id: 'bk-1' });
+    const items = [
+      { service_id: 'svc-haircut', employee_id: 'emp-mona', starts_at: '2026-11-04T08:00:00.000Z' },
+    ];
+    await expect(createBooking('branch-1', items, 'Haircut: Short on the sides')).resolves.toEqual({
+      id: 'bk-1',
+    });
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://example.supabase.co/functions/v1/bookings');
@@ -95,7 +111,9 @@ describe('createBooking', () => {
   it('omits customer_note when there is none', async () => {
     fetchMock.mockResolvedValue(json({ booking: { id: 'bk-2' } }, 201));
 
-    await createBooking('branch-1', [{ service_id: 'svc-wash', starts_at: '2026-11-04T10:00:00.000Z' }]);
+    await createBooking('branch-1', [
+      { service_id: 'svc-wash', starts_at: '2026-11-04T10:00:00.000Z' },
+    ]);
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(body).not.toHaveProperty('customer_note');
@@ -103,7 +121,10 @@ describe('createBooking', () => {
 
   it('rejects a 409 slot_taken with an ApiError that counts as a slot conflict', async () => {
     fetchMock.mockResolvedValue(
-      json({ code: 'slot_taken', message: 'Someone just booked this time. Please pick another.' }, 409),
+      json(
+        { code: 'slot_taken', message: 'Someone just booked this time. Please pick another.' },
+        409,
+      ),
     );
 
     const failure: unknown = await createBooking('branch-1', [
@@ -113,7 +134,9 @@ describe('createBooking', () => {
     expect(isApiError(failure, 'slot_taken')).toBe(true);
     expect((failure as ApiError).status).toBe(409);
     expect(isSlotConflict(failure)).toBe(true);
-    expect(getBookingErrorMessage(failure, 'fallback')).toBe('Someone just booked this time. Please pick another.');
+    expect(getBookingErrorMessage(failure, 'fallback')).toBe(
+      'Someone just booked this time. Please pick another.',
+    );
   });
 });
 

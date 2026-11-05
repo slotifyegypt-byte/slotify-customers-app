@@ -1,144 +1,45 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ListRow } from '@/components/ListRow';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useFavourites } from '@/features/favourites/hooks/useFavourites';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { useThemePreferenceStore } from '@/lib/theme/themePreferenceStore';
+import { enter, spacing } from '@/theme';
 
 import { deleteMe } from '../api/profileApi';
+import { SettingsGroup } from '../components/SettingsGroup';
 import { useMyProfile } from '../hooks/useProfile';
 
-interface ProfileRowConfig {
-  key: string;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconBg: string;
-  iconColor: string;
-  onPress: () => void;
-  trailingText?: string;
-}
-
-// TODO i18n — every label below
-function buildRowGroups(favouritesCount: number | undefined, colors: Colors): ProfileRowConfig[][] {
-  return [
-  [
-    {
-      key: 'favourites',
-      label: 'Favourites',
-      icon: 'heart',
-      iconBg: 'rgba(226, 74, 74, 0.12)',
-      iconColor: colors.danger,
-      onPress: () => router.push('/(tabs)/profile/favourites'),
-      trailingText: favouritesCount !== undefined ? String(favouritesCount) : undefined,
-    },
-    {
-      key: 'reviews',
-      label: 'My Reviews',
-      icon: 'star',
-      iconBg: 'rgba(224, 167, 45, 0.15)',
-      iconColor: colors.warning,
-      onPress: () => router.push('/(tabs)/profile/my-reviews'),
-    },
-  ],
-  [
-    {
-      key: 'notifications',
-      label: 'Notification Settings',
-      icon: 'notifications',
-      iconBg: 'rgba(124, 111, 240, 0.12)',
-      iconColor: colors.brandAccent,
-      onPress: () => router.push('/(tabs)/profile/notification-settings'),
-    },
-    {
-      key: 'language',
-      label: 'Language',
-      icon: 'globe',
-      iconBg: 'rgba(124, 111, 240, 0.24)',
-      iconColor: colors.brandAccent,
-      onPress: () => router.push('/(tabs)/profile/language'),
-    },
-    {
-      key: 'appearance',
-      label: 'Appearance',
-      icon: 'contrast',
-      iconBg: 'rgba(58, 36, 107, 0.12)',
-      iconColor: colors.brand,
-      onPress: () => router.push('/(tabs)/profile/appearance'),
-    },
-  ],
-  [
-    {
-      key: 'help',
-      label: 'Help & FAQ',
-      icon: 'help-circle',
-      iconBg: 'rgba(47, 175, 99, 0.15)',
-      iconColor: colors.success,
-      onPress: () => router.push('/(tabs)/profile/help'),
-    },
-    {
-      key: 'contact',
-      label: 'Contact Us',
-      icon: 'chatbubble-ellipses',
-      iconBg: 'rgba(226, 74, 74, 0.10)',
-      iconColor: colors.danger,
-      onPress: () => router.push('/(tabs)/profile/contact'),
-    },
-  ],
-  ];
-}
-
-function ProfileRow({
-  label,
-  icon,
-  iconBg,
-  iconColor,
-  onPress,
-  trailingText,
-  isLast,
-}: Omit<ProfileRowConfig, 'key'> & { isLast: boolean }) {
-  const colors = useColors();
-  const styles = createStyles(colors);
-  return (
-    <Pressable style={[styles.row, isLast && styles.rowLast]} onPress={onPress} accessibilityRole="button">
-      <View style={[styles.iconWell, { backgroundColor: iconBg }]}>
-        <Ionicons name={icon} size={18} color={iconColor} />
-      </View>
-      <ThemedText variant="bodyMedium" color="textPrimary" style={styles.rowLabel}>
-        {label}
-      </ThemedText>
-      {trailingText ? (
-        <ThemedText variant="body" color="textSecondary" style={styles.trailingText}>
-          {trailingText}
-        </ThemedText>
-      ) : null}
-      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-    </Pressable>
-  );
-}
-
+// The account hub: who you are, then settings in labelled groups, then the quiet account actions.
 export function ProfileScreen() {
-  const colors = useColors();
-  const styles = createStyles(colors);
+  const { t, i18n } = useTranslation();
   const { data: profile } = useMyProfile();
   const favourites = useFavourites();
   const logout = useLogout();
   const queryClient = useQueryClient();
+  const themePreference = useThemePreferenceStore((state) => state.preference);
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const rowGroups = buildRowGroups(favourites.data?.length, colors);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const displayName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
   const initials = (displayName || profile?.email || '?').trim().charAt(0).toUpperCase();
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+  const favouritesCount = favourites.data?.length;
+  const languageLabel = i18n.language === 'ar' ? 'العربية' : 'English';
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -150,116 +51,173 @@ export function ProfileScreen() {
     }
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete account', // TODO i18n
-      'This permanently deletes your account and can\'t be undone. Are you sure?', // TODO i18n
-      [
-        { text: 'Cancel', style: 'cancel' }, // TODO i18n
-        {
-          text: 'Delete', // TODO i18n
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteMe();
-              queryClient.clear();
-              await logout();
-            } catch {
-              Alert.alert('Something went wrong', 'Could not delete your account. Please try again.'); // TODO i18n
-            }
-          },
-        },
-      ],
-    );
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteMe();
+      queryClient.clear();
+      await logout();
+    } catch {
+      Alert.alert(t('profile.deleteFailedTitle'), t('profile.deleteFailedBody'));
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmVisible(false);
+    }
   };
 
   return (
     <Screen edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Pressable
-          style={styles.header}
-          onPress={() => router.push('/(tabs)/profile/edit')}
-          accessibilityRole="button"
-          accessibilityLabel="Edit profile" // TODO i18n
-        >
-          <Avatar uri={profile?.avatar_url} label={initials} size={64} />
-          <View style={styles.headerText}>
-            <ThemedText variant="h3">{displayName || 'Add your name'}</ThemedText>
-            <ThemedText variant="body" color="textSecondary">
-              {profile?.email ?? profile?.phone ?? ''}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Animated.View entering={enter(0)} style={styles.identity}>
+          <Avatar uri={profile?.avatar_url} label={initials} size={96} />
+          <View style={styles.identityText}>
+            <ThemedText variant="h2" style={styles.center} numberOfLines={2}>
+              {displayName || t('profile.addYourName')}
             </ThemedText>
+            {(profile?.email ?? profile?.phone) ? (
+              <ThemedText
+                variant="body"
+                color="textSecondary"
+                style={styles.center}
+                numberOfLines={1}
+              >
+                {profile?.email ?? profile?.phone}
+              </ThemedText>
+            ) : null}
           </View>
-        </Pressable>
+          <Button
+            label={t('profile.editProfile')}
+            variant="secondary"
+            size="sm"
+            icon="create-outline"
+            fullWidth={false}
+            onPress={() => router.push('/(tabs)/profile/edit')}
+          />
+        </Animated.View>
 
-        {rowGroups.map((rows, groupIndex) => (
-          <View key={groupIndex} style={styles.section}>
-            {rows.map(({ key, ...row }, index) => (
-              <ProfileRow key={key} {...row} isLast={index === rows.length - 1} />
-            ))}
-          </View>
-        ))}
+        <Animated.View entering={enter(1)}>
+          <SettingsGroup title={t('profile.groupActivity')}>
+            <ListRow
+              title={t('profile.favourites')}
+              icon="heart-outline"
+              iconTone="danger"
+              value={favouritesCount !== undefined ? String(favouritesCount) : undefined}
+              onPress={() => router.push('/(tabs)/profile/favourites')}
+            />
+            <ListRow
+              title={t('profile.myReviews')}
+              icon="star-outline"
+              iconTone="warning"
+              onPress={() => router.push('/(tabs)/profile/my-reviews')}
+            />
+          </SettingsGroup>
+        </Animated.View>
 
-        <Button
-          label="Log Out" // TODO i18n
-          variant="ghost"
-          onPress={() => setLogoutConfirmVisible(true)}
-          style={styles.logOut}
-        />
-        <Pressable onPress={handleDeleteAccount} accessibilityRole="button" style={styles.deleteAccount}>
-          <ThemedText variant="bodyMedium" color="danger" style={styles.deleteAccountText}>
-            Delete Account
+        <Animated.View entering={enter(2)}>
+          <SettingsGroup title={t('profile.groupPreferences')}>
+            <ListRow
+              title={t('notificationSettings.title')}
+              icon="notifications-outline"
+              iconTone="brand"
+              onPress={() => router.push('/(tabs)/profile/notification-settings')}
+            />
+            <ListRow
+              title={t('language.title')}
+              icon="globe-outline"
+              iconTone="brand"
+              value={languageLabel}
+              onPress={() => router.push('/(tabs)/profile/language')}
+            />
+            <ListRow
+              title={t('appearance.title')}
+              icon="contrast-outline"
+              iconTone="neutral"
+              value={t(`appearance.${themePreference}`)}
+              onPress={() => router.push('/(tabs)/profile/appearance')}
+            />
+          </SettingsGroup>
+        </Animated.View>
+
+        <Animated.View entering={enter(3)}>
+          <SettingsGroup title={t('profile.groupSupport')}>
+            <ListRow
+              title={t('helpFaq.title')}
+              icon="help-circle-outline"
+              iconTone="success"
+              onPress={() => router.push('/(tabs)/profile/help')}
+            />
+            <ListRow
+              title={t('contactUs.title')}
+              icon="chatbubble-ellipses-outline"
+              iconTone="success"
+              onPress={() => router.push('/(tabs)/profile/contact')}
+            />
+          </SettingsGroup>
+        </Animated.View>
+
+        <Animated.View entering={enter(4)} style={styles.footer}>
+          <Button
+            label={t('profile.logOut')}
+            variant="ghost"
+            icon="log-out-outline"
+            onPress={() => setLogoutConfirmVisible(true)}
+          />
+          <PressableScale
+            onPress={() => setDeleteConfirmVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.deleteAccount')}
+            scaleTo={0.97}
+            style={styles.deleteAccount}
+          >
+            <ThemedText variant="bodyMedium" color="danger">
+              {t('profile.deleteAccount')}
+            </ThemedText>
+          </PressableScale>
+          <ThemedText variant="caption" color="textTertiary" style={styles.center}>
+            {t('profile.version', { version: appVersion })}
           </ThemedText>
-        </Pressable>
-        <ThemedText variant="caption" color="textSecondary" style={styles.version}>
-          {`Slotify v${appVersion}`}
-        </ThemedText>
+        </Animated.View>
       </ScrollView>
 
       <ConfirmDialog
         visible={logoutConfirmVisible}
-        title="Log out of Slotify?" // TODO i18n
-        primaryLabel="Cancel" // TODO i18n
+        title={t('profile.logOutTitle')}
+        primaryLabel={t('common.cancel')}
         onPrimary={() => setLogoutConfirmVisible(false)}
-        secondaryLabel="Log Out" // TODO i18n
+        secondaryLabel={t('profile.logOut')}
         onSecondary={handleLogout}
         secondaryLoading={loggingOut}
+      />
+      <ConfirmDialog
+        visible={deleteConfirmVisible}
+        title={t('profile.deleteAccount')}
+        body={t('profile.deleteBody')}
+        primaryLabel={t('common.cancel')}
+        onPrimary={() => setDeleteConfirmVisible(false)}
+        secondaryLabel={t('profile.delete')}
+        onSecondary={handleDeleteAccount}
+        secondaryTone="danger"
+        secondaryLoading={deleting}
       />
     </Screen>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    content: { padding: spacing.md, paddingBottom: spacing.xxl },
-    header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg, paddingHorizontal: spacing.xs },
-    headerText: { marginLeft: spacing.md, flexShrink: 1 },
-    section: {
-      borderRadius: radius.lg,
-      backgroundColor: colors.surface,
-      overflow: 'hidden',
-      marginBottom: spacing.md,
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.divider,
-      gap: spacing.sm,
-    },
-    rowLast: { borderBottomWidth: 0 },
-    iconWell: {
-      width: 32,
-      height: 32,
-      borderRadius: radius.pill,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    rowLabel: { flex: 1 },
-    trailingText: { marginRight: spacing.xxs },
-    logOut: { marginTop: spacing.sm },
-    deleteAccount: { alignSelf: 'center', marginTop: spacing.md, padding: spacing.xxs },
-    deleteAccountText: { textDecorationLine: 'underline' },
-    version: { alignSelf: 'center', marginTop: spacing.sm },
-  });
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.lg,
+    paddingBottom: 120,
+    gap: 28,
+  },
+  identity: { alignItems: 'center', gap: spacing.sm },
+  identityText: { alignItems: 'center', gap: 2, alignSelf: 'stretch' },
+  center: { textAlign: 'center' },
+  footer: { gap: spacing.xs, alignItems: 'stretch' },
+  deleteAccount: {
+    alignSelf: 'center',
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+  },
+});

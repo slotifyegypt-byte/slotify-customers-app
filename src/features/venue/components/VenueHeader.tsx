@@ -1,28 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { type ReactNode, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  Pressable,
   Share,
   StyleSheet,
-  type StyleProp,
+  useWindowDimensions,
   View,
-  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IconButton } from '@/components/IconButton';
+import { Photo } from '@/components/Photo';
+import { Pill } from '@/components/Pill';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
+import { radius, spacing, useColors } from '@/theme';
 
 import type { GalleryItem } from '../api/schemas';
 
-const PHOTO_WIDTH = Dimensions.get('window').width;
-const PHOTO_HEIGHT = 260;
+const PHOTO_HEIGHT = 288;
+// The content sheet rises over the bottom of the photo, so the name reads as part of the picture.
+const SHEET_OVERLAP = 28;
 
 interface VenueHeaderProps {
   name: string;
@@ -41,6 +41,11 @@ interface VenueHeaderProps {
   onOpenDirections: () => void;
 }
 
+/**
+ * The top of a venue page: a full-bleed photo (or `Photo`'s placeholder) with floating back / share / favourite
+ * buttons, and a rounded sheet rising over it that carries the name, category, rating, distance and whether the
+ * place is open right now.
+ */
 export function VenueHeader({
   name,
   categoryLabel,
@@ -58,22 +63,20 @@ export function VenueHeader({
   onOpenDirections,
 }: VenueHeaderProps) {
   const colors = useColors();
-  const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
 
   const isOpen = status === 'open';
 
-  // Falls back to the store's single logo image when the gallery endpoint
-  // has nothing yet (it returns `[]` for most seed stores today) — the
-  // carousel chrome (dots/counter) only appears once there's more than one
-  // photo to page through.
-  const images = photos.length > 0 ? photos.map((photo) => photo.imageUrl) : coverImage ? [coverImage] : [];
+  // Falls back to the store's single logo image when the gallery endpoint has nothing yet (it returns `[]` for
+  // most seed stores today). The carousel chrome (dots/counter) only appears once there is more than one photo.
+  const images =
+    photos.length > 0 ? photos.map((photo) => photo.imageUrl) : coverImage ? [coverImage] : [];
   const hasMultiplePhotos = images.length > 1;
 
   const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / PHOTO_WIDTH);
-    setActiveIndex(index);
+    setActiveIndex(Math.round(event.nativeEvent.contentOffset.x / width));
   };
 
   const handleShare = () => {
@@ -82,7 +85,7 @@ export function VenueHeader({
 
   return (
     <View>
-      <View style={styles.coverWrap}>
+      <View style={{ height: PHOTO_HEIGHT }}>
         {images.length > 0 ? (
           <FlatList
             data={images}
@@ -92,196 +95,184 @@ export function VenueHeader({
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={handleScrollEnd}
             renderItem={({ item }) => (
-              <Image source={{ uri: item }} style={styles.cover} contentFit="cover" />
+              <Photo
+                uri={item}
+                name={name}
+                initialSize={96}
+                style={{ width, height: PHOTO_HEIGHT }}
+              />
             )}
           />
         ) : (
-          <View style={[styles.cover, styles.coverFallback]} />
+          <Photo name={name} initialSize={96} style={{ width, height: PHOTO_HEIGHT }} />
         )}
 
         <View style={[styles.topRow, { top: insets.top + spacing.xs }]} pointerEvents="box-none">
-          <View style={styles.topRowLeft}>
-            <CircleButton onPress={onBack} accessibilityLabel="Go back" /* TODO i18n */>
-              <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-            </CircleButton>
-            {hasMultiplePhotos ? (
-              <View style={styles.counterBadge}>
-                <ThemedText variant="caption" color="textInverse">
-                  {activeIndex + 1}/{images.length}
-                </ThemedText>
-              </View>
-            ) : null}
-          </View>
+          <IconButton
+            variant="overlay"
+            icon="arrow-back"
+            size={44}
+            onPress={onBack}
+            accessibilityLabel="Go back" /* TODO i18n */
+          />
           <View style={styles.topRowRight}>
-            <CircleButton onPress={handleShare} accessibilityLabel="Share this venue" /* TODO i18n */>
-              <Ionicons name="share-outline" size={18} color={colors.textPrimary} />
-            </CircleButton>
-            <CircleButton
-              onPress={onToggleFavourite}
-              disabled={isFavouriteLoading}
-              accessibilityLabel={isFavourite ? 'Remove from favourites' : 'Add to favourites'} // TODO i18n
-              style={styles.favouriteButton}
-            >
-              {isFavouriteLoading ? (
+            <IconButton
+              variant="overlay"
+              icon="share-outline"
+              size={44}
+              onPress={handleShare}
+              accessibilityLabel="Share this venue" /* TODO i18n */
+            />
+            {isFavouriteLoading ? (
+              <View style={[styles.favouriteBusy, { backgroundColor: colors.surfaceTranslucent }]}>
                 <ActivityIndicator size="small" color={colors.brand} />
-              ) : (
-                <Ionicons
-                  name={isFavourite ? 'heart' : 'heart-outline'}
-                  size={20}
-                  color={isFavourite ? colors.danger : colors.textPrimary}
-                />
-              )}
-            </CircleButton>
+              </View>
+            ) : (
+              <IconButton
+                variant="overlay"
+                icon={isFavourite ? 'heart' : 'heart-outline'}
+                size={44}
+                color={isFavourite ? colors.danger : undefined}
+                onPress={onToggleFavourite}
+                accessibilityLabel={isFavourite ? 'Remove from favourites' : 'Add to favourites'} // TODO i18n
+              />
+            )}
           </View>
         </View>
 
         {hasMultiplePhotos ? (
-          <View style={styles.dotsRow} pointerEvents="none">
-            {images.map((uri, index) => (
-              <View
-                key={`${uri}-${index}`}
-                style={[styles.dot, index === activeIndex && styles.dotActive]}
-              />
-            ))}
-          </View>
+          <>
+            <View
+              style={[styles.counterBadge, { backgroundColor: colors.overlay }]}
+              pointerEvents="none"
+            >
+              <ThemedText variant="label" color="textInverse">
+                {activeIndex + 1}/{images.length}
+              </ThemedText>
+            </View>
+            <View style={styles.dotsRow} pointerEvents="none">
+              {images.map((uri, index) => (
+                <View
+                  key={`${uri}-${index}`}
+                  style={[
+                    styles.dot,
+                    index === activeIndex ? styles.dotActive : styles.dotIdle,
+                    { backgroundColor: index === activeIndex ? colors.onHero : colors.onHeroMuted },
+                  ]}
+                />
+              ))}
+            </View>
+          </>
         ) : null}
       </View>
 
-      <View style={styles.content}>
-        <ThemedText variant="h2">{name}</ThemedText>
-        {categoryLabel ? (
-          <ThemedText variant="bodyMedium" color="brandAccent" style={styles.category}>
-            {categoryLabel}
-          </ThemedText>
-        ) : null}
+      <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+        <ThemedText variant="h1">{name}</ThemedText>
+
+        <View style={styles.categoryRow}>
+          {categoryLabel ? (
+            <ThemedText
+              variant="bodyMedium"
+              color="brandAccent"
+              numberOfLines={1}
+              style={styles.category}
+            >
+              {categoryLabel}
+            </ThemedText>
+          ) : (
+            <View style={styles.category} />
+          )}
+          <IconButton
+            variant="tint"
+            icon="navigate-outline"
+            size={44}
+            onPress={onOpenDirections}
+            accessibilityLabel="Open directions" /* TODO i18n */
+          />
+        </View>
 
         <View style={styles.metaRow}>
-          <View style={styles.metaLeft}>
-            <Ionicons name="star" size={14} color={colors.accentDecorative} />
-            <ThemedText variant="bodyMedium" style={styles.metaText}>
-              {rating.toFixed(1)}
-            </ThemedText>
+          <View style={styles.metaItem}>
+            <Ionicons name="star" size={15} color={colors.ratingStar} />
+            <ThemedText variant="bodyMedium">{rating.toFixed(1)}</ThemedText>
             {reviewCount != null ? (
-              <ThemedText variant="body" color="textSecondary" style={styles.metaText}>
+              <ThemedText variant="body" color="textSecondary">
                 ({reviewCount})
               </ThemedText>
             ) : null}
-            {distanceKm != null ? (
-              <ThemedText variant="body" color="textSecondary" style={styles.metaText}>
-                · {distanceKm.toFixed(1)} km
-              </ThemedText>
-            ) : null}
-            <ThemedText variant="body" color="textSecondary" style={styles.metaText}>
-              · {isOpen ? 'Open now' : 'Closed' /* TODO i18n */}
-            </ThemedText>
           </View>
-          <Pressable
-            onPress={onOpenDirections}
-            style={styles.mapButton}
-            accessibilityRole="button"
-            accessibilityLabel="Open directions" // TODO i18n
-            hitSlop={8}
-          >
-            <Ionicons name="map-outline" size={18} color={colors.brand} />
-          </Pressable>
+          {distanceKm != null ? (
+            <View style={styles.metaItem}>
+              <Ionicons name="location-outline" size={15} color={colors.textTertiary} />
+              <ThemedText variant="body" color="textSecondary">
+                {distanceKm.toFixed(1)} km {/* TODO i18n */}
+              </ThemedText>
+            </View>
+          ) : null}
+          {isOpen ? (
+            <Pill label="Open now" tone="mint" dot /* TODO i18n */ />
+          ) : (
+            <Pill label="Closed" tone="neutral" /* TODO i18n */ />
+          )}
         </View>
       </View>
     </View>
   );
 }
 
-function CircleButton({
-  children,
-  onPress,
-  disabled,
-  accessibilityLabel,
-  style,
-}: {
-  children: ReactNode;
-  onPress: () => void;
-  disabled?: boolean;
-  accessibilityLabel: string;
-  style?: StyleProp<ViewStyle>;
-}) {
-  const styles = createStyles(useColors());
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
-      disabled={disabled}
-      style={[styles.circleButton, style]}
-      hitSlop={8}
-    >
-      {children}
-    </Pressable>
-  );
-}
-
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-  coverWrap: { position: 'relative' },
-  cover: { width: PHOTO_WIDTH, height: PHOTO_HEIGHT },
-  coverFallback: { backgroundColor: colors.backgroundMuted },
+const styles = StyleSheet.create({
   topRow: {
     position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
+    start: spacing.md,
+    end: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  topRowLeft: { flexDirection: 'row', alignItems: 'center' },
-  topRowRight: { flexDirection: 'row', alignItems: 'center' },
-  circleButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  topRowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  favouriteBusy: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.sm,
   },
-  favouriteButton: { marginLeft: spacing.xs },
   counterBadge: {
-    marginLeft: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xxs / 2,
+    position: 'absolute',
+    end: spacing.md,
+    bottom: SHEET_OVERLAP + spacing.sm,
+    paddingHorizontal: spacing.xs + 2,
+    paddingVertical: 3,
     borderRadius: radius.pill,
-    backgroundColor: colors.overlay,
   },
   dotsRow: {
     position: 'absolute',
-    bottom: spacing.sm,
-    left: 0,
-    right: 0,
+    bottom: SHEET_OVERLAP + spacing.sm + 4,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'center',
+    gap: 6,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: radius.pill,
-    marginHorizontal: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  dot: { height: 6, borderRadius: 3 },
+  dotIdle: { width: 6 },
+  dotActive: { width: 18 },
+  sheet: {
+    marginTop: -SHEET_OVERLAP,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.lg,
+    gap: spacing.xxs,
   },
-  dotActive: { backgroundColor: colors.background, width: 8, height: 8 },
-  content: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
-  category: { marginTop: spacing.xxs / 2 },
+  categoryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  category: { flex: 1, minWidth: 0 },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
+    flexWrap: 'wrap',
+    columnGap: spacing.md,
+    rowGap: spacing.xs,
   },
-  metaLeft: { flexDirection: 'row', alignItems: 'center', flexShrink: 1, flexWrap: 'wrap' },
-  metaText: { marginLeft: spacing.xxs },
-  mapButton: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
-    backgroundColor: colors.backgroundMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
 });

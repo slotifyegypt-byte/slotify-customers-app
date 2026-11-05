@@ -2,23 +2,29 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Linking,
-  Pressable,
   SectionList,
   StyleSheet,
   View,
   type SectionListRenderItemInfo,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import Animated from 'react-native-reanimated';
 
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
+import { IconButton } from '@/components/IconButton';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
+import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
 import { getStoreDetail } from '@/features/explore-search/api/exploreApi';
 import { exploreKeys } from '@/features/explore-search/api/queryKeys';
 import { formatRelativeTime } from '@/lib/formatRelativeTime';
-import { fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
+import { enter, fontFamily, radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { Notification } from '../api/schemas';
 import {
@@ -62,7 +68,14 @@ function groupByDay(notifications: Notification[]): Section[] {
     .filter((section) => section.data.length > 0);
 }
 
+const SECTION_LABEL_KEY = {
+  Today: 'notifications.today',
+  Yesterday: 'notifications.yesterday',
+  Earlier: 'notifications.earlier',
+} as const;
+
 export function NotificationsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const styles = createStyles(colors);
   const { data: notifications, isLoading, isError, refetch } = useNotifications();
@@ -132,202 +145,213 @@ export function NotificationsScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: SectionListRenderItemInfo<Notification, Section>) => {
+    ({ item, index }: SectionListRenderItemInfo<Notification, Section>) => {
       const visual = notificationVisual(item.notification_type, colors);
       return (
-        <Swipeable
-          renderRightActions={() => (
-            <Pressable
-              style={styles.deleteAction}
-              onPress={() => handleDelete(item.id)}
-              accessibilityRole="button"
-              accessibilityLabel="Delete notification" // TODO i18n
-            >
-              <ThemedText variant="bodyMedium" color="textOnBrand">
-                Delete{/* TODO i18n */}
-              </ThemedText>
-            </Pressable>
-          )}
-          overshootRight={false}
-        >
-          <Pressable
-            style={styles.row}
-            onPress={() => handlePress(item)}
-            accessibilityRole="button"
+        <Animated.View entering={enter(index)}>
+          <Swipeable
+            renderRightActions={() => (
+              <PressableScale
+                style={styles.deleteAction}
+                onPress={() => handleDelete(item.id)}
+                accessibilityRole="button"
+                accessibilityLabel={t('notifications.deleteLabel')}
+              >
+                <Ionicons name="trash-outline" size={20} color={colors.textInverse} />
+                <ThemedText variant="captionStrong" color="textInverse">
+                  {t('notifications.delete')}
+                </ThemedText>
+              </PressableScale>
+            )}
+            overshootRight={false}
           >
-            <View style={[styles.iconWell, { backgroundColor: visual.tint }]}>
-              <Ionicons name={visual.icon} size={18} color={visual.iconColor} />
-            </View>
-            <View style={styles.rowText}>
-              <View style={styles.titleRow}>
-                {!item.is_read ? <View style={styles.unreadDot} /> : null}
-                <ThemedText
-                  variant="bodyMedium"
-                  style={[styles.titleText, !item.is_read && styles.titleUnread]}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </ThemedText>
-                <ThemedText variant="caption" color="textSecondary" style={styles.timestamp}>
-                  {formatRelativeTime(item.created_at)}
-                </ThemedText>
+            <Card
+              onPress={() => handlePress(item)}
+              accessibilityLabel={`${item.is_read ? '' : `${t('notifications.unread')}. `}${item.title}. ${item.message}`}
+            >
+              <View style={styles.row}>
+                <View style={[styles.iconWell, { backgroundColor: visual.tint }]}>
+                  <Ionicons name={visual.icon} size={20} color={visual.iconColor} />
+                </View>
+                <View style={styles.rowText}>
+                  <View style={styles.titleRow}>
+                    {!item.is_read ? <View style={styles.unreadDot} /> : null}
+                    <ThemedText
+                      variant="body"
+                      color={item.is_read ? 'textSecondary' : 'textPrimary'}
+                      style={[
+                        styles.titleText,
+                        item.is_read ? styles.titleRead : styles.titleUnread,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {item.title}
+                    </ThemedText>
+                    <ThemedText variant="caption" color="textTertiary" style={styles.timestamp}>
+                      {formatRelativeTime(item.created_at)}
+                    </ThemedText>
+                  </View>
+                  {item.message ? (
+                    <ThemedText
+                      variant="body"
+                      color={item.is_read ? 'textTertiary' : 'textSecondary'}
+                      style={styles.message}
+                      numberOfLines={3}
+                    >
+                      {item.message}
+                    </ThemedText>
+                  ) : null}
+                  {visual.showDirections ? (
+                    <View style={styles.directions}>
+                      <Button
+                        label={t('notifications.directions')}
+                        variant="secondary"
+                        size="sm"
+                        icon="navigate-outline"
+                        fullWidth={false}
+                        onPress={() => handleGetDirections(item)}
+                      />
+                    </View>
+                  ) : null}
+                </View>
               </View>
-              <ThemedText variant="body" color="textSecondary" style={styles.message}>
-                {item.message}
-              </ThemedText>
-              {visual.showDirections ? (
-                <Pressable
-                  style={styles.directionsButton}
-                  onPress={() => handleGetDirections(item)}
-                  accessibilityRole="button"
-                >
-                  <ThemedText variant="caption" color="brandAccent" style={styles.directionsLabel}>
-                    Get Directions{/* TODO i18n */}
-                  </ThemedText>
-                </Pressable>
-              ) : null}
-            </View>
-          </Pressable>
-        </Swipeable>
+            </Card>
+          </Swipeable>
+        </Animated.View>
       );
     },
-    [colors, handleDelete, handleGetDirections, handlePress, styles],
+    [colors, handleDelete, handleGetDirections, handlePress, styles, t],
   );
 
-  if (isError) {
-    return (
-      <Screen style={styles.padded}>
-        <View style={styles.titleRow2}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-            <Ionicons name="chevron-back" size={18} color={colors.brand} />
-          </Pressable>
-          <ThemedText variant="h1">Notifications</ThemedText>
-        </View>
-        <EmptyState
-          title="Couldn't load notifications" // TODO i18n
-          body="Check your connection and try again." // TODO i18n
-          actionLabel="Retry" // TODO i18n
-          onAction={() => refetch()}
-        />
-      </Screen>
-    );
-  }
+  const empty = isLoading ? (
+    <View style={styles.skeletons}>
+      {[0, 1, 2, 3].map((i) => (
+        <Card key={i}>
+          <View style={styles.row}>
+            <Skeleton width={44} height={44} radius={radius.md} />
+            <View style={styles.skeletonText}>
+              <Skeleton width="60%" height={16} />
+              <Skeleton width="90%" height={12} />
+            </View>
+          </View>
+        </Card>
+      ))}
+    </View>
+  ) : isError ? (
+    <EmptyState
+      icon="cloud-offline-outline"
+      title={t('notifications.errorTitle')}
+      body={t('notifications.errorBody')}
+      actionLabel={t('common.retry')}
+      onAction={() => refetch()}
+    />
+  ) : (
+    <EmptyState
+      icon="checkmark-done-outline"
+      title={t('notifications.emptyTitle')}
+      body={t('notifications.emptyBody')}
+    />
+  );
 
   return (
-    <Screen>
-      <View style={styles.header}>
-        <View style={styles.titleRow2}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-            <Ionicons name="chevron-back" size={18} color={colors.brand} />
-          </Pressable>
-          <ThemedText variant="h1">Notifications</ThemedText>
-        </View>
-        {hasUnread ? (
-          <Pressable
-            onPress={() => markAllRead.mutate()}
-            disabled={markAllRead.isPending}
-            accessibilityRole="button"
-            hitSlop={8}
-            style={[styles.markAllButton, markAllRead.isPending && styles.markAllButtonPending]}
-          >
-            <ThemedText variant="bodyMedium" color="brandAccent">
-              Mark all as read{/* TODO i18n */}
-            </ThemedText>
-          </Pressable>
-        ) : null}
-      </View>
-
+    <Screen edges={['top']}>
       <SectionList
-        sections={sections}
+        sections={isError ? [] : sections}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={Gap}
+        ListHeaderComponent={
+          <Animated.View entering={enter(0)} style={styles.header}>
+            <View style={styles.topRow}>
+              <IconButton
+                icon="chevron-back"
+                accessibilityLabel="Back"
+                onPress={() => router.back()}
+              />
+              {hasUnread && !isError ? (
+                <PressableScale
+                  onPress={() => markAllRead.mutate()}
+                  disabled={markAllRead.isPending}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('notifications.markAllRead')}
+                  hitSlop={8}
+                  style={[styles.markAll, markAllRead.isPending && styles.markAllPending]}
+                >
+                  <ThemedText variant="bodyMedium" color="brandAccent">
+                    {t('notifications.markAllRead')}
+                  </ThemedText>
+                </PressableScale>
+              ) : null}
+            </View>
+            <ThemedText variant="h1" accessibilityRole="header">
+              {t('notifications.title')}
+            </ThemedText>
+          </Animated.View>
+        }
         renderSectionHeader={({ section }) => (
-          <ThemedText variant="caption" color="textSecondary" style={styles.sectionHeader}>
-            {section.title}
+          <ThemedText variant="bodyMedium" color="textSecondary" style={styles.sectionHeader}>
+            {t(SECTION_LABEL_KEY[section.title as keyof typeof SECTION_LABEL_KEY])}
           </ThemedText>
         )}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          !isLoading ? (
-            <EmptyState title="No notifications yet" body="You're all caught up." />
-          ) : null // TODO i18n
-        }
+        ListEmptyComponent={empty}
       />
     </Screen>
   );
 }
 
+function Gap() {
+  return <View style={{ height: spacing.sm }} />;
+}
+
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
-    padded: { padding: spacing.lg },
-    header: {
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.sm,
-      gap: spacing.xs,
-    },
-    titleRow2: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    backButton: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.pill,
-      backgroundColor: colors.brandTint,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    markAllButton: { alignSelf: 'flex-end' },
-    markAllButtonPending: { opacity: 0.5 },
-    listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 },
-    sectionHeader: {
-      backgroundColor: colors.background,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.xs,
-      textTransform: 'uppercase',
-    },
-    row: {
+    header: { gap: spacing.sm, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+    topRow: {
       flexDirection: 'row',
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
-      padding: spacing.sm,
-      marginBottom: spacing.xs,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: 44,
     },
+    markAll: { minHeight: 44, justifyContent: 'center' },
+    markAllPending: { opacity: 0.5 },
+    listContent: { flexGrow: 1, paddingHorizontal: spacing.gutter, paddingBottom: 120 },
+    sectionHeader: { paddingTop: spacing.md, paddingBottom: spacing.sm },
+    row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
     iconWell: {
-      width: 40,
-      height: 40,
-      borderRadius: radius.pill,
+      width: 44,
+      height: 44,
+      borderRadius: radius.md,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: spacing.xs,
       flexShrink: 0,
     },
-    titleRow: { flexDirection: 'row', alignItems: 'center' },
-    titleText: { flexShrink: 1 },
+    rowText: { flex: 1, minWidth: 0 },
+    titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
+    titleText: { flex: 1, minWidth: 0 },
+    titleRead: { fontFamily: fontFamily.bodyRegular },
     titleUnread: { fontFamily: fontFamily.bodySemiBold },
     unreadDot: {
-      width: 6,
-      height: 6,
+      width: 8,
+      height: 8,
       borderRadius: radius.pill,
       backgroundColor: colors.brandAccent,
-      marginRight: spacing.xxs,
+      marginTop: 8,
     },
-    rowText: { flex: 1 },
+    timestamp: { flexShrink: 0, marginTop: 2 },
     message: { marginTop: spacing.xxs },
-    timestamp: { marginLeft: 'auto', paddingLeft: spacing.xs, flexShrink: 0 },
-    directionsButton: {
-      alignSelf: 'flex-start',
-      marginTop: spacing.xs,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xxs,
-      borderRadius: radius.pill,
-      borderWidth: 1,
-      borderColor: colors.brandAccent,
-    },
-    directionsLabel: { fontFamily: fontFamily.bodyMedium },
+    directions: { alignSelf: 'flex-start', marginTop: spacing.sm },
     deleteAction: {
       justifyContent: 'center',
       alignItems: 'center',
+      gap: 2,
       backgroundColor: colors.danger,
-      width: 72,
-      borderRadius: radius.md,
-      marginBottom: spacing.xs,
+      width: 84,
+      borderRadius: radius.lg,
+      marginStart: spacing.xs,
     },
+    skeletons: { gap: spacing.sm, paddingTop: spacing.md },
+    skeletonText: { flex: 1, gap: 10, paddingTop: 4 },
   });

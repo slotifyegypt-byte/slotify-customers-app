@@ -7,7 +7,12 @@ interface ThemedTextProps extends TextProps {
   color?: ColorToken;
 }
 
-export function ThemedText({ variant = 'body', color = 'textPrimary', style, ...rest }: ThemedTextProps) {
+export function ThemedText({
+  variant = 'body',
+  color = 'textPrimary',
+  style,
+  ...rest
+}: ThemedTextProps) {
   const colors = useColors();
   return <Text style={[typeScale[variant], { color: colors[color] }, style]} {...rest} />;
 }

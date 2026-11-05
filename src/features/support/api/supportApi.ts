@@ -14,7 +14,9 @@ export interface CreateSupportTicketPayload {
 const TICKET_COLUMNS = 'id, subject, message, status, created_at, updated_at';
 
 // Contact Us files tickets for the customer app.
-export async function createSupportTicket(payload: CreateSupportTicketPayload): Promise<SupportTicket> {
+export async function createSupportTicket(
+  payload: CreateSupportTicketPayload,
+): Promise<SupportTicket> {
   const { data, error } = await supabase
     .from('support_tickets')
     .insert({ app: 'customer', subject: payload.subject, message: payload.message })

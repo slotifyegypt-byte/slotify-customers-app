@@ -26,13 +26,18 @@ function sameInstant(a: string, b: string): boolean {
 //
 // The server's exclusion constraint blocks `[starts_at, ends_at + buffer)`, so
 // each held interval runs to the slot's end PLUS its service's buffer.
-export function getDraftBlockedIntervals(otherEntries: BookingDraftEntry[], date: string): BlockedInterval[] {
+export function getDraftBlockedIntervals(
+  otherEntries: BookingDraftEntry[],
+  date: string,
+): BlockedInterval[] {
   return otherEntries
     .filter((entry) => entry.date === date && entry.slot.employee_id)
     .map((entry) => ({
       employeeId: entry.slot.employee_id as string,
       start: entry.slot.start_time,
-      end: new Date(Date.parse(entry.slot.end_time) + entry.service.buffer_minutes * MINUTE_MS).toISOString(),
+      end: new Date(
+        Date.parse(entry.slot.end_time) + entry.service.buffer_minutes * MINUTE_MS,
+      ).toISOString(),
     }));
 }
 
@@ -87,7 +92,9 @@ export function availabilityParamsFor(
     store_id: storeId,
     service_id: entry.service.id,
     date: entry.date,
-    ...(entry.service.requires_specialist && entry.employeeId ? { employee_id: entry.employeeId } : {}),
+    ...(entry.service.requires_specialist && entry.employeeId
+      ? { employee_id: entry.employeeId }
+      : {}),
     ...(entry.excludeItemId ? { exclude_item_id: entry.excludeItemId } : {}),
   };
 }
@@ -99,7 +106,11 @@ function isStillOffered(entry: BookingDraftEntry, fresh: AvailabilityResponse): 
     return fresh.slots.some((candidate) => sameInstant(candidate.start_time, slot.start_time));
   }
   const employee = fresh.employees.find((candidate) => candidate.employee_id === slot.employee_id);
-  return employee?.available_slots.some((candidate) => sameInstant(candidate.start_time, slot.start_time)) ?? false;
+  return (
+    employee?.available_slots.some((candidate) =>
+      sameInstant(candidate.start_time, slot.start_time),
+    ) ?? false
+  );
 }
 
 /**

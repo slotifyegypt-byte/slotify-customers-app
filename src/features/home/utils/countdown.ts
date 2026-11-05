@@ -4,11 +4,15 @@
 // months ago never gets shown as "Next Up". A plain (non-hook) function so
 // its `Date.now()` call doesn't trip the React Compiler's purity check,
 // which flags impure calls made directly inside a component/hook body.
-export function selectNextUpBooking<T extends { booking_date: string }>(bookings: T[] | undefined): T | null {
+export function selectNextUpBooking<T extends { booking_date: string }>(
+  bookings: T[] | undefined,
+): T | null {
   const now = Date.now();
   const future = bookings?.filter((b) => new Date(b.booking_date).getTime() > now);
   if (!future?.length) return null;
-  return [...future].sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime())[0];
+  return [...future].sort(
+    (a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime(),
+  )[0];
 }
 
 // Mirrors the design's live "In 45 min" pill on the Next Up card — falls

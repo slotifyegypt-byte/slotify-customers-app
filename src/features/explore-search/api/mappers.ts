@@ -42,13 +42,18 @@ export function toStore(row: StoreSource): NearbyStore {
 
 // The detail query is a plain branch_cards read, so distance is only known
 // when the caller supplies the customer's coordinates.
-export function toStoreDetail(row: BranchCardRow, from?: { latitude: number; longitude: number }): StoreDetail {
+export function toStoreDetail(
+  row: BranchCardRow,
+  from?: { latitude: number; longitude: number },
+): StoreDetail {
   const store = toStore(row);
   const hasCoordinates = from != null && store.latitude != null && store.longitude != null;
   return {
     ...store,
     amenities: row.amenities ?? [],
     currency: row.currency,
-    distance_km: hasCoordinates ? distanceKm(from, { latitude: store.latitude!, longitude: store.longitude! }) : null,
+    distance_km: hasCoordinates
+      ? distanceKm(from, { latitude: store.latitude!, longitude: store.longitude! })
+      : null,
   };
 }

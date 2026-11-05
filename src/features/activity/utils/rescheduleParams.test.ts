@@ -4,7 +4,12 @@ import { rescheduleAvailabilityParams } from './rescheduleParams';
 
 const booking = { store_id: 'branch-1' } as BookingRead;
 const item = (overrides: Partial<BookingServiceRead> = {}) =>
-  ({ id: 'item-1', service_id: 'svc-haircut', employee_id: 'mona', ...overrides }) as BookingServiceRead;
+  ({
+    id: 'item-1',
+    service_id: 'svc-haircut',
+    employee_id: 'mona',
+    ...overrides,
+  }) as BookingServiceRead;
 
 describe('rescheduleAvailabilityParams', () => {
   it('pins the specialist and excludes the item being moved', () => {

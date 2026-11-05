@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from 'react';
+import { Platform, useColorScheme } from 'react-native';
 
 import { useThemePreferenceStore, type ThemePreference } from '@/lib/theme/themePreferenceStore';
 
@@ -15,14 +15,36 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+// Browser preview only (the web build is used to look at the design): `?theme=dark` or `?theme=light` on any
+// address forces that appearance for the rest of the tab's life. It does nothing on a phone.
+const subscribeNever = () => () => {};
+
+function webThemeOverride(): ResolvedScheme | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+  try {
+    const asked = new URLSearchParams(window.location.search).get('theme');
+    if (asked === 'dark' || asked === 'light')
+      window.sessionStorage.setItem('slotify-preview-theme', asked);
+    const kept = window.sessionStorage.getItem('slotify-preview-theme');
+    return kept === 'dark' || kept === 'light' ? kept : null;
+  } catch {
+    return null;
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const preference = useThemePreferenceStore((state) => state.preference);
 
+  // The static render has no window, so the server snapshot is "no override".
+  const override = useSyncExternalStore(subscribeNever, webThemeOverride, () => null);
+
   // useColorScheme() can also return 'unspecified' (Android, no explicit
   // setting) or null — both fall back to 'light', same as an explicit
   // 'light' preference does.
-  const scheme: ResolvedScheme = preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
+  const scheme: ResolvedScheme =
+    override ??
+    (preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference);
 
   const value = useMemo<ThemeContextValue>(
     () => ({ scheme, preference, colors: colorSchemes[scheme] }),

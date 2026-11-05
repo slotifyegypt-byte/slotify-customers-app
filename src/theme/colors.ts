@@ -1,134 +1,144 @@
-// Source: Design & Guideline & Map/slotify-brand-guidelines.md
+// The customer app speaks the same visual language as the partner dashboard: deep indigo ink, one mint
+// accent, cool indigo-tinted neutrals, hairline borders and soft shadows. Boldness lives in the brand colour
+// (primary actions, selection) and the mint "live" signal; everything else stays quiet.
 export const palette = {
-  deepPurple: '#3A246B',
+  deepPurple: '#2F2059',
+  indigo: '#4B3BA6',
   turquoise: '#39D2C0',
+  mint: '#6DCFBF',
   skyBlue: '#009FD0',
   lime: '#DBFA7B',
+  ink: '#15112B',
   black: '#000000',
   white: '#FFFFFF',
   offWhite: '#F6F7F8',
-  // Brighter interactive purple from the product mockups (Design.html) —
-  // used for highlight surfaces (next-up card, selected states, CTA accents)
-  // everywhere the mockups reach for purple. Distinct from `deepPurple`,
-  // which the brand guide reserves for dark header/nav surfaces — the
-  // mockups don't actually use a dark header on these screens.
+  // Kept for the few call sites that still reach for the old interactive purple.
   brightPurple: '#7C6FF0',
 } as const;
 
 const lightColors = {
   brand: palette.deepPurple,
-  brandAccent: palette.brightPurple,
-  accent: palette.turquoise,
+  // Interactive indigo: links, selected states, focus.
+  brandAccent: palette.indigo,
+  accent: palette.mint,
   accentSecondary: palette.skyBlue,
   accentDecorative: palette.lime,
 
-  background: palette.white,
-  backgroundMuted: palette.offWhite,
+  // Screens sit on a faintly lavender canvas; cards are white on top of it.
+  background: '#F4F3F8',
+  // Sunken fills: inputs, chips, image placeholders, segmented tracks.
+  backgroundMuted: '#EDECF3',
   surface: palette.white,
-  // Translucent `surface`-toned overlay — floating pills/chips over photos
-  // or maps, where a fully opaque surface would look too heavy but a plain
-  // white with hardcoded opacity would go transparent in dark mode too.
-  surfaceTranslucent: 'rgba(255, 255, 255, 0.94)',
+  // Floating pills/chips over photos or maps: translucent, so they follow the theme.
+  surfaceTranslucent: 'rgba(255, 255, 255, 0.92)',
 
-  textPrimary: palette.black,
-  textSecondary: '#6B6B76',
+  textPrimary: palette.ink,
+  textSecondary: '#4A4663',
+  textTertiary: '#736F8B',
   textInverse: palette.white,
   textOnBrand: palette.white,
 
-  border: '#E5E4EA',
-  divider: '#EFEFF3',
+  border: '#E4E2EC',
+  divider: '#ECEAF2',
 
-  success: '#2FAF63',
-  warning: '#E0A72D',
-  danger: '#E24A4A',
-  info: palette.skyBlue,
-  // Warm gold used specifically for star-rating fills (reviews, venue rating
-  // badge) — distinct from `warning`, which is semantically about alerts
-  // even though the two happen to sit in the same amber family.
-  ratingStar: '#F2A93B',
+  success: '#0F7B6B',
+  warning: '#A8680B',
+  danger: '#C73E4A',
+  info: '#2F6FA8',
+  ratingStar: '#E8A317',
 
-  overlay: 'rgba(17, 12, 33, 0.5)',
-  // A lighter wash than `overlay` — a loading spinner sits on top of it
-  // while content underneath (e.g. the map) stays dimly visible, rather
-  // than being hidden behind a near-opaque backdrop.
-  overlayLoading: 'rgba(255, 255, 255, 0.5)',
-  // Light tints of `brandAccent` for soft fills — selected/CTA pills, icon
-  // wells — where a flat fill would be too heavy.
-  brandTint: 'rgba(124, 111, 240, 0.12)',
-  brandTintStrong: 'rgba(124, 111, 240, 0.18)',
-  // Light tint of `success`, same formula as `brandTint` — used for the
-  // pickup-ready notification icon well (Design.html notifications screen).
-  successTint: 'rgba(47, 175, 99, 0.14)',
-  // Light tint of `textSecondary`, same formula as `brandTint`/`successTint`
-  // — used for the "general" notification icon well now that
-  // `notification_type` (customer-app-api-map.md §12 — VERIFIED against the
-  // live backend's /openapi.json, 2026-09-20) distinguishes it from
-  // booking/pickup notifications instead of falling back to the brand tint.
-  neutralTint: 'rgba(107, 107, 118, 0.12)',
+  overlay: 'rgba(21, 17, 43, 0.5)',
+  overlayLoading: 'rgba(244, 243, 248, 0.6)',
+  // Soft tints of the semantic colours: icon wells, status pills.
+  brandTint: 'rgba(75, 59, 166, 0.08)',
+  brandTintStrong: 'rgba(75, 59, 166, 0.14)',
+  successTint: 'rgba(15, 123, 107, 0.10)',
+  warningTint: 'rgba(168, 104, 11, 0.12)',
+  dangerTint: 'rgba(199, 62, 74, 0.10)',
+  neutralTint: 'rgba(74, 70, 99, 0.09)',
+  // Mint is reserved for the live signal (open now, happening today).
+  mint: palette.mint,
+  mintInk: '#0F7B6B',
+  mintTint: 'rgba(109, 207, 191, 0.20)',
 
-  tabActive: palette.brightPurple,
-  tabInactive: '#A7A5B3',
+  // The deep-indigo surface for the one hero card on a screen (next appointment, confirmation). It stays dark in
+  // both themes, with white text on it.
+  hero: '#2F2059',
+  onHero: '#FFFFFF',
+  onHeroMuted: 'rgba(255, 255, 255, 0.72)',
+  onHeroTint: 'rgba(255, 255, 255, 0.14)',
 
-  disabled: '#C9C7D1',
+  tabActive: palette.deepPurple,
+  tabInactive: '#9A97AE',
+
+  disabled: '#D6D4DF',
   disabledText: '#9C9AA6',
 } as const;
 
-// Same keys as `lightColors`, widened from its `as const` literal types to
-// plain `string` — otherwise TypeScript would require darkColors' values to
-// match lightColors' exact string literals instead of just its shape.
+// Same keys as `lightColors`, widened from its `as const` literal types to plain `string`.
 type Colors = { [K in keyof typeof lightColors]: string };
 
-// Dark variant of the same semantic tokens — same keys, same meaning, just
-// dark-appropriate values. `brand`/`brandAccent`/the semantic status colors
-// (success/warning/danger/info) are kept close to their light values (brand
-// identity + status colors should stay recognizable across themes); the
-// neutral surface/text/border ramp is what actually inverts.
+// Dark variant: the neutral ramp inverts, the brand inverts to light lavender (as in the dashboard), and the
+// semantic colours are lifted so they keep their contrast on dark surfaces.
 const darkColors: Colors = {
-  brand: palette.deepPurple,
-  brandAccent: palette.brightPurple,
-  accent: palette.turquoise,
-  accentSecondary: palette.skyBlue,
+  brand: '#ECEBFF',
+  brandAccent: '#9E8FFF',
+  accent: palette.mint,
+  accentSecondary: '#4FB4E0',
   accentDecorative: palette.lime,
 
-  background: '#121016',
-  backgroundMuted: '#1A1720',
-  surface: '#1E1B26',
-  surfaceTranslucent: 'rgba(30, 27, 38, 0.94)',
+  background: '#0A0912',
+  backgroundMuted: '#181728',
+  surface: '#121120',
+  surfaceTranslucent: 'rgba(18, 17, 32, 0.92)',
 
-  textPrimary: '#F5F4F8',
-  textSecondary: '#A7A5B3',
+  textPrimary: '#F1F0FA',
+  textSecondary: '#B0ACC6',
+  textTertiary: '#8583A2',
   textInverse: palette.white,
-  textOnBrand: palette.white,
+  textOnBrand: '#1A1238',
 
-  border: '#332F3D',
-  divider: '#292532',
+  border: '#2A2840',
+  divider: '#1F1D33',
 
-  success: '#3FC479',
-  warning: '#E9B851',
-  danger: '#EB6767',
-  info: '#33B2E0',
-  ratingStar: '#F2A93B',
+  success: '#6FE0CC',
+  warning: '#E7B15A',
+  danger: '#FF7A85',
+  info: '#6FB2E8',
+  ratingStar: '#E8A317',
 
   overlay: 'rgba(0, 0, 0, 0.6)',
-  overlayLoading: 'rgba(18, 16, 22, 0.55)',
-  brandTint: 'rgba(124, 111, 240, 0.18)',
-  brandTintStrong: 'rgba(124, 111, 240, 0.26)',
-  successTint: 'rgba(63, 196, 121, 0.18)',
-  neutralTint: 'rgba(167, 165, 179, 0.14)',
+  overlayLoading: 'rgba(10, 9, 18, 0.6)',
+  brandTint: 'rgba(158, 143, 255, 0.14)',
+  brandTintStrong: 'rgba(158, 143, 255, 0.22)',
+  successTint: 'rgba(111, 224, 204, 0.14)',
+  warningTint: 'rgba(231, 177, 90, 0.16)',
+  dangerTint: 'rgba(255, 122, 133, 0.14)',
+  neutralTint: 'rgba(176, 172, 198, 0.12)',
+  mint: palette.mint,
+  mintInk: '#7FE0CF',
+  mintTint: 'rgba(109, 207, 191, 0.16)',
 
-  tabActive: palette.brightPurple,
-  tabInactive: '#7A7787',
+  hero: '#2B2150',
+  onHero: '#FFFFFF',
+  onHeroMuted: 'rgba(255, 255, 255, 0.72)',
+  onHeroTint: 'rgba(255, 255, 255, 0.14)',
 
-  disabled: '#3A3742',
+  tabActive: '#ECEBFF',
+  tabInactive: '#6F6D8B',
+
+  disabled: '#2A2840',
   disabledText: '#6B6874',
 };
 
 export type { Colors };
 export type ColorToken = keyof Colors;
 
-export const colorSchemes = { light: lightColors, dark: darkColors } satisfies Record<string, Colors>;
+export const colorSchemes = { light: lightColors, dark: darkColors } satisfies Record<
+  string,
+  Colors
+>;
 
-// Static, light-mode export — kept for any call site that reads `colors`
-// directly outside a component (can't react to theme changes). Everywhere
-// that renders should prefer the `useColors()` hook from `ThemeProvider`.
+// Static, light-mode export for any call site that reads `colors` outside a component (it cannot react to
+// theme changes). Everywhere that renders should prefer the `useColors()` hook from `ThemeProvider`.
 export const colors = lightColors;

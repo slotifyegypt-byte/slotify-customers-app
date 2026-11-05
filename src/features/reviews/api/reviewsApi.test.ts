@@ -10,7 +10,9 @@ jest.mock('@/lib/supabase', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
     storage: {
       from: (bucket: string) => ({
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${path}` } }),
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
       }),
     },
   },
@@ -81,7 +83,10 @@ describe('createReview', () => {
   });
 
   it('turns a unique violation into ApiError duplicate', async () => {
-    const { builder } = mockQuery({ data: null, error: { code: '23505', message: 'reviews_booking_id_key' } });
+    const { builder } = mockQuery({
+      data: null,
+      error: { code: '23505', message: 'reviews_booking_id_key' },
+    });
     mockFrom.mockReturnValue(builder);
 
     const error = await createReview({ booking_id: 'bk1', rating: 4 }).catch((e) => e);
@@ -90,7 +95,10 @@ describe('createReview', () => {
   });
 
   it('turns an RLS refusal (booking not completed / not yours) into ApiError forbidden', async () => {
-    const { builder } = mockQuery({ data: null, error: { code: '42501', message: 'new row violates RLS' } });
+    const { builder } = mockQuery({
+      data: null,
+      error: { code: '42501', message: 'new row violates RLS' },
+    });
     mockFrom.mockReturnValue(builder);
 
     const error = await createReview({ booking_id: 'bk1', rating: 4 }).catch((e) => e);
@@ -123,7 +131,10 @@ describe('updateReview', () => {
   });
 
   it('maps a Postgres error through fromPostgrest', async () => {
-    const { builder } = mockQuery({ data: null, error: { code: '23514', message: 'rating check' } });
+    const { builder } = mockQuery({
+      data: null,
+      error: { code: '23514', message: 'rating check' },
+    });
     mockFrom.mockReturnValue(builder);
 
     const error = await updateReview('r1', { rating: 9 }).catch((e) => e);
@@ -159,7 +170,9 @@ describe('getCustomerReviews', () => {
   function setup(bookingRows: unknown[], cardRows: unknown[] = [branchRow]) {
     const bookings = mockQuery({ data: bookingRows, error: null });
     const branches = mockQuery({ data: cardRows, error: null });
-    mockFrom.mockImplementation((table: string) => (table === 'bookings' ? bookings.builder : branches.builder));
+    mockFrom.mockImplementation((table: string) =>
+      table === 'bookings' ? bookings.builder : branches.builder,
+    );
     return { bookings, branches };
   }
 
@@ -209,7 +222,18 @@ describe('getCustomerReviews', () => {
   it('keeps a review whose branch is no longer readable, with a null store_name', async () => {
     setup([
       { id: 'bk1', reviews: [mine] },
-      { id: 'bk2', reviews: [{ ...mine, id: 'r2', branch_id: 'gone', booking_id: 'bk2', created_at: '2026-10-01T10:00:00Z' }] },
+      {
+        id: 'bk2',
+        reviews: [
+          {
+            ...mine,
+            id: 'r2',
+            branch_id: 'gone',
+            booking_id: 'bk2',
+            created_at: '2026-10-01T10:00:00Z',
+          },
+        ],
+      },
     ]);
 
     const result = await getCustomerReviews('cust1');

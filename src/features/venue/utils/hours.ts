@@ -1,4 +1,12 @@
-export const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']; // TODO i18n
+export const WEEKDAY_NAMES = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+]; // TODO i18n
 
 // "HH:MM[:SS]" strings of the same width compare correctly as text. A closing
 // time earlier than the opening time runs past midnight (developer-guide.md §10).

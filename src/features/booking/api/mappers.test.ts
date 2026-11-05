@@ -4,7 +4,9 @@ jest.mock('@/lib/supabase', () => ({
   supabase: {
     storage: {
       from: (bucket: string) => ({
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${path}` } }),
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
       }),
     },
   },
@@ -66,7 +68,10 @@ const row = (overrides: Record<string, unknown> = {}): BookingRow =>
     ends_at: '2026-11-10T09:00:00+00:00',
     created_at: '2026-11-01T10:00:00+00:00',
     updated_at: '2026-11-01T10:00:00+00:00',
-    items: [item('i1'), item('i2', { starts_at: '2026-11-10T08:30:00+00:00', ends_at: '2026-11-10T09:00:00+00:00' })],
+    items: [
+      item('i1'),
+      item('i2', { starts_at: '2026-11-10T08:30:00+00:00', ends_at: '2026-11-10T09:00:00+00:00' }),
+    ],
     branch: branch(),
     reviews: [],
     ...overrides,
@@ -115,7 +120,9 @@ describe('toBooking', () => {
   });
 
   it('is a drop_off when every item has employee_id null', () => {
-    const booking = toBooking(row({ items: [item('i1', { employee_id: null }), item('i2', { employee_id: null })] }));
+    const booking = toBooking(
+      row({ items: [item('i1', { employee_id: null }), item('i2', { employee_id: null })] }),
+    );
     expect(booking.booking_type).toBe('drop_off');
   });
 
@@ -171,8 +178,12 @@ describe('toBooking', () => {
   it('formats hour and date in the branch timezone (Warsaw differs from Cairo at the same instant)', () => {
     // 2026-11-10T22:30Z is 00:30 on the 11th in Cairo (UTC+2) but 23:30 on the 10th in Warsaw (UTC+1).
     const startsAt = '2026-11-10T22:30:00+00:00';
-    const cairo = toBooking(row({ starts_at: startsAt, branch: branch({ timezone: 'Africa/Cairo' }) }));
-    const warsaw = toBooking(row({ starts_at: startsAt, branch: branch({ timezone: 'Europe/Warsaw' }) }));
+    const cairo = toBooking(
+      row({ starts_at: startsAt, branch: branch({ timezone: 'Africa/Cairo' }) }),
+    );
+    const warsaw = toBooking(
+      row({ starts_at: startsAt, branch: branch({ timezone: 'Europe/Warsaw' }) }),
+    );
 
     expect(cairo.booking_hour_str).toBe('12:30 AM');
     expect(cairo.booking_date_str).toBe('11 Nov. 2026');

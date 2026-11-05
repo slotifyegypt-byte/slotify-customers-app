@@ -18,7 +18,10 @@ import type {
 type Tables = Database['public']['Tables'];
 type Functions = Database['public']['Functions'];
 
-export type HoursRow = Pick<Tables['branch_hours']['Row'], 'day_of_week' | 'opens_at' | 'closes_at'>;
+export type HoursRow = Pick<
+  Tables['branch_hours']['Row'],
+  'day_of_week' | 'opens_at' | 'closes_at'
+>;
 export type SpecialDayRow = Pick<
   Tables['branch_special_days']['Row'],
   'date' | 'is_closed' | 'opens_at' | 'closes_at' | 'reason'
@@ -131,7 +134,8 @@ export function toService(row: BranchServiceRow, currency: string): Service | nu
 // Uncategorised services last; otherwise the owner's category order, then the
 // owner's service order, then alphabetical.
 export function compareBranchServices(a: BranchServiceRow, b: BranchServiceRow): number {
-  const rank = (row: BranchServiceRow) => row.service?.category?.sort_order ?? Number.POSITIVE_INFINITY;
+  const rank = (row: BranchServiceRow) =>
+    row.service?.category?.sort_order ?? Number.POSITIVE_INFINITY;
   const [rankA, rankB] = [rank(a), rank(b)];
   if (rankA !== rankB) return rankA < rankB ? -1 : 1;
   return (

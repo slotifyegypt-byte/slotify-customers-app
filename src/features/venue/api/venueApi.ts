@@ -2,8 +2,22 @@ import { fromPostgrest } from '@/lib/api/errors';
 import { supabase } from '@/lib/supabase';
 import { branchToday } from '@/lib/time/branchTime';
 
-import { toGalleryItem, toHoursWeek, toReview, toReviewStats, toSpecialDay, toTeamMember } from './mappers';
-import type { GalleryItem, HoursDay, SpecialDay, TeamMember, VenueReview, VenueReviewStats } from './schemas';
+import {
+  toGalleryItem,
+  toHoursWeek,
+  toReview,
+  toReviewStats,
+  toSpecialDay,
+  toTeamMember,
+} from './mappers';
+import type {
+  GalleryItem,
+  HoursDay,
+  SpecialDay,
+  TeamMember,
+  VenueReview,
+  VenueReviewStats,
+} from './schemas';
 
 // developer-guide.md §5 — `branchId` is the branch uuid.
 
@@ -20,7 +34,10 @@ export async function getStoreCalendar(branchId: string): Promise<HoursDay[]> {
 // One-off exceptions from today (in the BRANCH's timezone) onwards. Callers
 // that already hold the branch detail pass its `timezone`; otherwise it is
 // looked up from `branch_cards` with one small query.
-export async function getStoreSpecialDays(branchId: string, timezone?: string): Promise<SpecialDay[]> {
+export async function getStoreSpecialDays(
+  branchId: string,
+  timezone?: string,
+): Promise<SpecialDay[]> {
   const zone = timezone ?? (await getBranchTimezone(branchId));
   const { data, error } = await supabase
     .from('branch_special_days')
@@ -33,7 +50,11 @@ export async function getStoreSpecialDays(branchId: string, timezone?: string): 
 }
 
 async function getBranchTimezone(branchId: string): Promise<string> {
-  const { data, error } = await supabase.from('branch_cards').select('timezone').eq('id', branchId).single();
+  const { data, error } = await supabase
+    .from('branch_cards')
+    .select('timezone')
+    .eq('id', branchId)
+    .single();
   if (error) throw fromPostgrest(error);
   return data.timezone;
 }
@@ -61,7 +82,10 @@ export interface ReviewListParams {
   offset?: number;
 }
 
-export async function getStoreReviews(branchId: string, params: ReviewListParams = {}): Promise<VenueReview[]> {
+export async function getStoreReviews(
+  branchId: string,
+  params: ReviewListParams = {},
+): Promise<VenueReview[]> {
   const limit = params.limit ?? DEFAULT_REVIEWS_LIMIT;
   const offset = params.offset ?? 0;
   const { data, error } = await supabase
@@ -77,7 +101,9 @@ export async function getStoreReviews(branchId: string, params: ReviewListParams
 // One rpc call: average, total and the zero-filled 1-5 breakdown. An unknown or
 // inactive branch raises PT404 `branch_not_found`.
 export async function getStoreReviewStats(branchId: string): Promise<VenueReviewStats> {
-  const { data, error } = await supabase.rpc('get_review_stats', { p_branch_id: branchId }).single();
+  const { data, error } = await supabase
+    .rpc('get_review_stats', { p_branch_id: branchId })
+    .single();
   if (error) throw fromPostgrest(error);
   return toReviewStats(data);
 }

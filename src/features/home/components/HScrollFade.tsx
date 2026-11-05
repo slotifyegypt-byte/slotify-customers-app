@@ -1,15 +1,25 @@
 import { StyleSheet, View } from 'react-native';
 
+import { useColors } from '@/theme';
+
 import { SoftGradient } from './SoftGradient';
 
-// Signals there's more to scroll to on horizontal rails — mirrors the
-// right-edge fade the design uses on every horizontal card row. The 3
-// theme-background RGB values are `colors.backgroundMuted` (#F6F7F8) —
-// this fades toward it rather than a hardcoded color.
+function rgbOf(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** A soft fade at the right edge of a horizontal list, in the screen's own background colour, hinting that it scrolls. */
 export function HScrollFade() {
+  const colors = useColors();
   return (
     <View pointerEvents="none" style={styles.fade}>
-      <SoftGradient rgb={[246, 247, 248]} fromAlpha={0} toAlpha={1} direction="horizontal" />
+      <SoftGradient
+        rgb={rgbOf(colors.background)}
+        fromAlpha={0}
+        toAlpha={1}
+        direction="horizontal"
+      />
     </View>
   );
 }

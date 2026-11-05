@@ -5,7 +5,11 @@ import { isApiError } from '@/lib/api/errors';
 
 import { draftToBookingRequest } from '../api/bookingApi';
 import { useBookingDraftStore, type BookingDraftEntry } from '../state/bookingDraftStore';
-import { getBookingErrorMessage, isSlotConflict, slotConflictMessage } from '../utils/bookingErrors';
+import {
+  getBookingErrorMessage,
+  isSlotConflict,
+  slotConflictMessage,
+} from '../utils/bookingErrors';
 
 import { useCreateBooking } from './useCreateBooking';
 import { useSingleFlight } from './useSingleFlight';
@@ -51,10 +55,17 @@ export function useConfirmBooking(storeId: string) {
   const [recovering, setRecovering] = useState(false);
   const runOnce = useSingleFlight();
 
-  const submit = async (entries: BookingDraftEntry[], fallback: string): Promise<ConfirmOutcome> => {
+  const submit = async (
+    entries: BookingDraftEntry[],
+    fallback: string,
+  ): Promise<ConfirmOutcome> => {
     if (entries.length > MAX_ITEMS) {
       // TODO i18n
-      return { status: 'failed', message: `You can book up to ${MAX_ITEMS} services at once.`, conflicting: null };
+      return {
+        status: 'failed',
+        message: `You can book up to ${MAX_ITEMS} services at once.`,
+        conflicting: null,
+      };
     }
     try {
       const { items, customerNote } = draftToBookingRequest(entries);
@@ -66,7 +77,11 @@ export function useConfirmBooking(storeId: string) {
         setRecovering(true);
         try {
           const conflicting = await recoverFromSlotConflict(entries);
-          return { status: 'failed', message: slotConflictMessage(error, conflicting), conflicting };
+          return {
+            status: 'failed',
+            message: slotConflictMessage(error, conflicting),
+            conflicting,
+          };
         } catch {
           return { status: 'failed', message: slotConflictMessage(error, []), conflicting: [] };
         } finally {
@@ -76,7 +91,11 @@ export function useConfirmBooking(storeId: string) {
       if (isApiError(error, 'customer_profile_required')) {
         router.push('/(tabs)/profile/edit');
       }
-      return { status: 'failed', message: getBookingErrorMessage(error, fallback), conflicting: null };
+      return {
+        status: 'failed',
+        message: getBookingErrorMessage(error, fallback),
+        conflicting: null,
+      };
     }
   };
 

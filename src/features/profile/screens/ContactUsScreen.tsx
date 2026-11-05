@@ -1,21 +1,33 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { ListRow } from '@/components/ListRow';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { TextField } from '@/components/TextField';
 import { ThemedText } from '@/components/ThemedText';
 import { useCreateSupportTicket } from '@/features/support/hooks/useSupportTicketMutations';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { enter, spacing } from '@/theme';
+
+import { SettingsGroup } from '../components/SettingsGroup';
 
 // customer-app-api-map.md §11 — Call Support is real (device dialer).
-const SUPPORT_PHONE_DISPLAY = '+20 10 023 4567 · 9am–9pm daily'; // TODO i18n
+const SUPPORT_PHONE_DISPLAY = '+20 10 023 4567';
 const SUPPORT_PHONE_TEL = 'tel:+20100234567';
 
 export function ContactUsScreen() {
-  const colors = useColors();
-  const styles = createStyles(colors);
+  const { t } = useTranslation();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const canSend = subject.trim().length > 0 && message.trim().length > 0;
@@ -35,113 +47,83 @@ export function ContactUsScreen() {
       await createSupportTicket.mutateAsync({ subject: subject.trim(), message: message.trim() });
       setSubject('');
       setMessage('');
-      Alert.alert(
-        "Message sent" /* TODO i18n */,
-        "We've received your message and will get back to you soon." /* TODO i18n */,
-      );
+      Alert.alert(t('contactUs.sentTitle'), t('contactUs.sentBody'));
     } catch {
-      Alert.alert(
-        "Couldn't send your message" /* TODO i18n */,
-        'Please check your connection and try again.' /* TODO i18n */,
-      );
+      Alert.alert(t('contactUs.failedTitle'), t('contactUs.failedBody'));
     }
   };
 
   return (
     <Screen>
-      <ScreenHeader title="Contact Us" />
-      <ScrollView contentContainerStyle={styles.padded} keyboardShouldPersistTaps="handled">
-        <Pressable style={styles.callCard} onPress={handleCallSupport} accessibilityRole="button">
-          <View style={styles.callIconWell}>
-            <Ionicons name="call" size={18} color={colors.success} />
-          </View>
-          <View style={styles.flexShrink}>
-            <ThemedText variant="bodyMedium">Call Support</ThemedText>
-            <ThemedText variant="caption" color="textSecondary">
-              {SUPPORT_PHONE_DISPLAY}
+      <ScreenHeader title={t('contactUs.title')} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={enter(0)}>
+            <SettingsGroup title={t('contactUs.groupReach')}>
+              <ListRow
+                title={t('contactUs.callSupport')}
+                subtitle={`${SUPPORT_PHONE_DISPLAY} · ${t('contactUs.callHours')}`}
+                icon="call-outline"
+                iconTone="success"
+                onPress={handleCallSupport}
+              />
+            </SettingsGroup>
+          </Animated.View>
+
+          <Animated.View entering={enter(1)} style={styles.messageGroup}>
+            <ThemedText variant="captionStrong" color="textTertiary" style={styles.groupTitle}>
+              {t('contactUs.groupMessage')}
             </ThemedText>
-          </View>
-        </Pressable>
-
-        <View style={styles.formCard}>
-          <ThemedText variant="caption" color="textSecondary" style={styles.label}>
-            SUBJECT
-          </ThemedText>
-          <TextInput
-            value={subject}
-            onChangeText={setSubject}
-            placeholder="What's this about?" // TODO i18n
-            placeholderTextColor={colors.textSecondary}
-            style={styles.input}
-          />
-
-          <ThemedText variant="caption" color="textSecondary" style={styles.label}>
-            MESSAGE
-          </ThemedText>
-          <TextInput
-            value={message}
-            onChangeText={setMessage}
-            placeholder="Tell us more..." // TODO i18n
-            placeholderTextColor={colors.textSecondary}
-            style={[styles.input, styles.textarea]}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-          />
-
-          <Button
-            label="Send"
-            disabled={!canSend}
-            loading={createSupportTicket.isPending}
-            onPress={handleSend}
-            style={styles.sendButton}
-          />
-        </View>
-      </ScrollView>
+            <Card style={styles.form}>
+              <TextField
+                label={t('contactUs.subject')}
+                value={subject}
+                onChangeText={setSubject}
+                placeholder={t('contactUs.subjectPlaceholder')}
+                returnKeyType="next"
+              />
+              <TextField
+                label={t('contactUs.message')}
+                value={message}
+                onChangeText={setMessage}
+                placeholder={t('contactUs.messagePlaceholder')}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+                style={styles.textarea}
+              />
+              <Button
+                label={t('contactUs.send')}
+                icon="paper-plane-outline"
+                disabled={!canSend}
+                loading={createSupportTicket.isPending}
+                onPress={handleSend}
+              />
+            </Card>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    padded: { padding: spacing.lg, paddingBottom: spacing.xxl },
-    title: { marginBottom: spacing.lg },
-    callCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.divider,
-      padding: spacing.md,
-      marginBottom: spacing.md,
-    },
-    callIconWell: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.pill,
-      backgroundColor: colors.successTint,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    flexShrink: { flexShrink: 1 },
-    formCard: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.divider,
-      padding: spacing.md,
-    },
-    label: { marginBottom: spacing.xxs, marginTop: spacing.md },
-    input: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.sm,
-      color: colors.textPrimary,
-    },
-    textarea: { minHeight: 110 },
-    sendButton: { marginTop: spacing.lg },
-  });
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+    paddingBottom: 120,
+    gap: 28,
+  },
+  messageGroup: { gap: spacing.xs },
+  groupTitle: { paddingHorizontal: spacing.xs },
+  form: { gap: spacing.md },
+  textarea: { minHeight: 120, paddingTop: spacing.sm + 2, paddingBottom: spacing.sm + 2 },
+});

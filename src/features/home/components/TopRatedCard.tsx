@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Card } from '@/components/Card';
+import { Photo } from '@/components/Photo';
+import { Pill } from '@/components/Pill';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
+import { spacing, useColors } from '@/theme';
 
 interface TopRatedCardProps {
   name: string;
@@ -15,69 +17,47 @@ interface TopRatedCardProps {
   onPress: () => void;
 }
 
-export function TopRatedCard({ name, logo, rating, distanceKm, badge, onPress }: TopRatedCardProps) {
+/** A well-reviewed place nearby: photo, name, rating and how far it is. */
+export function TopRatedCard({
+  name,
+  logo,
+  rating,
+  distanceKm,
+  badge,
+  onPress,
+}: TopRatedCardProps) {
   const colors = useColors();
-  const styles = createStyles(colors);
   return (
-    <Pressable onPress={onPress} style={styles.card}>
-      <View style={styles.imageWrap}>
-        {logo ? (
-          <Image source={{ uri: logo }} style={styles.image} contentFit="cover" />
-        ) : (
-          <View style={[styles.image, styles.imageFallback]} />
-        )}
+    <Card onPress={onPress} padding="none" style={styles.card} accessibilityLabel={name}>
+      <Photo uri={logo} name={name} style={styles.photo} initialSize={36}>
         {badge ? (
           <View style={styles.badge}>
-            <ThemedText variant="overline" color="textInverse" style={styles.badgeText}>
-              {badge}
-            </ThemedText>
+            <Pill label={badge} tone="brand" />
           </View>
         ) : null}
-      </View>
+      </Photo>
       <View style={styles.content}>
         <ThemedText variant="captionStrong" numberOfLines={1}>
           {name}
         </ThemedText>
-        <View style={styles.metaRow}>
-          <View style={styles.ratingRow}>
-            <Ionicons name="star" size={11} color={colors.warning} />
-            <ThemedText variant="label">{rating.toFixed(1)}</ThemedText>
-          </View>
+        <View style={styles.meta}>
+          <Ionicons name="star" size={12} color={colors.ratingStar} />
+          <ThemedText variant="label">{rating.toFixed(1)}</ThemedText>
           {distanceKm != null ? (
-            <ThemedText variant="captionSmall" color="textSecondary">
-              {distanceKm.toFixed(1)} km
+            <ThemedText variant="captionSmall" color="textTertiary">
+              · {distanceKm.toFixed(1)} km
             </ThemedText>
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    card: {
-      width: 150,
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
-      overflow: 'hidden',
-      marginRight: spacing.xs,
-      ...shadows.sm,
-    },
-    imageWrap: { height: 96, position: 'relative' },
-    image: { width: '100%', height: '100%' },
-    imageFallback: { backgroundColor: colors.backgroundMuted },
-    badge: {
-      position: 'absolute',
-      top: spacing.xxs,
-      left: spacing.xxs,
-      backgroundColor: colors.brandAccent,
-      paddingHorizontal: spacing.xs,
-      paddingVertical: 3,
-      borderRadius: radius.pill,
-    },
-    badgeText: { letterSpacing: 0.3, textTransform: 'uppercase' },
-    content: { padding: spacing.xs + 2, gap: 4 },
-    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  });
+const styles = StyleSheet.create({
+  card: { width: 172, marginRight: spacing.sm },
+  photo: { height: 108, width: '100%' },
+  badge: { position: 'absolute', top: spacing.xs, left: spacing.xs },
+  content: { padding: spacing.sm + 2, gap: 4 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+});

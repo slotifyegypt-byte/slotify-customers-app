@@ -1,130 +1,173 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { FadeIn, LinearTransition, ReduceMotion } from 'react-native-reanimated';
 
+import { Card } from '@/components/Card';
+import { EmptyState } from '@/components/EmptyState';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { enter, fontFamily, radius, spacing, useColors } from '@/theme';
 
-// TODO i18n — every string below. Headers match the design's copy verbatim;
-// answers are written to reflect what Slotify actually supports today (see
-// customer-app-api-map.md §0.3/§11 — no reschedule endpoint, no in-app
-// payment/refund processing) rather than the design's generic placeholder
-// wording, so this never promises a flow the app can't back up.
-const FAQ_ITEMS = [
-  {
-    question: 'How do I cancel a booking?',
-    answer:
-      'Open the booking from your Activity tab and tap Cancel. You don\'t need a reason, but please cancel as early as you can so the store can free up the slot.',
-  },
-  {
-    question: 'How do I reschedule?',
-    answer:
-      'There\'s no direct reschedule yet — cancel the existing booking from Activity, then book the new time you want.',
-  },
-  {
-    question: 'What payment methods are accepted?',
-    answer: 'Slotify doesn\'t take payment in the app. You pay the store directly when you arrive for your booking.',
-  },
-  {
-    question: 'How do refunds work?',
-    answer:
-      'Since payment happens at the store rather than in the app, cancelling a booking here doesn\'t involve a charge or a refund.',
-  },
-  {
-    question: 'Can I change my phone number?',
-    answer:
-      'Yes, from Profile > Edit Profile. Changes to your phone number are saved immediately without a verification step, so make sure you type it correctly.',
-  },
-];
+// Answers reflect what Slotify supports today (no reschedule endpoint, no in-app payment or refund
+// processing; see customer-app-api-map.md §0.3/§11), so this never promises a flow the app can't back up.
+const FAQ_IDS = ['1', '2', '3', '4', '5'] as const;
+
+// One easing for every expansion; reduced motion simply swaps the content.
+const EXPAND = LinearTransition.duration(220).reduceMotion(ReduceMotion.System);
+const REVEAL = FadeIn.duration(220).reduceMotion(ReduceMotion.System);
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const colors = useColors();
-  const styles = createStyles(colors);
   const [expanded, setExpanded] = useState(false);
   return (
-    <Pressable style={styles.item} onPress={() => setExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded }}>
-      <View style={styles.itemHeader}>
-        <ThemedText variant="bodyMedium" style={styles.question}>
-          {question}
-        </ThemedText>
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
-      </View>
-      {expanded ? (
-        <ThemedText variant="body" color="textSecondary" style={styles.answer}>
-          {answer}
-        </ThemedText>
-      ) : null}
-    </Pressable>
+    <Animated.View layout={EXPAND}>
+      <Card padding="none">
+        <PressableScale
+          onPress={() => setExpanded((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={question}
+          accessibilityState={{ expanded }}
+          scaleTo={0.99}
+          style={styles.itemHeader}
+        >
+          <ThemedText variant="bodyMedium" style={styles.question}>
+            {question}
+          </ThemedText>
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={expanded ? colors.brandAccent : colors.textTertiary}
+          />
+        </PressableScale>
+        {expanded ? (
+          <Animated.View entering={REVEAL} style={styles.answerWrap}>
+            <ThemedText variant="body" color="textSecondary">
+              {answer}
+            </ThemedText>
+          </Animated.View>
+        ) : null}
+      </Card>
+    </Animated.View>
   );
 }
 
 export function HelpFAQScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
-  const styles = createStyles(colors);
   const [query, setQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  const items = useMemo(
+    () => FAQ_IDS.map((id) => ({ id, question: t(`helpFaq.q${id}`), answer: t(`helpFaq.a${id}`) })),
+    [t],
+  );
 
   const visibleItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return FAQ_ITEMS;
-    return FAQ_ITEMS.filter(
-      (item) => item.question.toLowerCase().includes(needle) || item.answer.toLowerCase().includes(needle),
+    if (!needle) return items;
+    return items.filter(
+      (item) =>
+        item.question.toLowerCase().includes(needle) || item.answer.toLowerCase().includes(needle),
     );
-  }, [query]);
+  }, [query, items]);
 
   return (
     <Screen>
-      <ScreenHeader title="Help & FAQ" />
-      <ScrollView contentContainerStyle={styles.padded} keyboardShouldPersistTaps="handled">
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={colors.textSecondary} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search help topics..." // TODO i18n
-            placeholderTextColor={colors.textSecondary}
-            style={styles.searchInput}
-          />
-        </View>
+      <ScreenHeader title={t('helpFaq.title')} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={enter(0)}>
+          <View
+            style={[
+              styles.searchBar,
+              {
+                backgroundColor: searchFocused ? colors.surface : colors.backgroundMuted,
+                borderColor: searchFocused ? colors.brandAccent : 'transparent',
+              },
+            ]}
+          >
+            <Ionicons name="search-outline" size={18} color={colors.textTertiary} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('helpFaq.searchPlaceholder')}
+              placeholderTextColor={colors.textTertiary}
+              selectionColor={colors.brandAccent}
+              accessibilityLabel={t('helpFaq.searchLabel')}
+              returnKeyType="search"
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              style={[styles.searchInput, { color: colors.textPrimary }]}
+            />
+            {query ? (
+              <PressableScale
+                onPress={() => setQuery('')}
+                accessibilityRole="button"
+                accessibilityLabel={t('helpFaq.clearSearch')}
+                hitSlop={10}
+              >
+                <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+              </PressableScale>
+            ) : null}
+          </View>
+        </Animated.View>
 
         {visibleItems.length ? (
-          visibleItems.map((item) => <FAQItem key={item.question} {...item} />)
+          <View style={styles.list}>
+            {visibleItems.map((item, index) => (
+              <Animated.View key={item.id} entering={enter(index + 1)}>
+                <FAQItem question={item.question} answer={item.answer} />
+              </Animated.View>
+            ))}
+          </View>
         ) : (
-          <ThemedText variant="body" color="textSecondary" style={styles.empty}>
-            No help topics match &quot;{query}&quot;.
-          </ThemedText>
+          <EmptyState icon="search-outline" title={t('helpFaq.noMatch', { query: query.trim() })} />
         )}
       </ScrollView>
     </Screen>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    padded: { padding: spacing.lg, paddingBottom: spacing.xxl },
-    title: { marginBottom: spacing.lg },
-    searchBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.xs,
-      backgroundColor: colors.backgroundMuted,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.sm,
-      marginBottom: spacing.md,
-    },
-    searchInput: { flex: 1, paddingVertical: spacing.sm, color: colors.textPrimary },
-    item: {
-      borderRadius: radius.lg,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.divider,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
-      marginBottom: spacing.sm,
-    },
-    itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-    question: { flex: 1 },
-    answer: { marginTop: spacing.xs },
-    empty: { textAlign: 'center', marginTop: spacing.lg },
-  });
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+    paddingBottom: 120,
+    gap: spacing.md,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minHeight: 48,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    paddingHorizontal: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 16,
+    paddingVertical: 10,
+    // The bar itself shows focus; the browser's own outline would double it.
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
+  },
+  list: { gap: spacing.sm },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md - 2,
+    minHeight: 56,
+  },
+  question: { flex: 1 },
+  answerWrap: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
+});

@@ -22,7 +22,10 @@ export async function recoverFromSlotConflict(
 ): Promise<BookingDraftEntry[]> {
   // Every cached grid may be stale now. Mark them without refetching here;
   // the fetches below refresh the ones this booking used.
-  await queryClient.invalidateQueries({ queryKey: bookingKeys.availabilityAll(), refetchType: 'none' });
+  await queryClient.invalidateQueries({
+    queryKey: bookingKeys.availabilityAll(),
+    refetchType: 'none',
+  });
 
   const results = await Promise.allSettled(
     entries.map((entry) => {

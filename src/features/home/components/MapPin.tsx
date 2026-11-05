@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { useColors, type Colors } from '@/theme';
+import { useColors, useTheme, type Colors } from '@/theme';
 
 import { iconForCategory, imageForCategory } from '../utils/categoryIcon';
 
@@ -19,8 +19,9 @@ interface MapPinProps {
 // rather than a teardrop shape.
 export function MapPin({ categorySlug, color, size = 34, isOpen }: MapPinProps) {
   const colors = useColors();
+  const { scheme } = useTheme();
   const styles = createStyles(colors);
-  const image = imageForCategory(categorySlug);
+  const image = imageForCategory(categorySlug, scheme);
 
   return (
     <View style={{ width: size, height: size }}>
@@ -37,13 +38,13 @@ export function MapPin({ categorySlug, color, size = 34, isOpen }: MapPinProps) 
         ]}
       >
         {image ? (
-          <Image
-            source={image.source}
-            style={[styles.image, { transform: [{ scale: image.scale }] }]}
-            contentFit="cover"
-          />
+          <Image source={image.source} style={styles.image} contentFit="cover" />
         ) : (
-          <Ionicons name={iconForCategory(categorySlug)} size={size * 0.52} color={colors.surface} />
+          <Ionicons
+            name={iconForCategory(categorySlug)}
+            size={size * 0.52}
+            color={colors.surface}
+          />
         )}
       </View>
       {isOpen ? <View style={styles.dot} /> : null}

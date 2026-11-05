@@ -25,5 +25,5 @@ export function VenueTabBar({ active, onChange }: VenueTabBarProps) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
+  wrap: { marginTop: spacing.lg, paddingHorizontal: spacing.gutter },
 });

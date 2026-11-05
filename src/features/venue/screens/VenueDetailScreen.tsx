@@ -1,10 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
+import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
+import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
 import type { Service } from '@/features/booking/api/schemas';
 import { useConfirmBooking } from '@/features/booking/hooks/useConfirmBooking';
@@ -12,17 +16,19 @@ import { useMyBookings } from '@/features/booking/hooks/useMyBookings';
 import { useStoreServices } from '@/features/booking/hooks/useStoreServices';
 import { formatDraftSummary, useDraftEntries } from '@/features/booking/state/bookingDraftStore';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
-import { useFavouriteCheck, useToggleFavourite } from '@/features/favourites/hooks/useToggleFavourite';
+import {
+  useFavouriteCheck,
+  useToggleFavourite,
+} from '@/features/favourites/hooks/useToggleFavourite';
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
 import { formatMoney } from '@/lib/money';
 import { formatDate } from '@/lib/time/branchTime';
-import { spacing, useColors, type Colors } from '@/theme';
+import { enter, radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { AboutTab } from '../components/AboutTab';
 import { ReviewsTab } from '../components/ReviewsTab';
 import { ServicesTab } from '../components/ServicesTab';
-import { TeamSection } from '../components/TeamSection';
 import { VenueHeader } from '../components/VenueHeader';
 import { VenueTabBar, type VenueTab } from '../components/VenueTabBar';
 import { useVenueGallery } from '../hooks/useVenueGallery';
@@ -80,7 +86,12 @@ export function VenueDetailScreen() {
   const draftSummaryByServiceId = useMemo(
     () =>
       branchTimezone
-        ? Object.fromEntries(draftEntryList.map((entry) => [entry.service.id, formatDraftSummary(entry, branchTimezone)]))
+        ? Object.fromEntries(
+            draftEntryList.map((entry) => [
+              entry.service.id,
+              formatDraftSummary(entry, branchTimezone),
+            ]),
+          )
         : {},
     [draftEntryList, branchTimezone],
   );
@@ -102,16 +113,25 @@ export function VenueDetailScreen() {
 
   if (storeDetail.isLoading) {
     return (
-      <Screen style={styles.centered}>
-        <ActivityIndicator color={colors.brand} />
+      <Screen edges={['bottom']} style={styles.screen}>
+        <VenueSkeleton onBack={() => router.back()} />
       </Screen>
     );
   }
 
   if (storeDetail.isError || !storeDetail.data) {
     return (
-      <Screen style={styles.centered}>
+      <Screen style={styles.screen}>
+        <View style={styles.errorBack}>
+          <IconButton
+            icon="arrow-back"
+            accessibilityLabel="Go back" /* TODO i18n */
+            onPress={() => router.back()}
+            size={44}
+          />
+        </View>
         <EmptyState
+          icon="cloud-offline-outline"
           title="Couldn't load this venue" // TODO i18n
           body="Check your connection and try again." // TODO i18n
           actionLabel="Retry" // TODO i18n
@@ -144,8 +164,17 @@ export function VenueDetailScreen() {
   };
 
   const handleOpenDirections = () => {
-    Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`);
+    Linking.openURL(
+      `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`,
+    );
   };
+
+  // The cheapest listed service, for the "From" price beside the Book now button.
+  const startingPrice = (services.data ?? []).reduce<number | null>(
+    (min, service) => (min === null || service.price < min ? service.price : min),
+    null,
+  );
+  const hasServices = (services.data?.length ?? 0) > 0;
 
   return (
     <Screen edges={['bottom']} style={styles.screen}>
@@ -157,7 +186,7 @@ export function VenueDetailScreen() {
           reviewCount={reviewStats.data?.total_reviews ?? null}
           distanceKm={store.distance_km ?? null}
           status={store.status}
-          photos={!gallery.isError ? gallery.data ?? [] : []}
+          photos={!gallery.isError ? (gallery.data ?? []) : []}
           coverImage={store.logo}
           // TODO: build a share URL from `store.share_slug` once the public web domain is defined (backend gap).
           shareLink={null}
@@ -168,55 +197,56 @@ export function VenueDetailScreen() {
           onOpenDirections={handleOpenDirections}
         />
 
-        {/* Team strip — hidden if empty/errored rather than showing a
-            broken-looking section. */}
-        {!team.isError && team.data && team.data.length > 0 ? <TeamSection members={team.data} /> : null}
-
         <VenueTabBar active={activeTab} onChange={setActiveTab} />
 
-        {activeTab === 'services' ? (
-          <ServicesTab
-            services={services.data ?? []}
-            isLoading={services.isLoading}
-            isError={services.isError}
-            onBook={handleBook}
-            draftSummaryByServiceId={draftSummaryByServiceId}
-          />
-        ) : null}
+        <Animated.View key={activeTab} entering={enter(0)}>
+          {activeTab === 'services' ? (
+            <ServicesTab
+              services={services.data ?? []}
+              isLoading={services.isLoading}
+              isError={services.isError}
+              onRetry={() => services.refetch()}
+              onBook={handleBook}
+              draftSummaryByServiceId={draftSummaryByServiceId}
+            />
+          ) : null}
 
-        {activeTab === 'about' ? (
-          <AboutTab
-            store={store}
-            calendarDays={calendar.data ?? []}
-            specialDays={specialDays.data ?? []}
-            photos={!gallery.isError ? gallery.data ?? [] : []}
-            isLoading={calendar.isLoading || specialDays.isLoading}
-            isError={calendar.isError || specialDays.isError}
-          />
-        ) : null}
+          {activeTab === 'about' ? (
+            <AboutTab
+              store={store}
+              calendarDays={calendar.data ?? []}
+              specialDays={specialDays.data ?? []}
+              photos={!gallery.isError ? (gallery.data ?? []) : []}
+              // Hidden when empty/errored rather than showing a broken-looking section.
+              team={!team.isError ? (team.data ?? []) : []}
+              isLoading={calendar.isLoading || specialDays.isLoading}
+              isError={calendar.isError || specialDays.isError}
+            />
+          ) : null}
 
-        {activeTab === 'reviews' ? (
-          <ReviewsTab
-            stats={reviewStats.data}
-            timezone={store.timezone}
-            reviews={reviews.data ?? []}
-            isLoading={reviewStats.isLoading || reviews.isLoading}
-            isError={reviewStats.isError || reviews.isError}
-            canReview={canReview}
-            onWriteReview={() => {
-              if (!reviewableBooking) return;
-              router.push({
-                pathname: '/(modal)/write-review',
-                params: {
-                  storeId,
-                  bookingId: reviewableBooking.id,
-                  serviceName: reviewableBooking.booking_services_str,
-                  date: formatDate(reviewableBooking.booking_date, reviewableBooking.timezone),
-                },
-              });
-            }}
-          />
-        ) : null}
+          {activeTab === 'reviews' ? (
+            <ReviewsTab
+              stats={reviewStats.data}
+              timezone={store.timezone}
+              reviews={reviews.data ?? []}
+              isLoading={reviewStats.isLoading || reviews.isLoading}
+              isError={reviewStats.isError || reviews.isError}
+              canReview={canReview}
+              onWriteReview={() => {
+                if (!reviewableBooking) return;
+                router.push({
+                  pathname: '/(modal)/write-review',
+                  params: {
+                    storeId,
+                    bookingId: reviewableBooking.id,
+                    serviceName: reviewableBooking.booking_services_str,
+                    date: formatDate(reviewableBooking.booking_date, reviewableBooking.timezone),
+                  },
+                });
+              }}
+            />
+          ) : null}
+        </Animated.View>
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -224,51 +254,115 @@ export function VenueDetailScreen() {
       {/* Also shown with only an error: a slot conflict can empty the draft,
           and the customer still needs to see why it vanished. */}
       {draftEntryList.length > 0 || draftError ? (
-        <View style={styles.draftBar}>
+        <View style={styles.bar}>
           {draftError ? (
-            <ThemedText variant="caption" color="danger" style={styles.draftError}>
-              {draftError}
-            </ThemedText>
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+              <ThemedText variant="caption" color="danger" style={styles.errorText}>
+                {draftError}
+              </ThemedText>
+            </View>
           ) : null}
           {draftEntryList.length > 0 ? (
-            <View style={styles.draftBarRow}>
-              <View>
+            <View style={styles.barRow}>
+              <View style={styles.barSummary}>
                 <ThemedText variant="caption" color="textSecondary">
                   {/* TODO i18n */}
-                  {draftEntryList.length} service{draftEntryList.length > 1 ? 's' : ''} configured
+                  {draftEntryList.length} service{draftEntryList.length > 1 ? 's' : ''} selected
                 </ThemedText>
                 <ThemedText variant="h3">
                   {formatMoney(draftTotal, draftEntryList[0].service.currency)}
                 </ThemedText>
               </View>
               <Button
-                label={/* TODO i18n */ 'Confirm Booking'}
-                variant="accent"
+                label={/* TODO i18n */ 'Confirm booking'}
                 fullWidth={false}
-                style={styles.draftConfirmButton}
+                style={styles.barButton}
                 onPress={handleConfirmDraft}
                 loading={isConfirmingDraft}
               />
             </View>
           ) : null}
         </View>
+      ) : hasServices && startingPrice !== null ? (
+        <View style={styles.bar}>
+          <View style={styles.barRow}>
+            <View style={styles.barSummary}>
+              <ThemedText variant="caption" color="textSecondary">
+                Starting from {/* TODO i18n */}
+              </ThemedText>
+              <ThemedText variant="h3">
+                {formatMoney(startingPrice, services.data?.[0]?.currency ?? store.currency)}
+              </ThemedText>
+            </View>
+            <Button
+              label={/* TODO i18n */ 'Book now'}
+              fullWidth={false}
+              style={styles.barButton}
+              onPress={() => router.push(`/booking/${storeId}/configure`)}
+            />
+          </View>
+        </View>
       ) : null}
     </Screen>
   );
 }
 
+/** The venue page's final layout in grey: photo, name block, tabs, and a few service cards. */
+function VenueSkeleton({ onBack }: { onBack: () => void }) {
+  const styles = createStyles(useColors());
+  return (
+    <ScrollView scrollEnabled={false}>
+      <Skeleton height={288} radius={0} />
+      <View style={styles.skeletonBack}>
+        <IconButton
+          variant="overlay"
+          icon="arrow-back"
+          size={44}
+          onPress={onBack}
+          accessibilityLabel="Go back"
+        />
+      </View>
+      <View style={styles.skeletonBody}>
+        <Skeleton width="70%" height={32} />
+        <Skeleton width={110} height={18} />
+        <Skeleton width="55%" height={18} />
+        <Skeleton height={44} radius={radius.pill} style={styles.skeletonTabs} />
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} height={108} radius={radius.lg} />
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
-  screen: { padding: 0 },
-  centered: { alignItems: 'center', justifyContent: 'center' },
-  bottomSpacer: { height: 32 },
-  draftBar: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-  },
-  draftError: { marginBottom: spacing.xs },
-  draftBarRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  draftConfirmButton: { paddingHorizontal: spacing.lg, minWidth: 168 },
-});
+    screen: { padding: 0 },
+    errorBack: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, alignItems: 'flex-start' },
+    bottomSpacer: { height: spacing.xl },
+    skeletonBack: { position: 'absolute', top: spacing.md, start: spacing.md },
+    skeletonBody: { padding: spacing.gutter, gap: spacing.sm },
+    skeletonTabs: { marginTop: spacing.md, marginBottom: spacing.xs },
+    bar: {
+      backgroundColor: colors.surface,
+      borderTopWidth: StyleSheet.hairlineWidth * 2,
+      borderTopColor: colors.border,
+      paddingHorizontal: spacing.gutter,
+      paddingVertical: spacing.sm,
+      gap: spacing.xs,
+      ...shadows.md,
+    },
+    barRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    barSummary: { flex: 1, minWidth: 0 },
+    barButton: { minWidth: 160 },
+    errorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.dangerTint,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+    },
+    errorText: { flex: 1 },
+  });

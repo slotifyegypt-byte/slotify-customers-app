@@ -1,7 +1,13 @@
 import { isApiError } from '@/lib/api/errors';
 import { mockQuery } from '@/test/mockSupabase';
 
-import { getBookingMessages, markBookingMessagesRead, sendBookingMessage, toBookingMessage, type MessageRow } from './chatApi';
+import {
+  getBookingMessages,
+  markBookingMessagesRead,
+  sendBookingMessage,
+  toBookingMessage,
+  type MessageRow,
+} from './chatApi';
 
 const mockFrom = jest.fn();
 const mockRpc = jest.fn();
@@ -79,13 +85,18 @@ describe('getBookingMessages', () => {
   it('maps a postgrest error', async () => {
     const { builder } = mockQuery({ error: { code: '42501', message: 'denied' } });
     mockFrom.mockReturnValue(builder);
-    await expect(getBookingMessages('bk1')).rejects.toMatchObject({ code: 'forbidden', status: 403 });
+    await expect(getBookingMessages('bk1')).rejects.toMatchObject({
+      code: 'forbidden',
+      status: 403,
+    });
   });
 });
 
 describe('sendBookingMessage', () => {
   it('inserts only booking_id and the trimmed body, and returns the mapped row', async () => {
-    const { builder, calls } = mockQuery({ data: [row('m9', { sender: 'customer', body: 'hello' })] });
+    const { builder, calls } = mockQuery({
+      data: [row('m9', { sender: 'customer', body: 'hello' })],
+    });
     mockFrom.mockReturnValue(builder);
 
     const sent = await sendBookingMessage('bk1', '  hello  ');
@@ -96,15 +107,16 @@ describe('sendBookingMessage', () => {
     expect(sent).toMatchObject({ id: 'm9', sender: 'customer', message: 'hello' });
   });
 
-  it.each([['empty', ''], ['whitespace', '   \n '], ['over 2000 chars', 'a'.repeat(2001)]])(
-    'rejects an %s body before any request',
-    async (_name, body) => {
-      const err = await sendBookingMessage('bk1', body).catch((e) => e);
-      expect(isApiError(err, 'invalid_input')).toBe(true);
-      expect(err.status).toBe(422);
-      expect(mockFrom).not.toHaveBeenCalled();
-    },
-  );
+  it.each([
+    ['empty', ''],
+    ['whitespace', '   \n '],
+    ['over 2000 chars', 'a'.repeat(2001)],
+  ])('rejects an %s body before any request', async (_name, body) => {
+    const err = await sendBookingMessage('bk1', body).catch((e) => e);
+    expect(isApiError(err, 'invalid_input')).toBe(true);
+    expect(err.status).toBe(422);
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
 
   it('accepts exactly 2000 chars', async () => {
     const { builder } = mockQuery({ data: [row('m9', { sender: 'customer' })] });
@@ -115,7 +127,10 @@ describe('sendBookingMessage', () => {
   it('throws forbidden when the insert returns no row (RLS refusal)', async () => {
     const { builder } = mockQuery({ data: [] });
     mockFrom.mockReturnValue(builder);
-    await expect(sendBookingMessage('bk1', 'hi')).rejects.toMatchObject({ code: 'forbidden', status: 403 });
+    await expect(sendBookingMessage('bk1', 'hi')).rejects.toMatchObject({
+      code: 'forbidden',
+      status: 403,
+    });
   });
 
   it('maps a postgrest error', async () => {
@@ -133,7 +148,13 @@ describe('markBookingMessagesRead', () => {
   });
 
   it('maps an rpc error (booking_not_found is raised as PT404)', async () => {
-    mockRpc.mockResolvedValue({ data: null, error: { code: 'PT404', message: 'booking_not_found' } });
-    await expect(markBookingMessagesRead('bk1')).rejects.toMatchObject({ code: 'booking_not_found', status: 404 });
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { code: 'PT404', message: 'booking_not_found' },
+    });
+    await expect(markBookingMessagesRead('bk1')).rejects.toMatchObject({
+      code: 'booking_not_found',
+      status: 404,
+    });
   });
 });

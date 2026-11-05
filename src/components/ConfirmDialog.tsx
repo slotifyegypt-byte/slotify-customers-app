@@ -1,6 +1,6 @@
 import { Modal, StyleSheet, View } from 'react-native';
 
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { Button } from './Button';
 import { ThemedText } from './ThemedText';
@@ -16,6 +16,8 @@ interface ConfirmDialogProps {
   secondaryLabel: string;
   onSecondary: () => void;
   secondaryLoading?: boolean;
+  /** `danger` colours the second button red, for deleting something. */
+  secondaryTone?: 'danger';
   onRequestClose?: () => void;
 }
 
@@ -36,12 +38,18 @@ export function ConfirmDialog({
   secondaryLabel,
   onSecondary,
   secondaryLoading,
+  secondaryTone,
   onRequestClose,
 }: ConfirmDialogProps) {
   const colors = useColors();
   const styles = createStyles(colors);
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onRequestClose ?? onPrimary}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onRequestClose ?? onPrimary}
+    >
       <View style={styles.overlay}>
         <View style={styles.card}>
           <ThemedText variant="h2" style={styles.title}>
@@ -52,10 +60,16 @@ export function ConfirmDialog({
               {body}
             </ThemedText>
           ) : null}
-          <Button label={primaryLabel} variant="accent" onPress={onPrimary} style={styles.primaryButton} />
+          <Button
+            label={primaryLabel}
+            variant="accent"
+            onPress={onPrimary}
+            style={styles.primaryButton}
+          />
           <Button
             label={secondaryLabel}
             variant="ghost"
+            tone={secondaryTone}
             loading={secondaryLoading}
             onPress={onSecondary}
             style={styles.secondaryButton}
@@ -77,13 +91,15 @@ const createStyles = (colors: Colors) =>
     },
     card: {
       width: '100%',
-      maxWidth: 360,
+      maxWidth: 380,
       backgroundColor: colors.surface,
       borderRadius: radius.xl,
       padding: spacing.lg,
+      gap: spacing.sm,
+      ...shadows.lg,
     },
     title: { textAlign: 'center' },
-    body: { textAlign: 'center', marginTop: spacing.xs },
-    primaryButton: { marginTop: spacing.lg },
-    secondaryButton: { marginTop: spacing.sm },
+    body: { textAlign: 'center' },
+    primaryButton: { marginTop: spacing.sm },
+    secondaryButton: {},
   });

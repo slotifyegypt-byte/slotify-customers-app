@@ -1,26 +1,38 @@
-import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/ThemedText';
+import { Photo } from '@/components/Photo';
+import { SectionHeader } from '@/components/SectionHeader';
 import { radius, spacing } from '@/theme';
 
 import type { GalleryItem } from '../api/schemas';
 
 interface GallerySectionProps {
   photos: GalleryItem[];
+  /** Names the venue, for the placeholder shown while a photo loads. */
+  name?: string;
 }
 
-export function GallerySection({ photos }: GallerySectionProps) {
+/** A row of photos that bleeds to the screen edge so the next one peeks in. */
+export function GallerySection({ photos, name = 'Photo' }: GallerySectionProps) {
   if (photos.length === 0) return null;
 
   return (
-    <View style={styles.container}>
-      <ThemedText variant="h3" style={styles.title}>
-        Photos {/* TODO i18n */}
-      </ThemedText>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <View>
+      <SectionHeader title="Photos" /* TODO i18n */ />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.bleed}
+        contentContainerStyle={styles.row}
+      >
         {photos.map((photo) => (
-          <Image key={photo.id} source={{ uri: photo.imageUrl }} style={styles.photo} contentFit="cover" />
+          <Photo
+            key={photo.id}
+            uri={photo.imageUrl}
+            name={name}
+            initialSize={28}
+            style={styles.photo}
+          />
         ))}
       </ScrollView>
     </View>
@@ -28,12 +40,7 @@ export function GallerySection({ photos }: GallerySectionProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
-  title: { marginBottom: spacing.sm },
-  photo: {
-    width: 140,
-    height: 100,
-    borderRadius: radius.md,
-    marginRight: spacing.xs,
-  },
+  bleed: { marginHorizontal: -spacing.gutter },
+  row: { paddingHorizontal: spacing.gutter, gap: spacing.xs },
+  photo: { width: 168, height: 120, borderRadius: radius.md },
 });

@@ -1,149 +1,179 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
+import { Button } from '@/components/Button';
+import { PressableScale } from '@/components/PressableScale';
+import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { radius, spacing, useColors } from '@/theme';
 
 import { useStoreEmployeesForService } from '../hooks/useStoreServices';
 
 interface SpecialistPickerProps {
   storeId: string;
   serviceId: string;
-  /** null = "Any specialist" — resolved to a concrete employee_id once a slot is picked. */
+  /** null = "Any professional": resolved to a concrete employee_id once a slot is picked. */
   selectedEmployeeId: string | null;
   onSelect: (employeeId: string | null) => void;
-}
-
-// Pastel avatar-fill palette for employees without a profile photo — picked
-// deterministically from the name so a given specialist always gets the same
-// color, matching the mockups' per-avatar tint variety (Design ref
-// 24-booking-configure.png: purple avatar for "Yara", pink for "Hana").
-function buildAvatarPalette(colors: Colors) {
-  return [
-    { bg: colors.brandTint, fg: colors.brandAccent },
-    { bg: 'rgba(226, 74, 74, 0.14)', fg: colors.danger },
-    { bg: colors.successTint, fg: colors.success },
-    { bg: 'rgba(224, 167, 45, 0.16)', fg: colors.warning },
-    { bg: 'rgba(0, 159, 208, 0.14)', fg: colors.accentSecondary },
-  ] as const;
-}
-
-function avatarPaletteFor(seed: string, colors: Colors) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  const palette = buildAvatarPalette(colors);
-  return palette[hash % palette.length];
+  /** Lets the row run to the screen edge: pass the screen's side margin. */
+  bleed?: number;
 }
 
 // customer-app-api-map.md §0.1: specialist-mode services let the customer pick
-// a specific employee, or "Anyone available" resolved to a specific employee
+// a specific employee, or "Any professional" resolved to a specific employee
 // client-side before submitting (here: whichever slot they end up tapping).
 //
-// Design ref 24-booking-configure.png: "Any Professional" is a distinct first
-// option (checkmark icon, no photo), then real staff as circular avatar +
-// name + star rating. The selected item gets a rounded-rect purple border
-// around the whole cell — not a filled background swap like a plain chip.
-export function SpecialistPicker({ storeId, serviceId, selectedEmployeeId, onSelect }: SpecialistPickerProps) {
+// "Any professional" is a distinct first option (people icon, no photo), then
+// real staff as round avatar + first name (+ rating when the backend has one).
+// The chosen one gets a brand edge, a soft fill and a check.
+export function SpecialistPicker({
+  storeId,
+  serviceId,
+  selectedEmployeeId,
+  onSelect,
+  bleed = 0,
+}: SpecialistPickerProps) {
   const colors = useColors();
-  const styles = createStyles(colors);
   const employees = useStoreEmployeesForService(storeId, serviceId);
+  const edge = bleed ? { marginHorizontal: -bleed } : null;
+  const pad = bleed ? { paddingHorizontal: bleed } : null;
 
   if (employees.isLoading) {
-    return <ActivityIndicator style={styles.spinner} color={colors.brand} />;
+    return (
+      <View style={[styles.row, styles.rowStatic]}>
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} width={92} height={112} radius={radius.lg} />
+        ))}
+      </View>
+    );
   }
 
   if (employees.isError) {
     return (
-      <ThemedText variant="caption" color="danger">
-        {/* TODO i18n */}
-        Couldn&apos;t load specialists for this service.
-      </ThemedText>
+      <View style={styles.error}>
+        <ThemedText variant="body" color="textSecondary">
+          {/* TODO i18n */}
+          Couldn&apos;t load the team for this service.
+        </ThemedText>
+        <Button
+          label="Try again" /* TODO i18n */
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
+          onPress={() => employees.refetch()}
+        />
+      </View>
     );
   }
 
+  const cells = [
+    { id: null as string | null, name: 'Anyone' /* TODO i18n */, member: null },
+    ...(employees.data ?? []).map((employee) => ({
+      id: employee.id as string | null,
+      name: employee.first_name,
+      member: employee,
+    })),
+  ];
+
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ selected: selectedEmployeeId === null }}
-        onPress={() => onSelect(null)}
-        style={[styles.cell, selectedEmployeeId === null && styles.cellSelected]}
-      >
-        <View style={[styles.avatar, { backgroundColor: colors.brandTint }]}>
-          <Ionicons name="checkmark" size={22} color={colors.brandAccent} />
-        </View>
-        <ThemedText variant="caption" numberOfLines={1} style={styles.name}>
-          {/* TODO i18n */}
-          Any Professional
-        </ThemedText>
-      </Pressable>
-      {employees.data?.map((employee) => {
-        const isSelected = selectedEmployeeId === employee.id;
-        const name = [employee.first_name, employee.last_name].filter(Boolean).join(' ');
-        const initial = employee.first_name.charAt(0).toUpperCase();
-        const palette = avatarPaletteFor(employee.id || name, colors);
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={[styles.scroll, edge]}
+      contentContainerStyle={[styles.row, pad]}
+    >
+      {cells.map(({ id, name, member }) => {
+        const isSelected = selectedEmployeeId === id;
         return (
-          <Pressable
-            key={employee.id}
+          <PressableScale
+            key={id ?? 'any'}
             accessibilityRole="button"
+            accessibilityLabel={member ? name : 'Any professional' /* TODO i18n */}
             accessibilityState={{ selected: isSelected }}
-            onPress={() => onSelect(employee.id)}
-            style={[styles.cell, isSelected && styles.cellSelected]}
+            onPress={() => onSelect(id)}
+            scaleTo={0.96}
+            style={[
+              styles.cell,
+              isSelected
+                ? {
+                    backgroundColor: colors.brandTint,
+                    borderColor: colors.brand,
+                    borderWidth: 1.5,
+                  }
+                : {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    borderWidth: StyleSheet.hairlineWidth * 2,
+                  },
+            ]}
           >
-            {employee.profile_picture ? (
-              <Image source={{ uri: employee.profile_picture }} style={styles.avatar} contentFit="cover" />
+            {member ? (
+              <Avatar
+                uri={member.profile_picture}
+                label={member.first_name.charAt(0).toUpperCase()}
+                size={52}
+              />
             ) : (
-              <View style={[styles.avatar, { backgroundColor: palette.bg }]}>
-                <ThemedText variant="bodyMedium" style={{ color: palette.fg }}>
-                  {initial}
-                </ThemedText>
+              <View style={[styles.anyWell, { backgroundColor: colors.brandTint }]}>
+                <Ionicons name="people-outline" size={24} color={colors.brandAccent} />
               </View>
             )}
-            <ThemedText variant="caption" numberOfLines={1} style={styles.name}>
-              {employee.first_name}
+            <ThemedText variant="captionStrong" numberOfLines={2} style={styles.name}>
+              {name}
             </ThemedText>
-            {typeof employee.rating === 'number' ? (
+            {member && typeof member.rating === 'number' ? (
               <View style={styles.ratingRow}>
-                <Ionicons name="star" size={10} color={colors.ratingStar} />
+                <Ionicons name="star" size={11} color={colors.ratingStar} />
                 <ThemedText variant="captionSmall" color="textSecondary">
-                  {employee.rating % 1 === 0 ? employee.rating.toFixed(0) : employee.rating.toFixed(1)}
+                  {member.rating % 1 === 0 ? member.rating.toFixed(0) : member.rating.toFixed(1)}
                 </ThemedText>
               </View>
             ) : null}
-          </Pressable>
+            {isSelected ? (
+              <View style={[styles.check, { backgroundColor: colors.brand }]}>
+                <Ionicons name="checkmark" size={12} color={colors.textOnBrand} />
+              </View>
+            ) : null}
+          </PressableScale>
         );
       })}
     </ScrollView>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-  spinner: { marginVertical: spacing.md },
-  row: { paddingVertical: spacing.xs },
+const styles = StyleSheet.create({
+  scroll: { flexGrow: 0 },
+  row: { paddingVertical: spacing.xxs, gap: spacing.xs },
+  rowStatic: { flexDirection: 'row' },
   cell: {
-    alignItems: 'center',
-    width: 78,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.xxs,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    marginRight: spacing.xs,
-  },
-  cellSelected: { borderColor: colors.brandAccent },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 92,
+    minHeight: 112,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xxs,
-    overflow: 'hidden',
+    gap: 6,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.lg,
+  },
+  anyWell: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   name: { textAlign: 'center' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  check: {
+    position: 'absolute',
+    top: 6,
+    end: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  error: { gap: spacing.sm, alignItems: 'flex-start' },
 });

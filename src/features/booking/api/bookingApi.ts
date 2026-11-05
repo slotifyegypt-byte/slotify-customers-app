@@ -21,7 +21,10 @@ import {
 // developer-guide.md §5 "My bookings". RLS alone is not enough: a login that is
 // also partner staff can read its branch's bookings, so the query is scoped to
 // the customer row. `reviews` is embedded so `has_review` needs no second call.
-export async function getMyBookings(customerId: string, status?: BookingStatus): Promise<BookingRead[]> {
+export async function getMyBookings(
+  customerId: string,
+  status?: BookingStatus,
+): Promise<BookingRead[]> {
   let query = supabase.from('bookings').select(BOOKING_SELECT).eq('customer_id', customerId);
   if (status) query = query.eq('status', status);
   const { data, error } = await query.order('starts_at', { ascending: false });
@@ -30,7 +33,11 @@ export async function getMyBookings(customerId: string, status?: BookingStatus):
 }
 
 export async function getBooking(bookingId: string): Promise<BookingRead> {
-  const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT).eq('id', bookingId).single();
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(BOOKING_SELECT)
+    .eq('id', bookingId)
+    .single();
   if (error) throw fromPostgrest(error);
   return toBooking(data as unknown as BookingRow);
 }
@@ -72,7 +79,10 @@ export async function getStoreServices(branchId: string): Promise<Service[]> {
 
 // developer-guide.md §5 — one `get_branch_team` call, narrowed to the members
 // who perform this service.
-export async function getStoreEmployeesForService(branchId: string, serviceId: string): Promise<BookingEmployee[]> {
+export async function getStoreEmployeesForService(
+  branchId: string,
+  serviceId: string,
+): Promise<BookingEmployee[]> {
   const team = await getStoreTeam(branchId);
   return team
     .filter((member) => member.service_ids.includes(serviceId))
@@ -128,7 +138,9 @@ export function draftEntryToPayload(entry: BookingDraftEntry): CreateBookingItem
     // Capacity services omit employee_id entirely; specialist services take
     // it from whichever slot was tapped, which covers both a specific pick
     // and "Any specialist" (see mergeSpecialistSlots).
-    ...(entry.service.requires_specialist && entry.slot.employee_id ? { employee_id: entry.slot.employee_id } : {}),
+    ...(entry.service.requires_specialist && entry.slot.employee_id
+      ? { employee_id: entry.slot.employee_id }
+      : {}),
     starts_at: entry.slot.start_time,
   };
 }
@@ -171,7 +183,10 @@ export async function createBooking(
 // item on their own booking; changing the specialist is staff-only (a
 // customer who wants someone else rebooks instead). `itemId` is the
 // booking_items uuid (BookingServiceRead.id).
-export async function rescheduleBookingService(itemId: string, params: { starts_at: string }): Promise<void> {
+export async function rescheduleBookingService(
+  itemId: string,
+  params: { starts_at: string },
+): Promise<void> {
   await callFunction<unknown>(`bookings/items/${itemId}`, {
     method: 'PATCH',
     body: { starts_at: params.starts_at },

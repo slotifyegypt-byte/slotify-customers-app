@@ -1,69 +1,84 @@
-import { ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Switch } from 'react-native';
+import Animated from 'react-native-reanimated';
 
+import { ListRow } from '@/components/ListRow';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { ThemedText } from '@/components/ThemedText';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { enter, spacing, useColors } from '@/theme';
 
+import { SettingsGroup } from '../components/SettingsGroup';
 import { useNotificationPreferencesStore } from '../store/notificationPreferencesStore';
 
-// TODO i18n — every label below
-const ROWS = [
-  { key: 'bookingReminders', label: 'Booking Reminders' },
-  { key: 'promotions', label: 'Promotions & Deals' },
-  { key: 'orderUpdates', label: 'Order Updates' },
-  { key: 'chatMessages', label: 'Chat Messages' },
-] as const;
+type PreferenceKey = 'bookingReminders' | 'promotions' | 'orderUpdates' | 'chatMessages';
+
+interface Row {
+  key: PreferenceKey;
+  icon: 'alarm-outline' | 'receipt-outline' | 'chatbubble-ellipses-outline' | 'pricetag-outline';
+  tone: 'brand' | 'success' | 'warning';
+}
+
+const GROUPS: { titleKey: string; rows: Row[] }[] = [
+  {
+    titleKey: 'notificationSettings.groupBookings',
+    rows: [
+      { key: 'bookingReminders', icon: 'alarm-outline', tone: 'brand' },
+      { key: 'orderUpdates', icon: 'receipt-outline', tone: 'success' },
+    ],
+  },
+  {
+    titleKey: 'notificationSettings.groupMessages',
+    rows: [
+      { key: 'chatMessages', icon: 'chatbubble-ellipses-outline', tone: 'brand' },
+      { key: 'promotions', icon: 'pricetag-outline', tone: 'warning' },
+    ],
+  },
+];
 
 export function NotificationSettingsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
-  const styles = createStyles(colors);
   const preferences = useNotificationPreferencesStore();
 
   return (
     <Screen>
-      <ScreenHeader title="Notification Settings" />
-      <ScrollView contentContainerStyle={styles.padded}>
-        <View style={styles.section}>
-          {ROWS.map((row, index) => (
-            <View key={row.key} style={[styles.row, index === ROWS.length - 1 && styles.rowLast]}>
-              <ThemedText variant="bodyMedium" style={styles.rowLabel}>
-                {row.label}
-              </ThemedText>
-              <Switch
-                value={preferences[row.key]}
-                onValueChange={(value) => preferences.setPreference(row.key, value)}
-                trackColor={{ false: colors.border, true: colors.brandAccent }}
-                thumbColor={colors.surface}
-              />
-            </View>
-          ))}
-        </View>
+      <ScreenHeader title={t('notificationSettings.title')} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {GROUPS.map((group, index) => (
+          <Animated.View key={group.titleKey} entering={enter(index)}>
+            <SettingsGroup title={t(group.titleKey)}>
+              {group.rows.map((row) => (
+                <ListRow
+                  key={row.key}
+                  title={t(`notificationSettings.${row.key}`)}
+                  icon={row.icon}
+                  iconTone={row.tone}
+                  trailing={
+                    <Switch
+                      value={preferences[row.key]}
+                      onValueChange={(value) => preferences.setPreference(row.key, value)}
+                      accessibilityLabel={t(`notificationSettings.${row.key}`)}
+                      trackColor={{ false: colors.disabled, true: colors.brandAccent }}
+                      thumbColor={colors.onHero}
+                      // react-native-web paints the on-state thumb with its own prop; native ignores it.
+                      {...({ activeThumbColor: colors.onHero } as object)}
+                    />
+                  }
+                />
+              ))}
+            </SettingsGroup>
+          </Animated.View>
+        ))}
       </ScrollView>
     </Screen>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    padded: { padding: spacing.lg, paddingBottom: spacing.xxl },
-    title: { marginBottom: spacing.lg },
-    section: {
-      borderRadius: radius.lg,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.divider,
-      overflow: 'hidden',
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.divider,
-    },
-    rowLast: { borderBottomWidth: 0 },
-    rowLabel: { flex: 1 },
-  });
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+    paddingBottom: 120,
+    gap: 28,
+  },
+});

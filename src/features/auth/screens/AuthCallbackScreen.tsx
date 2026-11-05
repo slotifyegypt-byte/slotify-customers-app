@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
-import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
-import { spacing, useColors } from '@/theme';
+import { enter, radius, spacing, useColors } from '@/theme';
 
 import { exchangeCode } from '../api/oauth';
 
@@ -28,7 +29,9 @@ export function AuthCallbackScreen() {
 
   // Derived at render time (not via setState-in-effect) since it depends only
   // on the route params themselves, not on any async work.
-  const missingCodeError = !code ? (oauthErrorDescription ?? oauthError ?? t('auth.noAuthCode')) : null;
+  const missingCodeError = !code
+    ? (oauthErrorDescription ?? oauthError ?? t('auth.noAuthCode'))
+    : null;
   const error = missingCodeError ?? exchangeError;
 
   useEffect(() => {
@@ -43,30 +46,64 @@ export function AuthCallbackScreen() {
       });
   }, [code, t]);
 
+  if (error) {
+    return (
+      <Screen>
+        <Animated.View entering={enter(0)} style={styles.fill}>
+          <EmptyState
+            icon="alert-circle-outline"
+            title={t('auth.signInFailedTitle')}
+            body={error}
+            actionLabel={t('auth.backToSignIn')}
+            onAction={() => router.replace('/sign-in')}
+          />
+        </Animated.View>
+      </Screen>
+    );
+  }
+
+  // The same deep-indigo welcome the sign-in screen opens with, so the hand-back from the browser feels continuous.
   return (
-    <Screen style={{ alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
-      {error ? (
-        <>
-          <ThemedText variant="h3" style={{ textAlign: 'center' }}>
-            {t('auth.signInFailedTitle')}
-          </ThemedText>
-          <ThemedText
-            variant="body"
-            color="textSecondary"
-            style={{ textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.lg }}
-          >
-            {error}
-          </ThemedText>
-          <Button label={t('auth.backToSignIn')} fullWidth={false} onPress={() => router.replace('/sign-in')} />
-        </>
-      ) : (
-        <>
-          <ActivityIndicator color={colors.brand} />
-          <ThemedText variant="body" color="textSecondary" style={{ marginTop: spacing.sm }}>
-            {t('auth.completingSignIn')}
-          </ThemedText>
-        </>
-      )}
+    <Screen background="hero" style={styles.center}>
+      <View
+        pointerEvents="none"
+        style={[styles.ring, styles.ringBig, { borderColor: colors.onHeroTint }]}
+      />
+      <View
+        pointerEvents="none"
+        style={[styles.ring, styles.ringSmall, { borderColor: colors.onHeroTint }]}
+      />
+      <Animated.View entering={enter(0)} style={[styles.tile, { backgroundColor: colors.onHero }]}>
+        <Image
+          source={require('../../../../assets/images/logo-mark.png')}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
+      </Animated.View>
+      <Animated.View entering={enter(1)} style={styles.status} accessibilityLiveRegion="polite">
+        <ActivityIndicator color={colors.onHero} />
+        <ThemedText variant="bodyLarge" color="onHero">
+          {t('auth.completingSignIn')}
+        </ThemedText>
+      </Animated.View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+  center: { alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
+  ring: { position: 'absolute', borderWidth: 1.5, borderRadius: 999 },
+  ringBig: { width: 360, height: 360, right: -140, top: -120 },
+  ringSmall: { width: 220, height: 220, right: -70, top: -50 },
+  tile: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: { width: 54, height: 54 },
+  status: { alignItems: 'center', gap: spacing.sm },
+});

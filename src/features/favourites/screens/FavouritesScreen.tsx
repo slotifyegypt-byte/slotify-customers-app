@@ -1,58 +1,93 @@
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { EmptyState } from '@/components/EmptyState';
+import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { StoreCard } from '@/components/StoreCard';
-import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
+import { ThemedText } from '@/components/ThemedText';
+import { VenueCard } from '@/features/explore-search/components/VenueCard';
+import { VenueListSkeleton } from '@/features/explore-search/components/VenueCardSkeleton';
+import { useCategoryNames } from '@/features/explore-search/hooks/useCategoryNames';
+import { enter, spacing, useColors } from '@/theme';
 
 import { type Favourite } from '../api/schemas';
 import { useFavourites } from '../hooks/useFavourites';
 import { useToggleFavourite } from '../hooks/useToggleFavourite';
 
 export function FavouritesScreen() {
-  const colors = useColors();
-  const styles = createStyles(colors);
+  const { t } = useTranslation();
   const favourites = useFavourites();
+  const categoryNames = useCategoryNames();
+
+  const header = (
+    <Animated.View entering={enter(0)} style={styles.header}>
+      <View style={styles.backRow}>
+        <IconButton icon="chevron-back" accessibilityLabel="Back" onPress={() => router.back()} />
+      </View>
+      <ThemedText variant="h1" accessibilityRole="header">
+        {t('favourites.title')}
+      </ThemedText>
+      {favourites.data?.length ? (
+        <ThemedText variant="body" color="textSecondary">
+          {t('favourites.count', { count: favourites.data.length })}
+        </ThemedText>
+      ) : null}
+    </Animated.View>
+  );
+
+  const empty = favourites.isLoading ? (
+    <VenueListSkeleton count={3} />
+  ) : favourites.isError ? (
+    <EmptyState
+      icon="cloud-offline-outline"
+      title={t('favourites.errorTitle')}
+      body={t('favourites.errorBody')}
+      actionLabel={t('common.retry')}
+      onAction={() => favourites.refetch()}
+    />
+  ) : (
+    <EmptyState
+      icon="heart-outline"
+      title={t('favourites.emptyTitle')}
+      body={t('favourites.emptyBody')}
+      actionLabel={t('favourites.emptyAction')}
+      onAction={() => router.push('/(tabs)/explore')}
+    />
+  );
 
   return (
-    <Screen edges={['top']} style={styles.screen}>
-      <ScreenHeader title="Favourites" />
-
-      {favourites.isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.brand} />
-        </View>
-      ) : favourites.isError ? (
-        <View style={styles.center}>
-          <EmptyState
-            title="Something went wrong"
-            body="Couldn't load your favourites."
-            actionLabel="Retry"
-            onAction={() => favourites.refetch()}
-          />
-        </View>
-      ) : !favourites.data?.length ? (
-        <View style={styles.center}>
-          <EmptyState title="No favourites yet" body="Stores you favourite will show up here." />
-        </View>
-      ) : (
-        <FlatList<Favourite>
-          data={favourites.data}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => <FavouriteRow favourite={item} />}
-        />
-      )}
+    <Screen edges={['top']}>
+      <FlatList<Favourite>
+        data={favourites.isLoading || favourites.isError ? [] : (favourites.data ?? [])}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={header}
+        ListEmptyComponent={empty}
+        renderItem={({ item, index }) => (
+          <Animated.View entering={enter(index + 1)}>
+            <FavouriteRow
+              favourite={item}
+              categoryName={categoryNames.get(item.store.category_slugs[0] ?? '')}
+            />
+          </Animated.View>
+        )}
+      />
     </Screen>
   );
 }
 
-function FavouriteRow({ favourite }: { favourite: Favourite }) {
+function FavouriteRow({
+  favourite,
+  categoryName,
+}: {
+  favourite: Favourite;
+  categoryName?: string;
+}) {
+  const { t } = useTranslation();
   const colors = useColors();
-  const styles = createStyles(colors);
   // customer-app-api-map.md §11 — VERIFIED live (2026-09-20): GET
   // /favourites/ now embeds the full store per row, so there's no more
   // per-row fetch (and no per-row failure mode to guard against) here.
@@ -60,42 +95,27 @@ function FavouriteRow({ favourite }: { favourite: Favourite }) {
   const store = favourite.store;
 
   return (
-    <View style={styles.row}>
-      <StoreCard
-        name={store.name}
-        logo={store.logo}
-        address={store.address}
-        rating={store.rating}
-        isOpen={store.status === 'open'}
-        onPress={() => router.push(`/venue/${store.id}`)}
-        width={220}
-      />
-      <Pressable
-        style={styles.removeBtn}
-        disabled={remove.isPending}
-        onPress={() => remove.mutate()}
-        hitSlop={8}
-      >
-        <SymbolView name={{ ios: 'heart.fill', android: 'favorite', web: 'favorite' }} tintColor={colors.danger} size={20} />
-      </Pressable>
-    </View>
+    <VenueCard
+      store={store}
+      categoryName={categoryName}
+      onPress={() => router.push(`/venue/${store.id}`)}
+      trailing={
+        <IconButton
+          icon="heart"
+          size={38}
+          color={colors.danger}
+          accessibilityLabel={t('favourites.remove', { name: store.name })}
+          onPress={() => {
+            if (!remove.isPending) remove.mutate();
+          }}
+        />
+      }
+    />
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-  screen: { padding: 0 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.md },
-  list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
-  row: { position: 'relative', marginBottom: spacing.md, alignSelf: 'flex-start' },
-  removeBtn: {
-    position: 'absolute',
-    top: spacing.xxs,
-    right: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    padding: spacing.xxs,
-    ...shadows.sm,
-  },
-  });
+const styles = StyleSheet.create({
+  list: { flexGrow: 1, paddingHorizontal: spacing.gutter, paddingBottom: 120, gap: spacing.sm },
+  header: { gap: spacing.xxs, paddingTop: spacing.sm, paddingBottom: spacing.md },
+  backRow: { flexDirection: 'row', marginBottom: spacing.sm },
+});

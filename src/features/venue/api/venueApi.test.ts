@@ -51,7 +51,9 @@ describe('getStoreCalendar', () => {
     expect(calls).toContainEqual(['select', ['day_of_week, opens_at, closes_at']]);
     expect(calls).toContainEqual(['eq', ['branch_id', 'branch-1']]);
     expect(days.map((d) => d.day_of_week)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(days[0].intervals).toEqual([{ opens_at: '10:00:00', closes_at: '18:00:00', crosses_midnight: false }]);
+    expect(days[0].intervals).toEqual([
+      { opens_at: '10:00:00', closes_at: '18:00:00', crosses_midnight: false },
+    ]);
     expect(days[1].intervals).toEqual([
       { opens_at: '09:00:00', closes_at: '13:00:00', crosses_midnight: false },
       { opens_at: '16:00:00', closes_at: '20:00:00', crosses_midnight: false },
@@ -67,7 +69,9 @@ describe('getStoreCalendar', () => {
 
     const days = await getStoreCalendar('branch-1');
 
-    expect(days[4].intervals).toEqual([{ opens_at: '22:00:00', closes_at: '02:00:00', crosses_midnight: true }]);
+    expect(days[4].intervals).toEqual([
+      { opens_at: '22:00:00', closes_at: '02:00:00', crosses_midnight: true },
+    ]);
   });
 
   it('returns empty intervals for a day with no rows (closed)', async () => {

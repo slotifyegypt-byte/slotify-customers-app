@@ -32,6 +32,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: 'light',
   ios: {
     supportsTablet: true,
+    // Home-screen icon for iOS 18+: it follows the system's light, dark and tinted appearance.
+    icon: {
+      light: './assets/images/icon.png',
+      dark: './assets/images/icon-dark.png',
+      tinted: './assets/images/icon-tinted.png',
+    },
     bundleIdentifier: `com.slotify.customers${ENV_SUFFIX[APP_ENV]}`,
     // Native "Sign in with Apple" (src/features/auth/hooks/useAppleSignIn.ts).
     usesAppleSignIn: true,
@@ -46,7 +52,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: `com.slotify.customers${ENV_SUFFIX[APP_ENV]}`,
     adaptiveIcon: {
-      backgroundColor: '#F6F7F8',
+      backgroundColor: '#ECEAF4',
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
@@ -71,14 +77,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         image: './assets/images/splash-icon.png',
         resizeMode: 'contain',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F4F3F8',
+        dark: {
+          image: './assets/images/splash-icon-dark.png',
+          backgroundColor: '#0A0912',
+        },
       },
     ],
     [
       'expo-notifications',
       {
-        icon: './assets/images/android-icon-foreground.png',
-        color: '#3A246B',
+        icon: './assets/images/notification-icon.png',
+        color: '#2F2059',
       },
     ],
     // '@sentry/react-native/expo' is intentionally left out of the plugin
@@ -90,7 +100,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-location',
       {
-        locationWhenInUsePermission: 'Slotify uses your location to show nearby stores and distances.',
+        locationWhenInUsePermission:
+          'Slotify uses your location to show nearby stores and distances.',
       },
     ],
   ],

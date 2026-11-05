@@ -2,7 +2,13 @@ import { z } from 'zod';
 
 // Mirrors the `booking_status` enum (database.types.ts). `no_show` is set by
 // staff after a missed appointment; the customer app only ever displays it.
-export const bookingStatusSchema = z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'no_show']);
+export const bookingStatusSchema = z.enum([
+  'pending',
+  'confirmed',
+  'completed',
+  'cancelled',
+  'no_show',
+]);
 export type BookingStatus = z.infer<typeof bookingStatusSchema>;
 
 // One `booking_items` row. `id` is the item's uuid (what reschedule targets).

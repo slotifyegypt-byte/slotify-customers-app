@@ -1,12 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { PressableScale } from '@/components/PressableScale';
 import { ThemedText } from '@/components/ThemedText';
-import { radius, spacing, useColors, type Colors } from '@/theme';
+import { radius, spacing, useColors, useTheme, type Colors } from '@/theme';
 
-import { iconForCategory, imageForCategory, pinColorForCategory, tintForCategory } from '../utils/categoryIcon';
+import {
+  iconForCategory,
+  imageForCategory,
+  pinColorForCategory,
+  tintForCategory,
+} from '../utils/categoryIcon';
 
 interface CategoryChipProps {
   name: string;
@@ -18,24 +23,29 @@ interface CategoryChipProps {
 
 export function CategoryChip({ name, slug, selected, muted, onPress }: CategoryChipProps) {
   const colors = useColors();
+  const { scheme } = useTheme();
   const styles = createStyles(colors);
-  const image = imageForCategory(slug);
-  // Fixed reference so the Image's style array doesn't get a new object
-  // identity every render (was causing expo-image to re-transition on every
-  // sibling selection change).
-  const imageStyle = useMemo(
-    () => [styles.image, image ? { transform: [{ scale: image.scale }] } : null],
-    [image, styles.image],
-  );
+  const image = imageForCategory(slug, scheme);
 
   return (
-    <Pressable onPress={onPress} style={[styles.wrap, muted && styles.muted]}>
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={name}
+      accessibilityState={{ selected: !!selected }}
+      scaleTo={0.94}
+      style={[styles.wrap, muted && styles.muted]}
+    >
       <View style={styles.circleOuter}>
         <View style={[styles.circle, !image && { backgroundColor: tintForCategory(slug, colors) }]}>
           {image ? (
-            <Image source={image.source} style={imageStyle} contentFit="cover" />
+            <Image source={image.source} style={styles.image} contentFit="cover" />
           ) : (
-            <Ionicons name={iconForCategory(slug)} size={26} color={pinColorForCategory(slug, colors)} />
+            <Ionicons
+              name={iconForCategory(slug)}
+              size={26}
+              color={pinColorForCategory(slug, colors)}
+            />
           )}
         </View>
         {/* Separate, non-clipping overlay so the selection ring never resizes
@@ -43,25 +53,25 @@ export function CategoryChip({ name, slug, selected, muted, onPress }: CategoryC
         {selected ? <View pointerEvents="none" style={styles.selectionRing} /> : null}
       </View>
       <ThemedText
-        variant={selected ? 'label' : 'captionSmall'}
-        color={selected ? 'brand' : 'textSecondary'}
+        variant={selected ? 'captionStrong' : 'caption'}
+        color={selected ? 'textPrimary' : 'textSecondary'}
         numberOfLines={1}
         style={styles.label}
       >
         {name}
       </ThemedText>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
-    wrap: { alignItems: 'center', gap: spacing.xxs, width: 66, marginRight: spacing.xs },
-    muted: { opacity: 0.4 },
-    circleOuter: { width: 60, height: 60 },
+    wrap: { alignItems: 'center', gap: 6, width: 72, marginRight: spacing.xs },
+    muted: { opacity: 0.5 },
+    circleOuter: { width: 64, height: 64 },
     circle: {
-      width: 60,
-      height: 60,
+      width: 64,
+      height: 64,
       borderRadius: radius.pill,
       backgroundColor: colors.backgroundMuted,
       alignItems: 'center',
@@ -70,13 +80,13 @@ const createStyles = (colors: Colors) =>
     },
     selectionRing: {
       position: 'absolute',
-      top: 0,
-      left: 0,
-      width: 60,
-      height: 60,
+      top: -4,
+      left: -4,
+      width: 72,
+      height: 72,
       borderRadius: radius.pill,
-      borderWidth: 2.5,
-      borderColor: colors.brandAccent,
+      borderWidth: 2,
+      borderColor: colors.brand,
     },
     image: { width: '100%', height: '100%' },
     label: { textAlign: 'center' },

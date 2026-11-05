@@ -19,7 +19,10 @@ const slot = (start: string, employee: string | null): AvailabilitySlot => ({
   time_slot_str: start,
 });
 
-const availability = (serviceId: string, employees: Record<string, AvailabilitySlot[]>): AvailabilityResponse => ({
+const availability = (
+  serviceId: string,
+  employees: Record<string, AvailabilitySlot[]>,
+): AvailabilityResponse => ({
   store_id: 'branch-1',
   service_id: serviceId,
   date: '2026-11-04',
@@ -28,7 +31,11 @@ const availability = (serviceId: string, employees: Record<string, AvailabilityS
   step_minutes: 15,
   price: 300,
   booking_mode: 'specialist',
-  employees: Object.entries(employees).map(([id, slots]) => ({ employee_id: id, employee_name: id, available_slots: slots })),
+  employees: Object.entries(employees).map(([id, slots]) => ({
+    employee_id: id,
+    employee_name: id,
+    available_slots: slots,
+  })),
   slots: [],
 });
 
@@ -51,7 +58,10 @@ describe('recoverFromSlotConflict', () => {
   it('refetches availability per entry, removes only the conflicting entry from the draft and returns it', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
     const stale = availability('haircut', { mona: [haircut.slot] });
-    queryClient.setQueryData(bookingKeys.availability({ store_id: 'branch-1', service_id: 'haircut', date: '2026-11-04' }), stale);
+    queryClient.setQueryData(
+      bookingKeys.availability({ store_id: 'branch-1', service_id: 'haircut', date: '2026-11-04' }),
+      stale,
+    );
     useBookingDraftStore.getState().setEntry('branch-1', haircut);
     useBookingDraftStore.getState().setEntry('branch-1', blowDry);
 
@@ -69,13 +79,19 @@ describe('recoverFromSlotConflict', () => {
     // The cached grid now holds the fresh data.
     expect(
       queryClient.getQueryData<AvailabilityResponse>(
-        bookingKeys.availability({ store_id: 'branch-1', service_id: 'haircut', date: '2026-11-04' }),
+        bookingKeys.availability({
+          store_id: 'branch-1',
+          service_id: 'haircut',
+          date: '2026-11-04',
+        }),
       )?.employees[0].available_slots,
     ).toEqual([]);
   });
 
-  it("removes nothing when a refetch fails, rather than guessing", async () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  it('removes nothing when a refetch fails, rather than guessing', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+    });
     useBookingDraftStore.getState().setEntry('branch-1', haircut);
     mockGetAvailability.mockRejectedValue(new Error('offline'));
 

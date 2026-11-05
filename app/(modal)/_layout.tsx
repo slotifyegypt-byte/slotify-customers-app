@@ -15,7 +15,8 @@ export default function ModalStackLayout() {
         name="cancel-booking"
         options={{ headerShown: false, presentation: 'transparentModal', animation: 'fade' }}
       />
-      <Stack.Screen name="write-review" options={{ title: 'Write a Review' }} />
+      {/* headerShown: false — WriteReviewScreen renders its own header with a close button. */}
+      <Stack.Screen name="write-review" options={{ headerShown: false }} />
       {/* headerShown: false — RescheduleBookingScreen renders its own
           ScreenHeader, same as BookingFlow's header above. */}
       <Stack.Screen name="reschedule-booking" options={{ headerShown: false }} />

@@ -34,7 +34,9 @@ export async function completeOAuthRedirect(url: string): Promise<void> {
   const code = params.code;
   if (typeof code !== 'string') {
     const reason = params.error_description ?? params.error;
-    throw new Error(typeof reason === 'string' ? reason : 'Sign-in did not return an authorization code');
+    throw new Error(
+      typeof reason === 'string' ? reason : 'Sign-in did not return an authorization code',
+    );
   }
   await exchangeCode(code);
 }

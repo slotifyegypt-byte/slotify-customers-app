@@ -1,8 +1,11 @@
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
 
-import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
+import { spacing, useColors } from '@/theme';
 
+import { Card } from './Card';
+import { Photo } from './Photo';
+import { Pill } from './Pill';
 import { ThemedText } from './ThemedText';
 
 interface StoreCardProps {
@@ -16,63 +19,62 @@ interface StoreCardProps {
   width?: number;
 }
 
-export function StoreCard({ name, logo, address, rating, distanceKm, isOpen, onPress, width = 220 }: StoreCardProps) {
+/** A venue in a horizontal list: its photo, whether it is open, name, address, rating and distance. */
+export function StoreCard({
+  name,
+  logo,
+  address,
+  rating,
+  distanceKm,
+  isOpen,
+  onPress,
+  width = 232,
+}: StoreCardProps) {
   const colors = useColors();
-  const styles = createStyles(colors);
   return (
-    <Pressable onPress={onPress} style={[styles.card, { width }]}>
-      <View style={styles.imageWrap}>
-        {logo ? (
-          <Image source={{ uri: logo }} style={styles.image} contentFit="cover" />
-        ) : (
-          <View style={[styles.image, styles.imageFallback]} />
-        )}
+    <Card
+      onPress={onPress}
+      padding="none"
+      style={{ width, marginRight: spacing.sm }}
+      accessibilityLabel={name}
+    >
+      <Photo uri={logo} name={name} style={styles.photo} initialSize={44}>
         {isOpen !== undefined ? (
-          <View style={[styles.statusPill, { backgroundColor: isOpen ? colors.success : colors.textSecondary }]}>
-            <ThemedText variant="caption" color="textInverse">
-              {isOpen ? 'Open' : 'Closed'}
-            </ThemedText>
+          <View style={styles.badge}>
+            <Pill
+              label={isOpen ? 'Open now' : 'Closed'}
+              tone={isOpen ? 'mint' : 'neutral'}
+              dot={isOpen}
+            />
           </View>
         ) : null}
-      </View>
-      <ThemedText variant="h3" numberOfLines={1} style={styles.name}>
-        {name}
-      </ThemedText>
-      {address ? (
-        <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
-          {address}
+      </Photo>
+      <View style={styles.body}>
+        <ThemedText variant="h3" numberOfLines={1}>
+          {name}
         </ThemedText>
-      ) : null}
-      <View style={styles.metaRow}>
-        <ThemedText variant="caption" color="textSecondary">
-          ★ {rating.toFixed(1)}
-        </ThemedText>
-        {distanceKm != null ? (
-          <ThemedText variant="caption" color="textSecondary">
-            {' '}
-            · {distanceKm.toFixed(1)} km
+        {address ? (
+          <ThemedText variant="caption" color="textTertiary" numberOfLines={1}>
+            {address}
           </ThemedText>
         ) : null}
+        <View style={styles.meta}>
+          <Ionicons name="star" size={13} color={colors.ratingStar} />
+          <ThemedText variant="captionStrong">{rating.toFixed(1)}</ThemedText>
+          {distanceKm != null ? (
+            <ThemedText variant="caption" color="textTertiary">
+              · {distanceKm.toFixed(1)} km
+            </ThemedText>
+          ) : null}
+        </View>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
-    card: { marginRight: spacing.sm },
-    imageWrap: { position: 'relative', marginBottom: spacing.xxs },
-    image: { width: '100%', height: 120, borderRadius: radius.md },
-    imageFallback: { backgroundColor: colors.backgroundMuted },
-    statusPill: {
-      position: 'absolute',
-      top: spacing.xxs,
-      left: spacing.xxs,
-      paddingHorizontal: spacing.xs,
-      paddingVertical: 2,
-      borderRadius: radius.pill,
-      ...shadows.sm,
-    },
-    name: { marginTop: spacing.xxs },
-    metaRow: { flexDirection: 'row', marginTop: 2 },
-  });
+const styles = StyleSheet.create({
+  photo: { height: 128, width: '100%' },
+  badge: { position: 'absolute', top: spacing.xs, left: spacing.xs },
+  body: { padding: spacing.sm + 2, gap: 2 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+});
