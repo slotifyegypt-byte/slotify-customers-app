@@ -1,6 +1,11 @@
 import type { BookingRead } from '@/features/booking/api/schemas';
 
-import { bookingStatusMeta, groupActiveBookings, groupPastBookings } from './bookingDisplay';
+import {
+  canCustomerCancel,
+  bookingStatusMeta,
+  groupActiveBookings,
+  groupPastBookings,
+} from './bookingDisplay';
 
 const NOW = new Date('2026-11-12T07:00:00Z');
 
@@ -75,5 +80,40 @@ describe('groupPastBookings', () => {
     ]);
     expect(groups.map((g) => g.month)).toEqual(['2026-11', '2026-10']);
     expect(groups[1].bookings.map((b) => b.id)).toEqual(['oct-2', 'oct-1']);
+  });
+});
+
+describe('canCustomerCancel', () => {
+  const now = new Date('2026-11-07T08:00:00Z');
+  const base = (over: Record<string, unknown>) =>
+    ({
+      booking_status: 'confirmed',
+      booking_type: 'appointment',
+      booking_date: '2026-11-07T10:00:00Z',
+      ...over,
+    }) as Parameters<typeof canCustomerCancel>[0];
+
+  it('lets a pending or confirmed appointment be cancelled', () => {
+    expect(canCustomerCancel(base({}), now)).toBe(true);
+    expect(canCustomerCancel(base({ booking_status: 'pending' }), now)).toBe(true);
+  });
+
+  it('lets a drop-off order be cancelled only before its start time', () => {
+    expect(canCustomerCancel(base({ booking_type: 'drop_off' }), now)).toBe(true);
+    expect(
+      canCustomerCancel(
+        base({ booking_type: 'drop_off', booking_date: '2026-11-07T07:00:00Z' }),
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it('never offers cancel for a booking that is already finished', () => {
+    for (const booking_status of ['completed', 'cancelled', 'no_show']) {
+      expect(canCustomerCancel(base({ booking_status }), now)).toBe(false);
+      expect(canCustomerCancel(base({ booking_status, booking_type: 'drop_off' }), now)).toBe(
+        false,
+      );
+    }
   });
 });

@@ -19,19 +19,14 @@ import { exchangeCode } from '../api/oauth';
 export function AuthCallbackScreen() {
   const colors = useColors();
   const { t } = useTranslation();
-  const {
-    code,
-    error: oauthError,
-    error_description: oauthErrorDescription,
-  } = useLocalSearchParams<{ code?: string; error?: string; error_description?: string }>();
+  const { code } = useLocalSearchParams<{ code?: string }>();
   const [exchangeError, setExchangeError] = useState<string | null>(null);
   const startedRef = useRef(false); // guard against double-exchange (an auth code is single-use)
 
   // Derived at render time (not via setState-in-effect) since it depends only
-  // on the route params themselves, not on any async work.
-  const missingCodeError = !code
-    ? (oauthErrorDescription ?? oauthError ?? t('auth.noAuthCode'))
-    : null;
+  // on the route params themselves, not on any async work. The link's own `error` text is never shown: anyone
+  // can open slotify://auth/callback?error_description=... and put words on this screen.
+  const missingCodeError = !code ? t('auth.noAuthCode') : null;
   const error = missingCodeError ?? exchangeError;
 
   useEffect(() => {
@@ -41,8 +36,8 @@ export function AuthCallbackScreen() {
     // Signing in updates the auth store via Supabase's auth listener.
     exchangeCode(code)
       .then(() => router.replace('/'))
-      .catch((err) => {
-        setExchangeError(err instanceof Error ? err.message : t('auth.signInFailedGeneric'));
+      .catch(() => {
+        setExchangeError(t('auth.signInFailedGeneric'));
       });
   }, [code, t]);
 
@@ -95,8 +90,8 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   center: { alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   ring: { position: 'absolute', borderWidth: 1.5, borderRadius: 999 },
-  ringBig: { width: 360, height: 360, right: -140, top: -120 },
-  ringSmall: { width: 220, height: 220, right: -70, top: -50 },
+  ringBig: { width: 360, height: 360, end: -140, top: -120 },
+  ringSmall: { width: 220, height: 220, end: -70, top: -50 },
   tile: {
     width: 72,
     height: 72,

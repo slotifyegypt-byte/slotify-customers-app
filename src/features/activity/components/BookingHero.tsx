@@ -99,8 +99,8 @@ export function BookingHero({ booking }: { booking: BookingRead }) {
 const styles = StyleSheet.create({
   card: { borderRadius: radius.xl, padding: spacing.md + 4, gap: spacing.md, overflow: 'hidden' },
   ring: { position: 'absolute', borderWidth: 1.5, borderRadius: 999 },
-  ringBig: { width: 190, height: 190, right: -60, top: -80 },
-  ringSmall: { width: 110, height: 110, right: -20, top: -40 },
+  ringBig: { width: 190, height: 190, end: -60, top: -80 },
+  ringSmall: { width: 110, height: 110, end: -20, top: -40 },
   chips: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
   chip: {
     flexDirection: 'row',

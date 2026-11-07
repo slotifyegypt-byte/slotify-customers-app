@@ -78,6 +78,87 @@ describe('callPublicFunction', () => {
   });
 });
 
+describe('request timeout', () => {
+  afterEach(() => jest.useRealTimers());
+
+  const hangsUntilAborted = (_url: string, init: RequestInit) =>
+    new Promise<Response>((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () =>
+        reject(new DOMException('Aborted', 'AbortError')),
+      );
+    });
+
+  it('gives up on a read that never answers after 20 seconds, as a network_error', async () => {
+    jest.useFakeTimers();
+    fetchMock.mockImplementation(hangsUntilAborted);
+
+    const pending = callFunction('account/me').catch((e) => e);
+    await jest.advanceTimersByTimeAsync(20_001);
+    const failure: unknown = await pending;
+
+    expect(isApiError(failure, 'network_error')).toBe(true);
+    expect((failure as ApiError).status).toBe(0);
+  });
+
+  it('waits much longer for a write, so a slow booking is not abandoned and retried', async () => {
+    jest.useFakeTimers();
+    fetchMock.mockImplementation(hangsUntilAborted);
+    let settled = false;
+
+    const pending = callFunction('bookings', { method: 'POST', body: {} })
+      .catch((e) => e)
+      .then((e) => {
+        settled = true;
+        return e;
+      });
+    await jest.advanceTimersByTimeAsync(30_000);
+    expect(settled).toBe(false);
+
+    await jest.advanceTimersByTimeAsync(30_001);
+    expect(isApiError(await pending, 'network_error')).toBe(true);
+  });
+
+  it('also covers a response whose body stalls after the headers arrived', async () => {
+    jest.useFakeTimers();
+    fetchMock.mockImplementation((_url: string, init: RequestInit) =>
+      Promise.resolve({
+        ok: true,
+        text: () =>
+          new Promise<string>((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () =>
+              reject(new DOMException('Aborted', 'AbortError')),
+            );
+          }),
+      } as unknown as Response),
+    );
+
+    const pending = callFunction('account/me').catch((e) => e);
+    await jest.advanceTimersByTimeAsync(20_001);
+
+    expect(isApiError(await pending, 'network_error')).toBe(true);
+  });
+
+  it('does the same for public calls', async () => {
+    jest.useFakeTimers();
+    fetchMock.mockImplementation(hangsUntilAborted);
+
+    const pending = callPublicFunction('availability', { a: 'b' }).catch((e) => e);
+    await jest.advanceTimersByTimeAsync(20_001);
+
+    expect(isApiError(await pending, 'network_error')).toBe(true);
+  });
+
+  it('passes an abort signal and leaves no timer behind after a fast answer', async () => {
+    jest.useFakeTimers();
+    fetchMock.mockResolvedValue(json({ ok: true }));
+
+    await callFunction('account/me');
+
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+});
+
 describe('network failures', () => {
   it('callFunction wraps a fetch rejection in ApiError(network_error, 0)', async () => {
     fetchMock.mockRejectedValue(new TypeError('Network request failed'));

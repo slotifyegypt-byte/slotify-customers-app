@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -5,21 +6,21 @@ import { spacing } from '@/theme';
 
 export type VenueTab = 'services' | 'about' | 'reviews';
 
-const TABS: { key: VenueTab; label: string }[] = [
-  { key: 'services', label: 'Services' /* TODO i18n */ },
-  { key: 'about', label: 'About' /* TODO i18n */ },
-  { key: 'reviews', label: 'Reviews' /* TODO i18n */ },
-];
-
 interface VenueTabBarProps {
   active: VenueTab;
   onChange: (tab: VenueTab) => void;
 }
 
 export function VenueTabBar({ active, onChange }: VenueTabBarProps) {
+  const { t } = useTranslation();
+  const tabs: { key: VenueTab; label: string }[] = [
+    { key: 'services', label: t('venue.tabServices') },
+    { key: 'about', label: t('venue.tabAbout') },
+    { key: 'reviews', label: t('venue.tabReviews') },
+  ];
   return (
     <View style={styles.wrap}>
-      <SegmentedControl options={TABS} value={active} onChange={onChange} />
+      <SegmentedControl options={tabs} value={active} onChange={onChange} />
     </View>
   );
 }

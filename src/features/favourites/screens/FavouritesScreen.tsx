@@ -24,7 +24,11 @@ export function FavouritesScreen() {
   const header = (
     <Animated.View entering={enter(0)} style={styles.header}>
       <View style={styles.backRow}>
-        <IconButton icon="chevron-back" accessibilityLabel="Back" onPress={() => router.back()} />
+        <IconButton
+          icon="chevron-back"
+          accessibilityLabel={t('a11y.back')}
+          onPress={() => router.back()}
+        />
       </View>
       <ThemedText variant="h1" accessibilityRole="header">
         {t('favourites.title')}

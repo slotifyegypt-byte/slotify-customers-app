@@ -33,10 +33,8 @@ export async function completeOAuthRedirect(url: string): Promise<void> {
   const params = Linking.parse(url).queryParams ?? {};
   const code = params.code;
   if (typeof code !== 'string') {
-    const reason = params.error_description ?? params.error;
-    throw new Error(
-      typeof reason === 'string' ? reason : 'Sign-in did not return an authorization code',
-    );
+    // The redirect's own error text is untrusted (anyone can craft the link), so it isn't passed on.
+    throw new Error('Sign-in did not return an authorization code');
   }
   await exchangeCode(code);
 }

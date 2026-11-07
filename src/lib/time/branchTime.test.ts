@@ -1,3 +1,5 @@
+import i18n from '@/lib/i18n';
+
 import {
   branchLocalDate,
   branchToday,
@@ -149,5 +151,31 @@ describe('formatDateTitle', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('in Arabic', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('ar');
+  });
+  afterAll(async () => {
+    await i18n.changeLanguage('en');
+  });
+
+  it('uses the Arabic AM/PM markers', () => {
+    expect(formatHour('2026-11-02T08:00:00Z', CAIRO)).toBe('10:00 ص');
+    expect(formatHour('2026-11-02T13:00:00Z', CAIRO)).toBe('3:00 م');
+  });
+
+  it('writes the month in Arabic', () => {
+    expect(formatDate('2026-11-02T08:00:00Z', CAIRO)).toContain('نوفمبر');
+  });
+
+  it('words the relative title in Arabic', () => {
+    const now = new Date('2026-11-02T08:00:00Z');
+    expect(formatDateTitle('2026-11-02T20:00:00Z', CAIRO, now)).toBe('اليوم بعد الظهر');
+    expect(formatDateTitle('2026-11-03T08:00:00Z', CAIRO, now)).toBe('غدًا صباحًا');
+    expect(formatDateTitle('2026-11-06T08:00:00Z', CAIRO, now)).toBe('خلال 4 أيام');
+    expect(formatDateTitle('2026-10-30T08:00:00Z', CAIRO, now)).toBe('قبل 3 أيام');
   });
 });

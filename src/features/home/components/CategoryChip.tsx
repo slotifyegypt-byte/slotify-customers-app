@@ -66,7 +66,7 @@ export function CategoryChip({ name, slug, selected, muted, onPress }: CategoryC
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
-    wrap: { alignItems: 'center', gap: 6, width: 72, marginRight: spacing.xs },
+    wrap: { alignItems: 'center', gap: 6, width: 72, marginEnd: spacing.xs },
     muted: { opacity: 0.5 },
     circleOuter: { width: 64, height: 64 },
     circle: {
@@ -81,7 +81,7 @@ const createStyles = (colors: Colors) =>
     selectionRing: {
       position: 'absolute',
       top: -4,
-      left: -4,
+      start: -4,
       width: 72,
       height: 72,
       borderRadius: radius.pill,

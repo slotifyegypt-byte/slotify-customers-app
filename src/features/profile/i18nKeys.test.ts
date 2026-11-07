@@ -10,6 +10,9 @@ const NAMESPACES = [
   'helpFaq',
   'contactUs',
   'notFound',
+  'auth',
+  'chat',
+  'report',
 ] as const;
 
 describe('profile i18n', () => {

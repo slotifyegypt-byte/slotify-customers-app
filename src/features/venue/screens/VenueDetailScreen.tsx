@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -21,6 +22,8 @@ import {
   useToggleFavourite,
 } from '@/features/favourites/hooks/useToggleFavourite';
 import { useCategories } from '@/features/home/hooks/useHomeData';
+import { useMyProfile } from '@/features/profile/hooks/useProfile';
+import { useMyReviews } from '@/features/reviews/hooks/useMyReviews';
 import { useCustomerLocation } from '@/lib/location/useCustomerLocation';
 import { formatMoney } from '@/lib/money';
 import { formatDate } from '@/lib/time/branchTime';
@@ -38,6 +41,7 @@ import { useVenueTeam } from '../hooks/useVenueTeam';
 
 export function VenueDetailScreen() {
   const colors = useColors();
+  const { t } = useTranslation();
   const styles = createStyles(colors);
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
   const [activeTab, setActiveTab] = useState<VenueTab>('services');
@@ -65,6 +69,15 @@ export function VenueDetailScreen() {
 
   const reviewStats = useVenueReviewStats(storeId);
   const reviews = useVenueReviews(storeId, { limit: 20, offset: 0 });
+
+  // A review can only be reported by someone else, so the customer's own are
+  // marked (their `customer_id` isn't readable on the public reviews).
+  const customerId = useMyProfile().data?.id;
+  const myReviews = useMyReviews(customerId);
+  const ownReviewIds = useMemo(
+    () => (myReviews.data ? new Set(myReviews.data.map((review) => review.id)) : undefined),
+    [myReviews.data],
+  );
 
   // "Write a review" eligibility: a review belongs to one completed booking
   // and each booking takes at most one, so the customer can review this venue
@@ -103,7 +116,7 @@ export function VenueDetailScreen() {
   // their slot from the draft (the bar updates) and the message names them.
   const handleConfirmDraft = async () => {
     setDraftError(null);
-    const outcome = await confirmDraft(draftEntryList, 'Something went wrong. Please try again.'); // TODO i18n
+    const outcome = await confirmDraft(draftEntryList, t('common.errorGeneric'));
     if (outcome.status === 'booked') {
       router.push({ pathname: '/(modal)/confirmation', params: { bookingId: outcome.id } });
     } else if (outcome.status === 'failed') {
@@ -125,16 +138,16 @@ export function VenueDetailScreen() {
         <View style={styles.errorBack}>
           <IconButton
             icon="arrow-back"
-            accessibilityLabel="Go back" /* TODO i18n */
+            accessibilityLabel={t('venue.goBack')}
             onPress={() => router.back()}
             size={44}
           />
         </View>
         <EmptyState
           icon="cloud-offline-outline"
-          title="Couldn't load this venue" // TODO i18n
-          body="Check your connection and try again." // TODO i18n
-          actionLabel="Retry" // TODO i18n
+          title={t('venue.loadError')}
+          body={t('venue.loadErrorBody')}
+          actionLabel={t('common.retry')}
           onAction={() => storeDetail.refetch()}
         />
       </Screen>
@@ -151,7 +164,7 @@ export function VenueDetailScreen() {
     // this only needs to surface the rare failure case, since silently
     // reverting with no explanation just looks like "favouriting doesn't
     // work".
-    const onError = () => Alert.alert("Couldn't update favourites", 'Please try again.'); // TODO i18n
+    const onError = () => Alert.alert(t('venue.favError'), t('venue.favErrorBody'));
     if (isFavourite) {
       remove.mutate(undefined, { onError });
     } else {
@@ -184,7 +197,7 @@ export function VenueDetailScreen() {
           categoryLabel={categoryLabel}
           rating={store.rating}
           reviewCount={reviewStats.data?.total_reviews ?? null}
-          distanceKm={store.distance_km ?? null}
+          distanceKm={location.status === 'granted' ? (store.distance_km ?? null) : null}
           status={store.status}
           photos={!gallery.isError ? (gallery.data ?? []) : []}
           coverImage={store.logo}
@@ -232,6 +245,7 @@ export function VenueDetailScreen() {
               isLoading={reviewStats.isLoading || reviews.isLoading}
               isError={reviewStats.isError || reviews.isError}
               canReview={canReview}
+              ownReviewIds={ownReviewIds}
               onWriteReview={() => {
                 if (!reviewableBooking) return;
                 router.push({
@@ -267,15 +281,14 @@ export function VenueDetailScreen() {
             <View style={styles.barRow}>
               <View style={styles.barSummary}>
                 <ThemedText variant="caption" color="textSecondary">
-                  {/* TODO i18n */}
-                  {draftEntryList.length} service{draftEntryList.length > 1 ? 's' : ''} selected
+                  {t('venue.servicesSelected', { count: draftEntryList.length })}
                 </ThemedText>
                 <ThemedText variant="h3">
                   {formatMoney(draftTotal, draftEntryList[0].service.currency)}
                 </ThemedText>
               </View>
               <Button
-                label={/* TODO i18n */ 'Confirm booking'}
+                label={t('booking.confirm')}
                 fullWidth={false}
                 style={styles.barButton}
                 onPress={handleConfirmDraft}
@@ -289,14 +302,14 @@ export function VenueDetailScreen() {
           <View style={styles.barRow}>
             <View style={styles.barSummary}>
               <ThemedText variant="caption" color="textSecondary">
-                Starting from {/* TODO i18n */}
+                {t('venue.startingFrom')}
               </ThemedText>
               <ThemedText variant="h3">
                 {formatMoney(startingPrice, services.data?.[0]?.currency ?? store.currency)}
               </ThemedText>
             </View>
             <Button
-              label={/* TODO i18n */ 'Book now'}
+              label={t('venue.bookNow')}
               fullWidth={false}
               style={styles.barButton}
               onPress={() => router.push(`/booking/${storeId}/configure`)}
@@ -311,6 +324,7 @@ export function VenueDetailScreen() {
 /** The venue page's final layout in grey: photo, name block, tabs, and a few service cards. */
 function VenueSkeleton({ onBack }: { onBack: () => void }) {
   const styles = createStyles(useColors());
+  const { t } = useTranslation();
   return (
     <ScrollView scrollEnabled={false}>
       <Skeleton height={288} radius={0} />
@@ -320,7 +334,7 @@ function VenueSkeleton({ onBack }: { onBack: () => void }) {
           icon="arrow-back"
           size={44}
           onPress={onBack}
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('venue.goBack')}
         />
       </View>
       <View style={styles.skeletonBody}>

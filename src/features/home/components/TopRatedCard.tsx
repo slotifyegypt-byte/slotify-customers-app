@@ -55,9 +55,9 @@ export function TopRatedCard({
 }
 
 const styles = StyleSheet.create({
-  card: { width: 172, marginRight: spacing.sm },
+  card: { width: 172, marginEnd: spacing.sm },
   photo: { height: 108, width: '100%' },
-  badge: { position: 'absolute', top: spacing.xs, left: spacing.xs },
+  badge: { position: 'absolute', top: spacing.xs, start: spacing.xs },
   content: { padding: spacing.sm + 2, gap: 4 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });

@@ -111,8 +111,8 @@ export function NoNextUpCard({ onExplore }: { onExplore: () => void }) {
 const styles = StyleSheet.create({
   card: { borderRadius: radius.xl, padding: spacing.md + 2, gap: spacing.md, overflow: 'hidden' },
   ring: { position: 'absolute', borderWidth: 1.5, borderRadius: 999 },
-  ringBig: { width: 190, height: 190, right: -60, top: -80 },
-  ringSmall: { width: 110, height: 110, right: -20, top: -40 },
+  ringBig: { width: 190, height: 190, end: -60, top: -80 },
+  ringSmall: { width: 110, height: 110, end: -20, top: -40 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 7, height: 7, borderRadius: 4 },

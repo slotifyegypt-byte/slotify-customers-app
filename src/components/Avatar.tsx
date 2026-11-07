@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { hueFor, useColors, type Colors } from '@/theme';
 
@@ -30,7 +31,14 @@ export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarP
   return (
     <View style={{ width: size, height: size }}>
       {uri ? (
-        <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+        <Image
+          source={{ uri }}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+          contentFit="cover"
+          transition={200}
+          recyclingKey={uri}
+          accessibilityIgnoresInvertColors
+        />
       ) : (
         <View
           style={[
@@ -56,7 +64,7 @@ export function Avatar({ uri, label, size = 64, editable, onPressEdit }: AvatarP
               height: badgeSize,
               borderRadius: badgeSize / 2,
               bottom: -badgeSize * 0.08,
-              right: -badgeSize * 0.08,
+              end: -badgeSize * 0.08,
             },
           ]}
         >

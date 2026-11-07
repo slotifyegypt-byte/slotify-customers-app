@@ -105,8 +105,7 @@ function RebookFlow({
         initialEmployeeId={matchedService.requires_specialist ? firstService.employee_id : null}
         notice={
           originalBooking.booking_services.length > 1
-            ? // TODO i18n
-              `This booking had multiple services. Only ${matchedService.name} will be rebooked.`
+            ? t('booking.rebookNotice', { name: matchedService.name })
             : undefined
         }
         onBooked={onBooked}

@@ -12,6 +12,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useNotificationsRealtime } from '@/features/notifications/hooks/useNotificationsRealtime';
 import { registerForPush, useNotificationResponseRouting } from '@/features/notifications/push';
 import '@/lib/i18n';
+import { setupQueryManagers } from '@/lib/query/managers';
 import { queryClient } from '@/lib/query/queryClient';
 import { initSentry } from '@/lib/sentry';
 import { useThemePreferenceStore } from '@/lib/theme/themePreferenceStore';
@@ -40,6 +41,7 @@ function SignedInEffects() {
 
 SplashScreen.preventAutoHideAsync();
 initSentry();
+setupQueryManagers();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontsToLoad);

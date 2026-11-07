@@ -7,6 +7,7 @@ export function useVenueReviewStats(storeId: string) {
   return useQuery({
     queryKey: venueKeys.reviewStats(storeId),
     queryFn: () => getStoreReviewStats(storeId),
+    staleTime: 2 * 60_000,
   });
 }
 

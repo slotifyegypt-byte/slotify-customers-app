@@ -1,3 +1,5 @@
+import i18n from '@/lib/i18n';
+
 import { addDaysToDate, branchDateStrip, formatDraftDateLabel } from './dates';
 
 const LATE_NOV_2_UTC = new Date('2026-11-02T23:30:00Z');
@@ -45,5 +47,33 @@ describe('formatDraftDateLabel', () => {
 
   it('uses "EEE, MMM d" for any other day', () => {
     expect(formatDraftDateLabel('2026-11-10', 'Europe/Warsaw', LATE_NOV_2_UTC)).toBe('Tue, Nov 10');
+  });
+});
+
+describe('in Arabic', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('ar');
+  });
+  afterAll(async () => {
+    await i18n.changeLanguage('en');
+  });
+
+  it('names the strip days in Arabic', () => {
+    const strip = branchDateStrip('Europe/Warsaw', 3, LATE_NOV_2_UTC);
+    expect(strip[0].value).toBe('2026-11-03');
+    expect(strip[0].weekday).toBe('الثلاثاء');
+    expect(strip.map((d) => d.weekday)).not.toContain('Tue');
+  });
+
+  it('says اليوم / غدًا relative to the branch-local date', () => {
+    expect(formatDraftDateLabel('2026-11-03', 'Europe/Warsaw', LATE_NOV_2_UTC)).toBe('اليوم');
+    expect(formatDraftDateLabel('2026-11-04', 'Europe/Warsaw', LATE_NOV_2_UTC)).toBe('غدًا');
+  });
+
+  it('writes a later date with an Arabic weekday and month', () => {
+    const label = formatDraftDateLabel('2026-11-10', 'Europe/Warsaw', LATE_NOV_2_UTC);
+    expect(label).toContain('الثلاثاء');
+    expect(label).toContain('نوفمبر');
+    expect(label).not.toMatch(/[A-Za-z]/);
   });
 });

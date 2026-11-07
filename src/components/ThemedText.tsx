@@ -1,4 +1,4 @@
-import { Text, type TextProps } from 'react-native';
+import { I18nManager, Text, type TextProps } from 'react-native';
 
 import { typeScale, useColors, type ColorToken, type TypeScaleToken } from '@/theme';
 
@@ -7,6 +7,11 @@ interface ThemedTextProps extends TextProps {
   color?: ColorToken;
 }
 
+// A paragraph normally takes the direction of its first letter, so a Latin name ("Omar", "Glamour Studio") inside
+// the mirrored Arabic layout stays left-aligned while everything around it is right-aligned. Pinning the paragraph
+// to the app's direction keeps it with the rest.
+const direction = I18nManager.isRTL ? ({ writingDirection: 'rtl' } as const) : null;
+
 export function ThemedText({
   variant = 'body',
   color = 'textPrimary',
@@ -14,5 +19,7 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const colors = useColors();
-  return <Text style={[typeScale[variant], { color: colors[color] }, style]} {...rest} />;
+  return (
+    <Text style={[typeScale[variant], direction, { color: colors[color] }, style]} {...rest} />
+  );
 }

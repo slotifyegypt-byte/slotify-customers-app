@@ -10,5 +10,6 @@ export function useVenueGallery(storeId: string) {
     queryKey: venueKeys.gallery(storeId),
     queryFn: () => getStoreGallery(storeId),
     retry: false,
+    staleTime: 5 * 60_000,
   });
 }

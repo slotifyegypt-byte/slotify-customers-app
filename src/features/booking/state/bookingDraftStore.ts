@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import i18n from '@/lib/i18n';
+
 import type { AvailabilitySlot, Service } from '../api/schemas';
 import { formatDraftDateLabel } from '../utils/dates';
 
@@ -78,7 +80,7 @@ export function formatDraftSummary(
   }
   const specialistLabel =
     entry.employeeId === null
-      ? 'Any pro' /* TODO i18n */
-      : (entry.slot.employee_name ?? 'Specialist'); /* TODO i18n */
+      ? i18n.t('booking.anyPro')
+      : (entry.slot.employee_name ?? i18n.t('booking.specialist'));
   return `${specialistLabel} · ${dateLabel} · ${timeLabel}`;
 }

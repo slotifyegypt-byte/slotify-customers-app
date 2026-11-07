@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Photo } from '@/components/Photo';
@@ -14,11 +15,12 @@ interface GallerySectionProps {
 
 /** A row of photos that bleeds to the screen edge so the next one peeks in. */
 export function GallerySection({ photos, name = 'Photo' }: GallerySectionProps) {
+  const { t } = useTranslation();
   if (photos.length === 0) return null;
 
   return (
     <View>
-      <SectionHeader title="Photos" /* TODO i18n */ />
+      <SectionHeader title={t('venue.photos')} />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

@@ -69,7 +69,7 @@ const createStyles = (colors: Colors) =>
     dot: {
       position: 'absolute',
       top: -2,
-      right: -2,
+      end: -2,
       width: 10,
       height: 10,
       borderRadius: 5,

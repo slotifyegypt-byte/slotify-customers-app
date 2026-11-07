@@ -1,3 +1,4 @@
+import i18n from '@/lib/i18n';
 import { branchToday } from '@/lib/time/branchTime';
 
 // Calendar dates the customer picks while booking are BRANCH-local
@@ -6,7 +7,7 @@ import { branchToday } from '@/lib/time/branchTime';
 // arithmetic on those strings, reading them as UTC midnights, so neither the
 // phone's zone nor a DST change can shift a day.
 
-// Hard-coded English names (rather than Intl) so labels match on every engine.
+// English fallbacks, used when the engine's Intl can't format the locale.
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_ABBR = [
   'Jan',
@@ -25,6 +26,33 @@ const MONTH_ABBR = [
 
 function ymdToUtc(ymd: string): Date {
   return new Date(`${ymd}T00:00:00Z`);
+}
+
+// Weekday and month names follow the app language (Arabic readers get Arabic names). `ymd` dates are UTC
+// midnights, so formatting in UTC reads the same calendar day on every phone.
+const intlLocale = () => (i18n.language?.startsWith('ar') ? 'ar' : 'en-US');
+
+function weekdayShort(date: Date): string {
+  try {
+    return new Intl.DateTimeFormat(intlLocale(), { weekday: 'short', timeZone: 'UTC' }).format(
+      date,
+    );
+  } catch {
+    return WEEKDAY_ABBR[date.getUTCDay()];
+  }
+}
+
+function monthDayLabel(date: Date): string {
+  try {
+    return new Intl.DateTimeFormat(intlLocale(), {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(date);
+  } catch {
+    return `${WEEKDAY_ABBR[date.getUTCDay()]}, ${MONTH_ABBR[date.getUTCMonth()]} ${date.getUTCDate()}`;
+  }
 }
 
 /** `ymd` plus `days` calendar days, e.g. ("2026-11-30", 1) -> "2026-12-01". */
@@ -53,7 +81,7 @@ export function branchDateStrip(
   return Array.from({ length: daysAhead }, (_, i) => {
     const value = addDaysToDate(today, i);
     const date = ymdToUtc(value);
-    return { value, weekday: WEEKDAY_ABBR[date.getUTCDay()], day: String(date.getUTCDate()) };
+    return { value, weekday: weekdayShort(date), day: String(date.getUTCDate()) };
   });
 }
 
@@ -64,8 +92,7 @@ export function formatDraftDateLabel(
   now: Date = new Date(),
 ): string {
   const today = branchToday(timeZone, now);
-  if (ymd === today) return 'Today'; // TODO i18n
-  if (ymd === addDaysToDate(today, 1)) return 'Tomorrow'; // TODO i18n
-  const date = ymdToUtc(ymd);
-  return `${WEEKDAY_ABBR[date.getUTCDay()]}, ${MONTH_ABBR[date.getUTCMonth()]} ${date.getUTCDate()}`;
+  if (ymd === today) return i18n.t('booking.today');
+  if (ymd === addDaysToDate(today, 1)) return i18n.t('booking.tomorrow');
+  return monthDayLabel(ymdToUtc(ymd));
 }

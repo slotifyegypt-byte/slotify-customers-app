@@ -19,6 +19,7 @@ export function parseOrReport<T>(schema: ZodType<T>, data: unknown, context: str
   if (isDev) {
     throw new Error(message);
   }
-  Sentry.captureMessage(message, { level: 'warning', extra: { raw: data } });
+  // The response body is deliberately not attached: it can hold a customer's personal details.
+  Sentry.captureMessage(message, { level: 'warning' });
   return data as T;
 }

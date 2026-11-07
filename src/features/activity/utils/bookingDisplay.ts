@@ -17,6 +17,20 @@ export function isOrderBooking(booking: Pick<BookingRead, 'booking_type'>): bool
 }
 
 /**
+ * Whether the customer is offered "Cancel". An appointment can be cancelled while it is pending or confirmed. A
+ * drop-off order only until its start time: after that the venue has the item and is working on it (the tracker
+ * says "In progress"), so cancelling is a conversation with the venue, not a button.
+ */
+export function canCustomerCancel(
+  booking: Pick<BookingRead, 'booking_status' | 'booking_type' | 'booking_date'>,
+  now: Date = new Date(),
+): boolean {
+  if (booking.booking_status !== 'pending' && booking.booking_status !== 'confirmed') return false;
+  if (!isOrderBooking(booking)) return true;
+  return Date.parse(booking.booking_date) > now.getTime();
+}
+
+/**
  * The word and tone for a booking's state. There is no queue or stage field on the backend, so a pending order
  * reads "In progress" (it has been dropped off) and a pending appointment reads "Pending" (awaiting the venue).
  */

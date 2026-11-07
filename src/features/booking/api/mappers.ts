@@ -1,6 +1,7 @@
 import { toStore } from '@/features/explore-search/api/mappers';
 import type { BranchCardRow } from '@/features/explore-search/api/mappers';
 import type { Database } from '@/lib/database.types';
+import i18n from '@/lib/i18n';
 import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
 
 import type {
@@ -50,7 +51,7 @@ function toBookingService(item: BookingItemRow): BookingServiceRead {
 // visible instead of the whole list failing.
 function fallbackStore() {
   return {
-    name: 'Unavailable venue', // TODO i18n
+    name: i18n.t('booking.unavailableVenue'),
     logo: null,
     address: '',
     rating: 0,

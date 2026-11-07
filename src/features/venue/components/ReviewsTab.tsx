@@ -1,4 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -6,9 +8,12 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
+import { PressableScale } from '@/components/PressableScale';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
+import { ReportSheet } from '@/features/support/components/ReportSheet';
+import { hiddenKey, useHiddenContentStore } from '@/features/support/store/hiddenContentStore';
 import { formatDate } from '@/lib/time/branchTime';
 import { enter, radius, spacing, useColors } from '@/theme';
 
@@ -25,6 +30,11 @@ interface ReviewsTabProps {
   isError: boolean;
   canReview: boolean;
   onWriteReview: () => void;
+  /**
+   * The signed-in customer's own review ids: those can't be reported. Leave it undefined until they are known, and
+   * no review offers "Report" in the meantime (otherwise your own review could be reported while this loads).
+   */
+  ownReviewIds?: ReadonlySet<string>;
 }
 
 type SortKey = 'recent' | 'highest';
@@ -39,17 +49,22 @@ export function ReviewsTab({
   isError,
   canReview,
   onWriteReview,
+  ownReviewIds,
 }: ReviewsTabProps) {
+  const { t } = useTranslation();
   const colors = useColors();
+  const hidden = useHiddenContentStore((state) => state.hidden);
+  const [reportingId, setReportingId] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>('recent');
   const [showGateHint, setShowGateHint] = useState(false);
 
   const sortedReviews = useMemo(() => {
-    const copy = [...reviews];
+    // Reviews the customer reported are hidden for them on this device.
+    const copy = reviews.filter((review) => !hidden[hiddenKey('review', review.id)]);
     return sort === 'highest'
       ? copy.sort((a, b) => b.rating - a.rating)
       : copy.sort((a, b) => b.created_at.localeCompare(a.created_at));
-  }, [reviews, sort]);
+  }, [reviews, sort, hidden]);
 
   // `rating_distribution` is the full 1-5 star breakdown across every review
   // for the branch, not just the page of reviews loaded here.
@@ -83,8 +98,8 @@ export function ReviewsTab({
     return (
       <EmptyState
         icon="cloud-offline-outline"
-        title="Couldn't load reviews" /* TODO i18n */
-        body="Check your connection and open this tab again." /* TODO i18n */
+        title={t('venue.reviewsTab.loadError')}
+        body={t('venue.reviewsTab.loadErrorBody')}
       />
     );
   }
@@ -99,8 +114,7 @@ export function ReviewsTab({
                 <ThemedText variant="display">{stats.average_rating.toFixed(1)}</ThemedText>
                 <RatingStars rating={stats.average_rating} size={16} />
                 <ThemedText variant="caption" color="textSecondary" style={styles.totalCount}>
-                  {stats.total_reviews} {stats.total_reviews === 1 ? 'review' : 'reviews'}{' '}
-                  {/* TODO i18n */}
+                  {t('venue.reviewsTab.count', { count: stats.total_reviews })}
                 </ThemedText>
               </View>
               <View style={styles.distribution}>
@@ -130,14 +144,14 @@ export function ReviewsTab({
 
       <Animated.View entering={enter(1)} style={styles.actions}>
         <Button
-          label={/* TODO i18n */ 'Write a review'}
+          label={t('venue.reviewsTab.writeReview')}
           variant="secondary"
           icon="create-outline"
           onPress={handleWriteReview}
         />
         {showGateHint ? (
           <ThemedText variant="caption" color="textSecondary" style={styles.gateHint}>
-            You can leave a review after your visit {/* TODO i18n */}
+            {t('venue.reviewsTab.gateHint')}
           </ThemedText>
         ) : null}
       </Animated.View>
@@ -145,16 +159,16 @@ export function ReviewsTab({
       {sortedReviews.length === 0 ? (
         <EmptyState
           icon="chatbubble-ellipses-outline"
-          title="No reviews yet"
-          body="Be the first to book and leave one." /* TODO i18n */
+          title={t('venue.reviewsTab.none')}
+          body={t('venue.reviewsTab.noneBody')}
         />
       ) : (
         <>
           <Animated.View entering={enter(2)}>
             <SegmentedControl
               options={[
-                { key: 'recent', label: 'Most recent' /* TODO i18n */ },
-                { key: 'highest', label: 'Highest rated' /* TODO i18n */ },
+                { key: 'recent', label: t('venue.reviewsTab.mostRecent') },
+                { key: 'highest', label: t('venue.reviewsTab.highestRated') },
               ]}
               value={sort}
               onChange={setSort}
@@ -171,7 +185,7 @@ export function ReviewsTab({
                     />
                     <View style={styles.reviewWho}>
                       <ThemedText variant="bodyMedium" numberOfLines={1}>
-                        {review.customer_name ?? 'Customer' /* TODO i18n */}
+                        {review.customer_name ?? t('venue.reviewsTab.customer')}
                       </ThemedText>
                       <ThemedText variant="caption" color="textTertiary">
                         {formatDate(review.created_at, timezone)}
@@ -187,17 +201,35 @@ export function ReviewsTab({
                   {review.owner_reply ? (
                     <View style={[styles.ownerReply, { backgroundColor: colors.backgroundMuted }]}>
                       <ThemedText variant="captionStrong" color="textSecondary">
-                        Owner response {/* TODO i18n */}
+                        {t('venue.reviewsTab.ownerResponse')}
                       </ThemedText>
                       <ThemedText variant="body">{review.owner_reply}</ThemedText>
                     </View>
                   ) : null}
+                  {ownReviewIds === undefined || ownReviewIds.has(review.id) ? null : (
+                    <PressableScale
+                      onPress={() => setReportingId(review.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('report.action')}
+                      scaleTo={0.96}
+                      style={styles.report}
+                    >
+                      <Ionicons name="flag-outline" size={15} color={colors.textTertiary} />
+                      <ThemedText variant="caption" color="textTertiary">
+                        {t('report.action')}
+                      </ThemedText>
+                    </PressableScale>
+                  )}
                 </Card>
               </Animated.View>
             ))}
           </View>
         </>
       )}
+      <ReportSheet
+        target={reportingId ? { kind: 'review', id: reportingId } : null}
+        onClose={() => setReportingId(null)}
+      />
     </View>
   );
 }
@@ -218,6 +250,15 @@ const styles = StyleSheet.create({
   reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   reviewWho: { flex: 1, minWidth: 0 },
   comment: { marginTop: spacing.sm },
+  report: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 44,
+    marginTop: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+  },
   ownerReply: {
     marginTop: spacing.sm,
     padding: spacing.sm,

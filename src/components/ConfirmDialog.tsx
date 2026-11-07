@@ -3,6 +3,7 @@ import { Modal, StyleSheet, View } from 'react-native';
 import { radius, shadows, spacing, useColors, type Colors } from '@/theme';
 
 import { Button } from './Button';
+import { PressableScale } from './PressableScale';
 import { ThemedText } from './ThemedText';
 
 interface ConfirmDialogProps {
@@ -19,6 +20,9 @@ interface ConfirmDialogProps {
   /** `danger` colours the second button red, for deleting something. */
   secondaryTone?: 'danger';
   onRequestClose?: () => void;
+  /** An optional text link under the body (e.g. "Learn more"). */
+  linkLabel?: string;
+  onLinkPress?: () => void;
 }
 
 /**
@@ -40,6 +44,8 @@ export function ConfirmDialog({
   secondaryLoading,
   secondaryTone,
   onRequestClose,
+  linkLabel,
+  onLinkPress,
 }: ConfirmDialogProps) {
   const colors = useColors();
   const styles = createStyles(colors);
@@ -59,6 +65,19 @@ export function ConfirmDialog({
             <ThemedText variant="body" color="textSecondary" style={styles.body}>
               {body}
             </ThemedText>
+          ) : null}
+          {linkLabel && onLinkPress ? (
+            <PressableScale
+              onPress={onLinkPress}
+              accessibilityRole="link"
+              accessibilityLabel={linkLabel}
+              scaleTo={0.97}
+              style={styles.link}
+            >
+              <ThemedText variant="bodyMedium" color="brandAccent">
+                {linkLabel}
+              </ThemedText>
+            </PressableScale>
           ) : null}
           <Button
             label={primaryLabel}
@@ -100,6 +119,12 @@ const createStyles = (colors: Colors) =>
     },
     title: { textAlign: 'center' },
     body: { textAlign: 'center' },
+    link: {
+      alignSelf: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+    },
     primaryButton: { marginTop: spacing.sm },
     secondaryButton: {},
   });

@@ -33,14 +33,14 @@ describe('parseOrReport', () => {
     expect(mockCaptureMessage).not.toHaveBeenCalled();
   });
 
-  it('reports to Sentry and passes the raw data through in production', () => {
+  it('reports to Sentry without the response body, and passes the data through in production', () => {
     mockIsDev = false;
     const raw = { id: 1 };
 
     expect(parseOrReport(schema, raw, 'GET thing')).toBe(raw);
     expect(mockCaptureMessage).toHaveBeenCalledWith(
       expect.stringContaining('[API contract drift] GET thing'),
-      expect.objectContaining({ level: 'warning', extra: { raw } }),
+      { level: 'warning' },
     );
   });
 });

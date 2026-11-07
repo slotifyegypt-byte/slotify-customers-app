@@ -95,14 +95,17 @@ export async function unregisterPush(timeoutMs: number = UNREGISTER_TIMEOUT_MS):
   }
 }
 
-// Push payloads carry the same `data` jsonb as the notifications row.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Push payloads carry the same `data` jsonb as the notifications row. The ids end up inside a route, so only
+// real UUIDs are accepted: anything else (a crafted payload like "../profile") opens nothing.
 export function routeForNotificationData(
   data: unknown,
 ): `/(tabs)/activity/${string}` | `/venue/${string}` | null {
   if (typeof data !== 'object' || data === null) return null;
   const { booking_id: bookingId, branch_id: branchId } = data as Record<string, unknown>;
-  if (typeof bookingId === 'string' && bookingId) return `/(tabs)/activity/${bookingId}`;
-  if (typeof branchId === 'string' && branchId) return `/venue/${branchId}`;
+  if (typeof bookingId === 'string' && UUID.test(bookingId)) return `/(tabs)/activity/${bookingId}`;
+  if (typeof branchId === 'string' && UUID.test(branchId)) return `/venue/${branchId}`;
   return null;
 }
 

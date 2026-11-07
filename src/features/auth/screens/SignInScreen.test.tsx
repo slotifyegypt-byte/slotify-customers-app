@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import * as WebBrowser from 'expo-web-browser';
 
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
@@ -25,6 +26,7 @@ jest.mock('@/lib/theme/themePreferenceStore', () => ({
     select({ preference: 'light' }),
 }));
 jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
+jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn().mockResolvedValue({}) }));
 jest.mock('expo-apple-authentication', () => ({
   AppleAuthenticationButton: 'AppleAuthenticationButton',
   AppleAuthenticationButtonType: { CONTINUE: 0 },
@@ -113,5 +115,19 @@ describe('SignInScreen dev password sign-in', () => {
     await fireEvent.press(screen.getByText('Sign in with password'));
 
     expect(await screen.findByText('Invalid login credentials')).toBeTruthy();
+  });
+});
+
+describe('SignInScreen legal notice', () => {
+  it('links the Terms of Service and the Privacy Policy', async () => {
+    await renderScreen();
+
+    expect(screen.getByText(/By continuing you agree to our/)).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Terms of Service'));
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith('https://slotify-eg.com/terms');
+
+    await fireEvent.press(screen.getByText('Privacy Policy'));
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith('https://slotify-eg.com/privacy');
   });
 });

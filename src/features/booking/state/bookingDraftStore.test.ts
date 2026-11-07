@@ -1,3 +1,5 @@
+import i18n from '@/lib/i18n';
+
 import type { AvailabilitySlot, Service } from '../api/schemas';
 
 import {
@@ -58,5 +60,21 @@ describe('formatDraftSummary', () => {
         now,
       ),
     ).toBe('Mona Hassan · Tomorrow · 10:00 AM');
+  });
+});
+
+describe('formatDraftSummary in Arabic', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('ar');
+  });
+  afterAll(async () => {
+    await i18n.changeLanguage('en');
+  });
+
+  it('says أي أخصائي for "any pro" and اليوم for today', () => {
+    const now = new Date('2026-11-02T23:30:00Z');
+    expect(formatDraftSummary(entry('a', { date: '2026-11-03' }), 'Europe/Warsaw', now)).toContain(
+      'أي أخصائي · اليوم',
+    );
   });
 });

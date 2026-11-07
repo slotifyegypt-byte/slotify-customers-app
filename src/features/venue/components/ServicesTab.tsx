@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -38,6 +39,7 @@ export function ServicesTab({
   draftSummaryByServiceId = {},
 }: ServicesTabProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   // Services arrive already ordered by category, uncategorised last, so a
   // Map keeps that order; the category comes embedded on each service.
   const groups = useMemo<Group[]>(() => {
@@ -47,7 +49,7 @@ export function ServicesTab({
       const categoryId = service.category?.id ?? null;
       const group = byCategory.get(categoryId) ?? {
         categoryId,
-        label: service.category?.name ?? 'Other services' /* TODO i18n */,
+        label: service.category?.name ?? t('venue.servicesTab.other'),
         services: [],
       };
       group.services.push(service);
@@ -55,7 +57,7 @@ export function ServicesTab({
     });
 
     return Array.from(byCategory.values());
-  }, [services]);
+  }, [services, t]);
 
   // Every group starts expanded: collapsing is purely a display
   // preference, not something that should hide services by default.
@@ -77,9 +79,9 @@ export function ServicesTab({
     return (
       <EmptyState
         icon="cloud-offline-outline"
-        title="Couldn't load services" /* TODO i18n */
-        body="Check your connection and try again." /* TODO i18n */
-        actionLabel={onRetry ? 'Try again' /* TODO i18n */ : undefined}
+        title={t('venue.servicesTab.loadError')}
+        body={t('venue.servicesTab.loadErrorBody')}
+        actionLabel={onRetry ? t('common.retry') : undefined}
         onAction={onRetry}
       />
     );
@@ -89,8 +91,8 @@ export function ServicesTab({
     return (
       <EmptyState
         icon="cut-outline"
-        title="No services yet" /* TODO i18n */
-        body="This place hasn't listed anything to book yet." /* TODO i18n */
+        title={t('venue.servicesTab.empty')}
+        body={t('venue.servicesTab.emptyBody')}
       />
     );
   }
@@ -149,13 +151,14 @@ function ServiceCard({
   onPress: () => void;
 }) {
   const colors = useColors();
+  const { t } = useTranslation();
   const isSelected = draftSummary != null;
   return (
     <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`Book ${service.name}`} // TODO i18n
+      accessibilityLabel={t('venue.servicesTab.bookService', { name: service.name })}
       scaleTo={0.985}
       style={[
         styles.card,
@@ -178,11 +181,11 @@ function ServiceCard({
           <View style={styles.meta}>
             <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
             <ThemedText variant="caption" color="textSecondary">
-              {service.duration_minutes} min {/* TODO i18n */}
+              {t('booking.minutes', { count: service.duration_minutes })}
             </ThemedText>
           </View>
           {!service.requires_specialist && service.max_concurrent_bookings ? (
-            <Pill label={`Up to ${service.max_concurrent_bookings} at once`} /* TODO i18n */ />
+            <Pill label={t('venue.servicesTab.upTo', { count: service.max_concurrent_bookings })} />
           ) : null}
         </View>
         {isSelected ? (
@@ -200,7 +203,7 @@ function ServiceCard({
         ) : (
           <View style={[styles.action, { backgroundColor: colors.brandTint }]}>
             <ThemedText variant="captionStrong" color="brandAccent">
-              Book {/* TODO i18n */}
+              {t('venue.servicesTab.book')}
             </ThemedText>
           </View>
         )}

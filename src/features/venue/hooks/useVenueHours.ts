@@ -11,10 +11,12 @@ export function useVenueHours(storeId: string, timezone: string | undefined) {
   const calendar = useQuery({
     queryKey: venueKeys.calendar(storeId),
     queryFn: () => getStoreCalendar(storeId),
+    staleTime: 5 * 60_000,
   });
   const specialDays = useQuery({
     queryKey: venueKeys.specialDays(storeId, timezone),
     queryFn: () => getStoreSpecialDays(storeId, timezone),
+    staleTime: 5 * 60_000,
     // Waits for the store detail rather than paying for a timezone lookup.
     enabled: timezone !== undefined,
   });

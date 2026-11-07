@@ -96,3 +96,56 @@ describe('AboutTab hours', () => {
     expect(screen.getByText(/Opening hours aren't set up yet/)).toBeOnTheScreen();
   });
 });
+
+describe('AboutTab amenities', () => {
+  const withAmenities = (amenities: string[]) =>
+    render(
+      <ThemeProvider>
+        <AboutTab
+          store={{ ...store, amenities } as unknown as StoreDetail}
+          calendarDays={week({})}
+          specialDays={[]}
+          photos={[]}
+          isLoading={false}
+          isError={false}
+        />
+      </ThemeProvider>,
+    );
+
+  it('labels every amenity the database can hold, including pet friendly and InstaPay', async () => {
+    await withAmenities([
+      'parking',
+      'card_payments',
+      'wheelchair_accessible',
+      'wifi',
+      'kids_friendly',
+      'pet_friendly',
+      'instapay',
+    ]);
+
+    for (const label of [
+      'Parking available',
+      'Card payments',
+      'Wheelchair accessible',
+      'Wi-Fi',
+      'Kids friendly',
+      'Pet friendly',
+      'InstaPay',
+    ]) {
+      expect(screen.getByText(label)).toBeOnTheScreen();
+    }
+  });
+
+  it('hides an amenity this app version does not know instead of printing its raw key', async () => {
+    await withAmenities(['wifi', 'rooftop_pool']);
+
+    expect(screen.getByText('Wi-Fi')).toBeOnTheScreen();
+    expect(screen.queryByText('rooftop_pool')).not.toBeOnTheScreen();
+  });
+
+  it('omits the whole section when no amenity is recognised', async () => {
+    await withAmenities(['rooftop_pool']);
+
+    expect(screen.queryByText('Amenities')).not.toBeOnTheScreen();
+  });
+});

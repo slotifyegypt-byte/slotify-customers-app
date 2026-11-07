@@ -47,5 +47,5 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   title: { flex: 1 },
-  seeAll: { flexDirection: 'row', alignItems: 'center', gap: 2, marginLeft: spacing.sm },
+  seeAll: { flexDirection: 'row', alignItems: 'center', gap: 2, marginStart: spacing.sm },
 });

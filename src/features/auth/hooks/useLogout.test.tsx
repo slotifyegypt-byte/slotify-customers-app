@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import { unregisterPush } from '@/features/notifications/push';
+import { useHiddenContentStore } from '@/features/support/store/hiddenContentStore';
 
 import { useLogout } from './useLogout';
 
@@ -11,6 +12,11 @@ const mockRemoveAllChannels = jest.fn();
 const mockUnregisterPush = unregisterPush as jest.MockedFunction<typeof unregisterPush>;
 
 jest.mock('@/features/notifications/push', () => ({ unregisterPush: jest.fn() }));
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: { signOut: (...args: unknown[]) => mockSignOut(...args) },
@@ -97,5 +103,16 @@ describe('useLogout', () => {
     expect(mockSignOut).toHaveBeenCalledTimes(1);
     expect(mockRemoveAllChannels).toHaveBeenCalledTimes(1);
     expect(queryClient.getQueryData(['x'])).toBeUndefined();
+  });
+
+  it("forgets the signed-out customer's hidden reports", async () => {
+    useHiddenContentStore.getState().hide('review', 'r-1');
+    const { result } = await setup();
+
+    await act(async () => {
+      await result.current();
+    });
+
+    expect(useHiddenContentStore.getState().hidden).toEqual({});
   });
 });

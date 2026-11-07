@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/api/errors';
+import i18n from '@/lib/i18n';
 
 import { getBookingErrorMessage, isSlotConflict, slotConflictMessage } from './bookingErrors';
 
@@ -63,5 +64,27 @@ describe('slotConflictMessage', () => {
     expect(slotConflictMessage(past, [{ service: { name: 'Haircut' } }])).toBe(
       'Haircut: Choose a time in the future.',
     );
+  });
+});
+
+describe('in Arabic', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('ar');
+  });
+  afterAll(async () => {
+    await i18n.changeLanguage('en');
+  });
+
+  it('words a lost slot in Arabic, naming the services', () => {
+    const taken = new ApiError('slot_taken', 409);
+    expect(slotConflictMessage(taken, [])).toBe('تم حجز هذا الوقت للتو — اختر وقتًا آخر');
+    expect(slotConflictMessage(taken, [{ service: { name: 'قص شعر' } }])).toBe(
+      'تم حجز وقت قص شعر للتو — اختر وقتًا آخر',
+    );
+  });
+
+  it('still shows the server text when there is one', () => {
+    const past = new ApiError('time_in_past', 422, 'Choose a time in the future.');
+    expect(slotConflictMessage(past, [])).toBe('Choose a time in the future.');
   });
 });

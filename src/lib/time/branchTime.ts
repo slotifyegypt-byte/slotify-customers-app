@@ -13,8 +13,11 @@
 // bad value is a data bug, and a loud error beats silently showing customers
 // the wrong appointment time.
 
+import i18n from '@/lib/i18n';
+
 // English month abbreviations are hard-coded (rather than asking Intl for
-// them) so the output is identical on every JS engine and locale.
+// them) so the English output is identical on every JS engine. Arabic uses Intl month names and the
+// Arabic AM/PM markers (ص / م).
 const MONTH_ABBR = [
   'Jan',
   'Feb',
@@ -29,6 +32,19 @@ const MONTH_ABBR = [
   'Nov',
   'Dec',
 ];
+
+function monthAbbr(month: number): string {
+  if (i18n.language?.startsWith('ar')) {
+    try {
+      return new Intl.DateTimeFormat('ar', { month: 'short', timeZone: 'UTC' }).format(
+        new Date(Date.UTC(2026, month - 1, 1)),
+      );
+    } catch {
+      // Engine without Arabic Intl data: fall through to the English abbreviation.
+    }
+  }
+  return MONTH_ABBR[month - 1];
+}
 
 type BranchParts = {
   year: number;
@@ -101,24 +117,24 @@ export function branchToday(timeZone: string, now: Date = new Date()): string {
 export function formatHour(iso: string, timeZone: string): string {
   const { hour, minute } = getBranchParts(iso, timeZone);
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-  const amPm = hour < 12 ? 'AM' : 'PM';
+  const amPm = i18n.t(hour < 12 ? 'time.am' : 'time.pm');
   return `${hour12}:${String(minute).padStart(2, '0')} ${amPm}`;
 }
 
 /** Branch-local date, e.g. "25 Sep. 2026". */
 export function formatDate(iso: string, timeZone: string): string {
   const { year, month, day } = getBranchParts(iso, timeZone);
-  return `${String(day).padStart(2, '0')} ${MONTH_ABBR[month - 1]}. ${year}`;
+  return `${String(day).padStart(2, '0')} ${monthAbbr(month)}. ${year}`;
 }
 
 /** Relative title for a booking, e.g. "Tomorrow Morning", "In 3 days", "2 days ago". */
 export function formatDateTitle(iso: string, timeZone: string, now: Date = new Date()): string {
   const target = getBranchParts(iso, timeZone);
   const daysDiff = daysBetween(branchToday(timeZone, now), toYmd(target));
-  const timeOfDay = target.hour < 12 ? 'Morning' : 'Afternoon'; // TODO i18n
+  const part = i18n.t(target.hour < 12 ? 'time.morning' : 'time.afternoon');
 
-  if (daysDiff === 0) return `Today ${timeOfDay}`; // TODO i18n
-  if (daysDiff === 1) return `Tomorrow ${timeOfDay}`; // TODO i18n
-  if (daysDiff > 1) return `In ${daysDiff} days`; // TODO i18n
-  return `${Math.abs(daysDiff)} days ago`; // TODO i18n
+  if (daysDiff === 0) return i18n.t('time.todayPart', { part });
+  if (daysDiff === 1) return i18n.t('time.tomorrowPart', { part });
+  if (daysDiff > 1) return i18n.t('time.inDays', { count: daysDiff });
+  return i18n.t('time.daysAgoLong', { count: Math.abs(daysDiff) });
 }

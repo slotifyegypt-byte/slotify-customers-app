@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
@@ -35,6 +36,7 @@ export function SpecialistPicker({
   bleed = 0,
 }: SpecialistPickerProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const employees = useStoreEmployeesForService(storeId, serviceId);
   const edge = bleed ? { marginHorizontal: -bleed } : null;
   const pad = bleed ? { paddingHorizontal: bleed } : null;
@@ -53,11 +55,10 @@ export function SpecialistPicker({
     return (
       <View style={styles.error}>
         <ThemedText variant="body" color="textSecondary">
-          {/* TODO i18n */}
-          Couldn&apos;t load the team for this service.
+          {t('booking.teamError')}
         </ThemedText>
         <Button
-          label="Try again" /* TODO i18n */
+          label={t('common.retry')}
           variant="secondary"
           size="sm"
           fullWidth={false}
@@ -68,7 +69,7 @@ export function SpecialistPicker({
   }
 
   const cells = [
-    { id: null as string | null, name: 'Anyone' /* TODO i18n */, member: null },
+    { id: null as string | null, name: t('booking.anyone'), member: null },
     ...(employees.data ?? []).map((employee) => ({
       id: employee.id as string | null,
       name: employee.first_name,
@@ -89,7 +90,7 @@ export function SpecialistPicker({
           <PressableScale
             key={id ?? 'any'}
             accessibilityRole="button"
-            accessibilityLabel={member ? name : 'Any professional' /* TODO i18n */}
+            accessibilityLabel={member ? name : t('booking.anyProfessional')}
             accessibilityState={{ selected: isSelected }}
             onPress={() => onSelect(id)}
             scaleTo={0.96}

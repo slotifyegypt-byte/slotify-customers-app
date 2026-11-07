@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
@@ -13,11 +14,12 @@ interface TeamSectionProps {
 
 /** "Meet the team": tidy round avatars with first name and role, in a row that bleeds to the screen edge. */
 export function TeamSection({ members }: TeamSectionProps) {
+  const { t } = useTranslation();
   if (members.length === 0) return null;
 
   return (
     <View>
-      <SectionHeader title="Meet the team" /* TODO i18n */ />
+      <SectionHeader title={t('venue.meetTeam')} />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

@@ -125,15 +125,44 @@ describe('registerForPush', () => {
   });
 });
 
+const BOOKING = '3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b';
+const BRANCH = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
+
 describe('routeForNotificationData', () => {
   it('prefers the booking, then the venue, else nothing', () => {
-    expect(routeForNotificationData({ booking_id: 'bk1', branch_id: 'br1' })).toBe(
-      '/(tabs)/activity/bk1',
+    expect(routeForNotificationData({ booking_id: BOOKING, branch_id: BRANCH })).toBe(
+      `/(tabs)/activity/${BOOKING}`,
     );
-    expect(routeForNotificationData({ branch_id: 'br1' })).toBe('/venue/br1');
+    expect(routeForNotificationData({ branch_id: BRANCH })).toBe(`/venue/${BRANCH}`);
     expect(routeForNotificationData({})).toBeNull();
     expect(routeForNotificationData(null)).toBeNull();
     expect(routeForNotificationData({ booking_id: 5 })).toBeNull();
+  });
+
+  it('accepts upper-case ids', () => {
+    expect(routeForNotificationData({ booking_id: BOOKING.toUpperCase() })).toBe(
+      `/(tabs)/activity/${BOOKING.toUpperCase()}`,
+    );
+  });
+
+  it('refuses ids that are not UUIDs, so a crafted payload cannot steer navigation', () => {
+    for (const hostile of [
+      'bk1',
+      '../profile',
+      '../../sign-in',
+      `${BOOKING}/../x`,
+      `${BOOKING}?x=1`,
+      '',
+    ]) {
+      expect(routeForNotificationData({ booking_id: hostile })).toBeNull();
+      expect(routeForNotificationData({ branch_id: hostile })).toBeNull();
+    }
+  });
+
+  it('falls back to the venue when the booking id is junk but the branch id is real', () => {
+    expect(routeForNotificationData({ booking_id: '../x', branch_id: BRANCH })).toBe(
+      `/venue/${BRANCH}`,
+    );
   });
 });
 
@@ -143,16 +172,16 @@ describe('useNotificationResponseRouting', () => {
   it('routes a tap and removes the listener on unmount', async () => {
     const { unmount } = await renderHook(() => useNotificationResponseRouting());
     const listener = mockAddListener.mock.calls[0][0];
-    listener(response({ booking_id: 'bk1' }));
-    expect(mockPush).toHaveBeenCalledWith('/(tabs)/activity/bk1');
+    listener(response({ booking_id: BOOKING }));
+    expect(mockPush).toHaveBeenCalledWith(`/(tabs)/activity/${BOOKING}`);
     await unmount();
     expect(mockRemove).toHaveBeenCalled();
   });
 
   it('routes a cold-start tap once', async () => {
-    mockGetLastResponse.mockReturnValue(response({ branch_id: 'br1' }));
+    mockGetLastResponse.mockReturnValue(response({ branch_id: BRANCH }));
     await renderHook(() => useNotificationResponseRouting());
-    expect(mockPush).toHaveBeenCalledWith('/venue/br1');
+    expect(mockPush).toHaveBeenCalledWith(`/venue/${BRANCH}`);
   });
 
   it('shows foreground notifications', async () => {

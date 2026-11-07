@@ -21,13 +21,21 @@ const STEPS: { key: string; icon: IconName }[] = [
   { key: 'activity.detail.stepReady', icon: 'bag-check-outline' },
 ];
 
-/** Index of the current step, STEPS.length once everything is done, -1 when the order was cancelled. */
-export function orderStepIndex(status: BookingStatus): number {
+/**
+ * Index of the current step, STEPS.length once everything is done, -1 when the order was cancelled.
+ * A confirmed order whose start time is still ahead has not been dropped off yet, so it stays on the first step;
+ * it moves to "In progress" once its start time has passed.
+ */
+export function orderStepIndex(
+  status: BookingStatus,
+  startsAt?: string,
+  now: Date = new Date(),
+): number {
   switch (status) {
     case 'pending':
       return 0;
     case 'confirmed':
-      return 1;
+      return startsAt !== undefined && Date.parse(startsAt) > now.getTime() ? 0 : 1;
     case 'completed':
       return STEPS.length;
     default:
@@ -36,10 +44,10 @@ export function orderStepIndex(status: BookingStatus): number {
 }
 
 /** A vertical progress list for a drop-off order: done steps are checked, the current one is lifted. */
-export function OrderTracker({ status }: { status: BookingStatus }) {
+export function OrderTracker({ status, startsAt }: { status: BookingStatus; startsAt?: string }) {
   const { t } = useTranslation();
   const colors = useColors();
-  const current = orderStepIndex(status);
+  const current = orderStepIndex(status, startsAt);
   if (current < 0) return null;
 
   return (

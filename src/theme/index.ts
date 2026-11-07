@@ -8,7 +8,7 @@ export { radius } from './radius';
 export type { RadiusToken } from './radius';
 export { shadows } from './shadows';
 export type { ShadowToken } from './shadows';
-export { fontFamily, fontsToLoad, typeScale } from './typography';
+export { fontFamily, fontsToLoad, isArabicUi, typeScale } from './typography';
 export type { TypeScaleToken } from './typography';
 export { enter, enterFromTop, fade, STAGGER_MS } from './motion';
 export { hueFor } from './hues';

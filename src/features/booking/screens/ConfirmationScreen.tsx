@@ -68,7 +68,7 @@ export function ConfirmationScreen() {
       const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&location=${location}`;
       await Linking.openURL(url);
     } catch {
-      Alert.alert(t('common.errorGeneric')); // TODO i18n: dedicated calendar-open failure copy
+      Alert.alert(t('booking.calendarError'));
     }
   };
 
@@ -136,14 +136,10 @@ export function ConfirmationScreen() {
           <DrawnCheck />
           <View style={styles.heroText}>
             <ThemedText variant="h1" color="onHero" style={styles.center}>
-              {/* TODO i18n */}
-              {isPending ? 'Request sent' : 'Booking confirmed'}
+              {isPending ? t('booking.requestSent') : t('booking.confirmed')}
             </ThemedText>
             <ThemedText variant="bodyLarge" color="onHeroMuted" style={styles.center}>
-              {/* TODO i18n */}
-              {isPending
-                ? "We'll let you know once the venue confirms."
-                : "You'll get a reminder 1 hour before."}
+              {isPending ? t('booking.requestSentBody') : t('booking.confirmedBody')}
             </ThemedText>
           </View>
           <View style={[styles.when, { backgroundColor: colors.onHeroTint }]}>
@@ -190,7 +186,7 @@ export function ConfirmationScreen() {
                       <ThemedText variant="caption" color="textSecondary">
                         {formatHour(service.booking_start_time, data.timezone)}
                         {service.employee_id
-                          ? ` · ${specialist ?? 'Any professional' /* TODO i18n */}`
+                          ? ` · ${specialist ?? t('booking.anyProfessional')}`
                           : ''}
                       </ThemedText>
                     </View>
@@ -212,15 +208,14 @@ export function ConfirmationScreen() {
             <Fact
               icon="location-outline"
               title={data.store_address}
-              subtitle="Get directions" /* TODO i18n */
+              subtitle={t('booking.getDirections')}
               onPress={handleOpenMaps}
             />
             <Divider />
 
             <View style={[styles.total, { backgroundColor: colors.backgroundMuted }]}>
               <ThemedText variant="bodyMedium" color="textSecondary">
-                {/* TODO i18n */}
-                Total
+                {t('booking.total')}
               </ThemedText>
               <ThemedText variant="h2">{formatMoney(data.total_price, data.currency)}</ThemedText>
             </View>
@@ -237,11 +232,11 @@ export function ConfirmationScreen() {
         ]}
       >
         <Button
-          label={/* TODO i18n */ 'Add to calendar'}
+          label={t('booking.addToCalendar')}
           icon="calendar-outline"
           onPress={() => handleAddToCalendar(data)}
         />
-        <Button label={/* TODO i18n */ 'Back to home'} variant="ghost" onPress={handleBackHome} />
+        <Button label={t('booking.backHome')} variant="ghost" onPress={handleBackHome} />
       </Animated.View>
     </Screen>
   );
@@ -308,8 +303,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   ring: { position: 'absolute', borderWidth: 1.5, borderRadius: 999 },
-  ringBig: { width: 260, height: 260, right: -90, top: -100 },
-  ringSmall: { width: 150, height: 150, right: -40, top: -40 },
+  ringBig: { width: 260, height: 260, end: -90, top: -100 },
+  ringSmall: { width: 150, height: 150, end: -40, top: -40 },
   heroText: { gap: spacing.xs, alignItems: 'center' },
   center: { textAlign: 'center' },
   when: {

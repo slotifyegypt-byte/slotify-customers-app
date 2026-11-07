@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useFavourites } from '@/features/favourites/hooks/useFavourites';
+import { openLegalUrl } from '@/lib/legal';
 import { useThemePreferenceStore } from '@/lib/theme/themePreferenceStore';
 import { enter, spacing } from '@/theme';
 
@@ -152,6 +153,18 @@ export function ProfileScreen() {
               iconTone="success"
               onPress={() => router.push('/(tabs)/profile/contact')}
             />
+            <ListRow
+              title={t('profile.privacyPolicy')}
+              icon="shield-checkmark-outline"
+              iconTone="neutral"
+              onPress={() => openLegalUrl('privacy')}
+            />
+            <ListRow
+              title={t('profile.termsOfService')}
+              icon="document-text-outline"
+              iconTone="neutral"
+              onPress={() => openLegalUrl('terms')}
+            />
           </SettingsGroup>
         </Animated.View>
 
@@ -198,6 +211,8 @@ export function ProfileScreen() {
         onSecondary={handleDeleteAccount}
         secondaryTone="danger"
         secondaryLoading={deleting}
+        linkLabel={t('profile.deleteLearnMore')}
+        onLinkPress={() => openLegalUrl('deleteAccount')}
       />
     </Screen>
   );

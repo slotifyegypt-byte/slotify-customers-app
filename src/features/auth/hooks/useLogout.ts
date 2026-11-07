@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { unregisterPush } from '@/features/notifications/push';
+import { useHiddenContentStore } from '@/features/support/store/hiddenContentStore';
 import { supabase } from '@/lib/supabase';
 
 export function useLogout() {
@@ -21,5 +22,7 @@ export function useLogout() {
     // the cache clear: the local session is already gone at this point.
     await supabase.removeAllChannels().catch(() => undefined);
     queryClient.clear(); // drop every cached server response — next sign-in starts clean
+    // Reports are per customer: the next person to sign in on this phone must not inherit what this one hid.
+    useHiddenContentStore.getState().clear();
   }, [queryClient]);
 }

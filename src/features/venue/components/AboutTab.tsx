@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, type ComponentProps } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { I18nManager, Linking, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Card } from '@/components/Card';
@@ -16,19 +17,22 @@ import { branchToday } from '@/lib/time/branchTime';
 import { enter, radius, spacing, useColors } from '@/theme';
 
 import type { GalleryItem, HoursDay, SpecialDay, TeamMember } from '../api/schemas';
-import { formatInterval, WEEKDAY_NAMES } from '../utils/hours';
+import { formatInterval, weekdayName } from '../utils/hours';
 
 import { GallerySection } from './GallerySection';
 import { TeamSection } from './TeamSection';
 
-// `amenity` enum (developer-guide.md §10).
-const AMENITY_LABELS: Record<string, string> = {
-  parking: 'Parking available', // TODO i18n
-  card_payments: 'Card payments', // TODO i18n
-  wheelchair_accessible: 'Wheelchair accessible', // TODO i18n
-  wifi: 'Wi-Fi', // TODO i18n
-  kids_friendly: 'Kids friendly', // TODO i18n
-};
+// `amenity` enum (developer-guide.md §10): every value has a `venue.amenity.<value>` label. A value the app
+// doesn't know yet (a newly added amenity) is hidden rather than shown as a raw snake_case word.
+const KNOWN_AMENITIES = new Set([
+  'parking',
+  'card_payments',
+  'wheelchair_accessible',
+  'wifi',
+  'kids_friendly',
+  'pet_friendly',
+  'instapay',
+]);
 
 interface AboutTabProps {
   store: StoreDetail;
@@ -62,6 +66,7 @@ export function AboutTab({
   isError,
 }: AboutTabProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const today = useMemo(() => branchWeekday(store.timezone), [store.timezone]);
 
   const hasPhone = Boolean(store.phone);
@@ -90,12 +95,13 @@ export function AboutTab({
     return (
       <EmptyState
         icon="time-outline"
-        title="Couldn't load opening hours" /* TODO i18n */
-        body="Check your connection and open this tab again." /* TODO i18n */
+        title={t('venue.hoursLoadError')}
+        body={t('venue.hoursLoadErrorBody')}
       />
     );
   }
 
+  const amenities = (store.amenities ?? []).filter((amenity) => KNOWN_AMENITIES.has(amenity));
   const noHours = calendarDays.every((day) => day.intervals.length === 0);
   let block = 0;
 
@@ -116,11 +122,11 @@ export function AboutTab({
       ) : null}
 
       <Animated.View entering={enter(block++)}>
-        <SectionHeader title="Hours" /* TODO i18n */ />
+        <SectionHeader title={t('venue.hours')} />
         {noHours ? (
           <Card>
             <ThemedText variant="body" color="textSecondary">
-              Opening hours aren&apos;t set up yet. {/* TODO i18n */}
+              {t('venue.hoursNotSet')}
             </ThemedText>
           </Card>
         ) : (
@@ -138,11 +144,11 @@ export function AboutTab({
                   >
                     <View style={styles.weekday}>
                       <ThemedText variant={isToday ? 'bodyMedium' : 'body'}>
-                        {WEEKDAY_NAMES[day.day_of_week - 1]}
+                        {weekdayName(day.day_of_week)}
                       </ThemedText>
                       {isToday ? (
                         <ThemedText variant="caption" color="brandAccent">
-                          Today {/* TODO i18n */}
+                          {t('venue.today')}
                         </ThemedText>
                       ) : null}
                     </View>
@@ -150,7 +156,7 @@ export function AboutTab({
                     <View style={styles.hoursColumn}>
                       {day.intervals.length === 0 ? (
                         <ThemedText variant="body" color="textTertiary">
-                          Closed {/* TODO i18n */}
+                          {t('venue.closed')}
                         </ThemedText>
                       ) : (
                         day.intervals.map((interval) => (
@@ -173,7 +179,7 @@ export function AboutTab({
 
       {specialDays.length > 0 ? (
         <Animated.View entering={enter(block++)}>
-          <SectionHeader title="Upcoming exceptions" /* TODO i18n */ />
+          <SectionHeader title={t('venue.upcomingExceptions')} />
           <Card padding="none">
             {specialDays.map((day, index) => (
               <View key={day.date}>
@@ -192,13 +198,11 @@ export function AboutTab({
                     color={day.is_closed ? 'textTertiary' : 'textPrimary'}
                     style={styles.exceptionValue}
                   >
-                    {
-                      day.is_closed
-                        ? 'Closed' /* TODO i18n */
-                        : day.opens_at && day.closes_at
-                          ? formatInterval(day.opens_at, day.closes_at)
-                          : 'Open' /* TODO i18n */
-                    }
+                    {day.is_closed
+                      ? t('venue.closed')
+                      : day.opens_at && day.closes_at
+                        ? formatInterval(day.opens_at, day.closes_at)
+                        : t('venue.open')}
                   </ThemedText>
                 </View>
               </View>
@@ -208,30 +212,30 @@ export function AboutTab({
       ) : null}
 
       <Animated.View entering={enter(block++)}>
-        <SectionHeader title="Contact and location" /* TODO i18n */ />
+        <SectionHeader title={t('venue.contactLocation')} />
         <Card padding="none">
           <InfoRow
             icon="call-outline"
-            label={hasPhone ? 'Call' : undefined /* TODO i18n */}
-            text={hasPhone ? (store.phone as string) : 'No phone number on file' /* TODO i18n */}
+            label={hasPhone ? t('venue.call') : undefined}
+            text={hasPhone ? (store.phone as string) : t('venue.noPhone')}
             onPress={hasPhone ? call : undefined}
           />
           <Divider />
           <InfoRow
             icon="location-outline"
-            label="Get directions" /* TODO i18n */
+            label={t('venue.getDirections')}
             text={store.address}
             onPress={openDirections}
           />
         </Card>
       </Animated.View>
 
-      {store.amenities && store.amenities.length > 0 ? (
+      {amenities.length > 0 ? (
         <Animated.View entering={enter(block++)}>
-          <SectionHeader title="Amenities" /* TODO i18n */ />
+          <SectionHeader title={t('venue.amenities')} />
           <View style={styles.amenities}>
-            {store.amenities.map((amenity) => (
-              <Pill key={amenity} label={AMENITY_LABELS[amenity] ?? amenity} icon="checkmark" />
+            {amenities.map((amenity) => (
+              <Pill key={amenity} label={t(`venue.amenity.${amenity}`)} icon="checkmark" />
             ))}
           </View>
         </Animated.View>
@@ -303,7 +307,7 @@ const styles = StyleSheet.create({
   },
   weekday: { flexShrink: 1 },
   hoursColumn: { alignItems: 'flex-end', flexShrink: 0 },
-  exceptionValue: { textAlign: 'right' },
+  exceptionValue: { textAlign: I18nManager.isRTL ? 'left' : 'right' },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',

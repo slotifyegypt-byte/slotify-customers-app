@@ -81,7 +81,7 @@ export function ServiceBookingConfigScreen() {
   if (!selectedServiceId || !selectedService) {
     return (
       <Screen style={styles.container}>
-        <ScreenHeader title="Choose a service" /* TODO i18n */ subtitle={store.data.name} />
+        <ScreenHeader title={t('booking.chooseService')} subtitle={store.data.name} />
         <FlatList
           data={services.data ?? []}
           keyExtractor={(item) => item.id}
@@ -96,7 +96,7 @@ export function ServiceBookingConfigScreen() {
                     <View style={styles.meta}>
                       <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
                       <ThemedText variant="caption" color="textSecondary">
-                        {item.duration_minutes} min {/* TODO i18n */}
+                        {t('booking.minutes', { count: item.duration_minutes })}
                       </ThemedText>
                     </View>
                   </View>
@@ -109,9 +109,9 @@ export function ServiceBookingConfigScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="cut-outline"
-              title="No services available" /* TODO i18n */
-              body="This place hasn't listed anything to book yet." /* TODO i18n */
-              actionLabel="Go back" /* TODO i18n */
+              title={t('booking.noServices')}
+              body={t('booking.noServicesBody')}
+              actionLabel={t('booking.goBack')}
               onAction={() => router.back()}
             />
           }

@@ -22,7 +22,7 @@ import { BookingHero } from '../components/BookingHero';
 import { ServicesCard, WhereWithCard } from '../components/BookingSummary';
 import { OrderTracker } from '../components/OrderTracker';
 import { useStoreTeam } from '../hooks/useStoreTeam';
-import { isOrderBooking } from '../utils/bookingDisplay';
+import { canCustomerCancel, isOrderBooking } from '../utils/bookingDisplay';
 
 export function BookingDetailScreen() {
   const { t } = useTranslation();
@@ -131,6 +131,7 @@ export function BookingDetailScreen() {
   const canReschedule =
     isActive && !isOrder && Boolean(specialistServiceForReschedule) && data.venue_available;
   const canMessage = isActive && data.venue_available;
+  const canCancel = canCustomerCancel(data);
   const hasPhone = Boolean(store.data?.phone);
 
   return (
@@ -149,7 +150,7 @@ export function BookingDetailScreen() {
 
         {isOrder ? (
           <Animated.View entering={enter(1)}>
-            <OrderTracker status={data.booking_status} />
+            <OrderTracker status={data.booking_status} startsAt={data.booking_date} />
           </Animated.View>
         ) : null}
 
@@ -220,20 +221,28 @@ export function BookingDetailScreen() {
                   />
                 </View>
               )}
-              {!isOrder ? (
+              {canCancel ? (
                 <>
-                  <ThemedText variant="caption" color="textTertiary" style={styles.note}>
-                    {t('activity.detail.freeCancel')}
-                  </ThemedText>
+                  {!isOrder ? (
+                    <ThemedText variant="caption" color="textTertiary" style={styles.note}>
+                      {t('activity.detail.freeCancel')}
+                    </ThemedText>
+                  ) : null}
                   <PressableScale
                     onPress={handleCancel}
                     accessibilityRole="button"
-                    accessibilityLabel={t('activity.detail.cancelAppointment')}
+                    accessibilityLabel={
+                      isOrder
+                        ? t('activity.detail.cancelOrder')
+                        : t('activity.detail.cancelAppointment')
+                    }
                     scaleTo={0.97}
                     style={styles.cancel}
                   >
                     <ThemedText variant="bodyMedium" color="danger">
-                      {t('activity.detail.cancelAppointment')}
+                      {isOrder
+                        ? t('activity.detail.cancelOrder')
+                        : t('activity.detail.cancelAppointment')}
                     </ThemedText>
                   </PressableScale>
                 </>

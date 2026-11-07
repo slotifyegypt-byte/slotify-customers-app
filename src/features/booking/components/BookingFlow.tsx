@@ -185,11 +185,11 @@ export function BookingFlow({
     ? [
         formatDraftDateLabel(selectedDate, timezone),
         selectedSlot.time_slot_str,
-        otherEntries.length > 0 ? `+${otherEntries.length} more` /* TODO i18n */ : null,
+        otherEntries.length > 0 ? t('booking.moreServices', { count: otherEntries.length }) : null,
       ]
         .filter(Boolean)
         .join(' · ')
-    : 'Choose a time to continue'; // TODO i18n
+    : t('booking.chooseTime');
 
   return (
     <View style={styles.flex}>
@@ -224,12 +224,10 @@ export function BookingFlow({
                 </View>
                 <View>
                   <ThemedText variant="caption" color="textTertiary">
-                    {/* TODO i18n */}
-                    Duration
+                    {t('booking.duration')}
                   </ThemedText>
                   <ThemedText variant="bodyMedium">
-                    {/* TODO i18n */}
-                    {service.duration_minutes} min
+                    {t('booking.minutes', { count: service.duration_minutes })}
                   </ThemedText>
                 </View>
               </View>
@@ -239,8 +237,7 @@ export function BookingFlow({
                 </View>
                 <View>
                   <ThemedText variant="caption" color="textTertiary">
-                    {/* TODO i18n */}
-                    Price
+                    {t('booking.price')}
                   </ThemedText>
                   <ThemedText variant="bodyMedium">
                     {formatMoney(service.price, service.currency)}
@@ -255,9 +252,9 @@ export function BookingFlow({
           <Animated.View entering={enter(1)} style={styles.section}>
             <StepHeading
               number={1}
-              title="Choose a professional" /* TODO i18n */
+              title={t('booking.chooseProfessional')}
               done
-              aside={employeeId === null ? 'Any' /* TODO i18n */ : undefined}
+              aside={employeeId === null ? t('booking.any') : undefined}
             />
             <SpecialistPicker
               storeId={storeId}
@@ -272,7 +269,7 @@ export function BookingFlow({
         <Animated.View entering={enter(2)} style={styles.section}>
           <StepHeading
             number={hasSpecialistStep ? 2 : 1}
-            title="Pick a day and time" /* TODO i18n */
+            title={t('booking.pickDayTime')}
             done={selectedSlot !== null}
             aside={formatDraftDateLabel(selectedDate, timezone)}
           />
@@ -298,7 +295,7 @@ export function BookingFlow({
           <Card padding="none">
             <PressableScale
               accessibilityRole="button"
-              accessibilityLabel="Add a note (optional)" // TODO i18n
+              accessibilityLabel={t('booking.addNote')}
               accessibilityState={{ expanded: noteOpen }}
               onPress={() => setNoteOpen((open) => !open)}
               scaleTo={0.99}
@@ -306,8 +303,7 @@ export function BookingFlow({
             >
               <Ionicons name="create-outline" size={20} color={colors.brandAccent} />
               <ThemedText variant="bodyMedium" style={styles.noteLabel}>
-                {/* TODO i18n */}
-                Add a note (optional)
+                {t('booking.addNote')}
               </ThemedText>
               <Ionicons
                 name={noteOpen ? 'chevron-up' : 'chevron-down'}
@@ -320,7 +316,7 @@ export function BookingFlow({
                 <TextField
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Anything the specialist should know?" // TODO i18n
+                  placeholder={t('booking.notePlaceholder')}
                   multiline
                   style={styles.noteInput}
                 />
@@ -329,7 +325,7 @@ export function BookingFlow({
           </Card>
 
           <Button
-            label={/* TODO i18n */ 'Add another service'}
+            label={t('booking.addAnother')}
             variant="ghost"
             icon="add"
             disabled={!selectedSlot}
@@ -355,7 +351,7 @@ export function BookingFlow({
             <ThemedText variant="h3">{formatMoney(totalPrice, service.currency)}</ThemedText>
           </View>
           <Button
-            label={/* TODO i18n */ 'Confirm booking'}
+            label={t('booking.confirm')}
             fullWidth={false}
             style={styles.confirmButton}
             onPress={handleConfirm}

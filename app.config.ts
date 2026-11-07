@@ -24,12 +24,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  // The app has no dark theme (src/theme/colors.ts is a single static
-  // palette) — 'automatic' still resolves Android's native day/night theme
-  // from the system setting, and Google Maps' SDK auto-selects dark basemap
-  // tiles from that native resolution independently of our (always-light)
-  // RN UI, producing a dark map on an otherwise light screen.
-  userInterfaceStyle: 'light',
+  // The app has light and dark themes (src/theme/ThemeProvider.tsx). 'automatic' lets the native side follow
+  // whichever appearance is active: ThemeProvider pins it to the customer's choice with
+  // Appearance.setColorScheme (or releases it to the OS for "System"), so the keyboard, system alerts and
+  // Google Maps' basemap always agree with the in-app theme instead of following the OS on their own.
+  userInterfaceStyle: 'automatic',
   ios: {
     supportsTablet: true,
     // Home-screen icon for iOS 18+: it follows the system's light, dark and tinted appearance.
@@ -42,6 +41,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Native "Sign in with Apple" (src/features/auth/hooks/useAppleSignIn.ts).
     usesAppleSignIn: true,
     infoPlist: {
+      // The app only uses the encryption built into the OS (HTTPS / TLS), which is exempt, so App
+      // Store Connect doesn't ask the export-compliance question on every build.
+      ITSAppUsesNonExemptEncryption: false,
       // Required for Linking.canOpenURL('comgooglemaps://') in the Explore
       // screen's "Directions" action (src/features/explore-search/screens/ExploreScreen.tsx)
       // — iOS refuses to even check for an external app's URL scheme unless
@@ -72,6 +74,26 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-apple-authentication',
+    // Without this the layout stays left-to-right even when the phone itself is set to Arabic (only the in-app
+    // language switch used to flip it), which gave Arabic text in a mirrored-less layout on first launch.
+    ['expo-localization', { supportsRTL: true }],
+    // Embeds the brand fonts in the native build so they exist before JavaScript runs (see src/theme/typography.ts).
+    // Changing this needs a new native build; nothing breaks before then, the app keeps loading them at runtime.
+    [
+      'expo-font',
+      {
+        fonts: [
+          './node_modules/@expo-google-fonts/instrument-sans/400Regular/InstrumentSans_400Regular.ttf',
+          './node_modules/@expo-google-fonts/instrument-sans/500Medium/InstrumentSans_500Medium.ttf',
+          './node_modules/@expo-google-fonts/instrument-sans/600SemiBold/InstrumentSans_600SemiBold.ttf',
+          './node_modules/@expo-google-fonts/instrument-sans/700Bold/InstrumentSans_700Bold.ttf',
+          './node_modules/@expo-google-fonts/ibm-plex-sans-arabic/400Regular/IBMPlexSansArabic_400Regular.ttf',
+          './node_modules/@expo-google-fonts/ibm-plex-sans-arabic/500Medium/IBMPlexSansArabic_500Medium.ttf',
+          './node_modules/@expo-google-fonts/ibm-plex-sans-arabic/600SemiBold/IBMPlexSansArabic_600SemiBold.ttf',
+          './node_modules/@expo-google-fonts/ibm-plex-sans-arabic/700Bold/IBMPlexSansArabic_700Bold.ttf',
+        ],
+      },
+    ],
     [
       'expo-splash-screen',
       {
@@ -100,8 +122,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-location',
       {
+        // Location is only read while the app is open, to show nearby businesses and how far away
+        // they are. Nothing runs in the background, so the plugin's default "Always" and motion
+        // strings (it adds them unless told not to) are removed rather than shipped unused.
         locationWhenInUsePermission:
-          'Slotify uses your location to show nearby stores and distances.',
+          'Slotify uses your location while the app is open to show businesses near you and how far away they are.',
+        locationAlwaysAndWhenInUsePermission: false,
+        locationAlwaysPermission: false,
+        motionUsagePermission: false,
       },
     ],
   ],

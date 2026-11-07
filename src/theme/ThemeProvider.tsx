@@ -1,5 +1,12 @@
-import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
+import { Appearance, Platform, useColorScheme } from 'react-native';
 
 import { useThemePreferenceStore, type ThemePreference } from '@/lib/theme/themePreferenceStore';
 
@@ -45,6 +52,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const scheme: ResolvedScheme =
     override ??
     (preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference);
+
+  // The status bar, keyboard, system alerts and map tiles follow the OS appearance unless told otherwise, so
+  // without this a customer who picked Dark (or Light) in the app still gets the other one in native UI.
+  // 'system' hands control back to the OS.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    Appearance.setColorScheme(preference === 'system' ? 'unspecified' : preference);
+  }, [preference]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({ scheme, preference, colors: colorSchemes[scheme] }),

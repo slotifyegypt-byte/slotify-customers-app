@@ -9,7 +9,7 @@ function rgbOf(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** A soft fade at the right edge of a horizontal list, in the screen's own background colour, hinting that it scrolls. */
+/** A soft fade at the trailing edge of a horizontal list, in the screen's own background colour, hinting that it scrolls. */
 export function HScrollFade() {
   const colors = useColors();
   return (
@@ -25,5 +25,5 @@ export function HScrollFade() {
 }
 
 const styles = StyleSheet.create({
-  fade: { position: 'absolute', top: 0, right: 0, bottom: 0, width: 28 },
+  fade: { position: 'absolute', top: 0, end: 0, bottom: 0, width: 28 },
 });

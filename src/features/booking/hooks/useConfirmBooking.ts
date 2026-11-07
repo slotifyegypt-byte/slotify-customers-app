@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { isApiError } from '@/lib/api/errors';
+import i18n from '@/lib/i18n';
 
 import { draftToBookingRequest } from '../api/bookingApi';
 import { useBookingDraftStore, type BookingDraftEntry } from '../state/bookingDraftStore';
@@ -60,10 +61,9 @@ export function useConfirmBooking(storeId: string) {
     fallback: string,
   ): Promise<ConfirmOutcome> => {
     if (entries.length > MAX_ITEMS) {
-      // TODO i18n
       return {
         status: 'failed',
-        message: `You can book up to ${MAX_ITEMS} services at once.`,
+        message: i18n.t('booking.maxItems', { count: MAX_ITEMS }),
         conflicting: null,
       };
     }

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
@@ -63,6 +64,7 @@ export function VenueHeader({
   onOpenDirections,
 }: VenueHeaderProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -113,7 +115,7 @@ export function VenueHeader({
             icon="arrow-back"
             size={44}
             onPress={onBack}
-            accessibilityLabel="Go back" /* TODO i18n */
+            accessibilityLabel={t('venue.goBack')}
           />
           <View style={styles.topRowRight}>
             <IconButton
@@ -121,7 +123,7 @@ export function VenueHeader({
               icon="share-outline"
               size={44}
               onPress={handleShare}
-              accessibilityLabel="Share this venue" /* TODO i18n */
+              accessibilityLabel={t('venue.share')}
             />
             {isFavouriteLoading ? (
               <View style={[styles.favouriteBusy, { backgroundColor: colors.surfaceTranslucent }]}>
@@ -134,7 +136,9 @@ export function VenueHeader({
                 size={44}
                 color={isFavourite ? colors.danger : undefined}
                 onPress={onToggleFavourite}
-                accessibilityLabel={isFavourite ? 'Remove from favourites' : 'Add to favourites'} // TODO i18n
+                accessibilityLabel={
+                  isFavourite ? t('venue.removeFavourite') : t('venue.addFavourite')
+                }
               />
             )}
           </View>
@@ -187,7 +191,7 @@ export function VenueHeader({
             icon="navigate-outline"
             size={44}
             onPress={onOpenDirections}
-            accessibilityLabel="Open directions" /* TODO i18n */
+            accessibilityLabel={t('venue.openDirections')}
           />
         </View>
 
@@ -205,14 +209,14 @@ export function VenueHeader({
             <View style={styles.metaItem}>
               <Ionicons name="location-outline" size={15} color={colors.textTertiary} />
               <ThemedText variant="body" color="textSecondary">
-                {distanceKm.toFixed(1)} km {/* TODO i18n */}
+                {t('venue.km', { value: distanceKm.toFixed(1) })}
               </ThemedText>
             </View>
           ) : null}
           {isOpen ? (
-            <Pill label="Open now" tone="mint" dot /* TODO i18n */ />
+            <Pill label={t('venue.openNow')} tone="mint" dot />
           ) : (
-            <Pill label="Closed" tone="neutral" /* TODO i18n */ />
+            <Pill label={t('venue.closed')} tone="neutral" />
           )}
         </View>
       </View>

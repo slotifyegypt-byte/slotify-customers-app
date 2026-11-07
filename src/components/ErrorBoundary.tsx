@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import i18n from '@/lib/i18n';
 import { Sentry } from '@/lib/sentry';
 import { spacing } from '@/theme';
 
@@ -40,12 +41,17 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <View style={styles.container}>
           <ThemedText variant="h2" style={styles.center}>
-            Something went wrong
+            {i18n.t('common.boundaryTitle')}
           </ThemedText>
           <ThemedText variant="body" color="textSecondary" style={[styles.center, styles.spaced]}>
-            This part of the app ran into a problem. Your data is safe.
+            {i18n.t('common.boundaryBody')}
           </ThemedText>
-          <Button label="Try again" onPress={this.reset} fullWidth={false} style={styles.spaced} />
+          <Button
+            label={i18n.t('common.retry')}
+            onPress={this.reset}
+            fullWidth={false}
+            style={styles.spaced}
+          />
         </View>
       );
     }

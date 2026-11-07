@@ -7,5 +7,6 @@ export function useVenueTeam(storeId: string) {
   return useQuery({
     queryKey: venueKeys.team(storeId),
     queryFn: () => getStoreTeam(storeId),
+    staleTime: 5 * 60_000,
   });
 }

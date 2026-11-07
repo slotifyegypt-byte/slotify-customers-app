@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/EmptyState';
@@ -35,17 +36,13 @@ function slotKey(slot: AvailabilitySlot) {
 
 type DayPart = 'morning' | 'afternoon' | 'evening';
 
-const DAY_PART_LABEL: Record<DayPart, string> = {
-  morning: 'Morning', // TODO i18n
-  afternoon: 'Afternoon', // TODO i18n
-  evening: 'Evening', // TODO i18n
-};
-
-// `time_slot_str` is already the branch-local "10:00 AM", so the day part reads the branch's clock, never the phone's.
-function dayPartOf(slot: AvailabilitySlot): DayPart {
-  const match = /^(\d{1,2}):\d{2}\s*(AM|PM)/i.exec(slot.time_slot_str);
+// `time_slot_str` is already the branch-local "10:00 AM" (or "10:00 ص" in Arabic), so the day part reads the
+// branch's clock, never the phone's.
+export function dayPartOf(slot: AvailabilitySlot): DayPart {
+  const match = /^(\d{1,2}):\d{2}\s*(AM|PM|ص|م)/i.exec(slot.time_slot_str);
   if (!match) return 'morning';
-  const hour = (Number(match[1]) % 12) + (match[2].toUpperCase() === 'PM' ? 12 : 0);
+  const isPm = match[2].toUpperCase() === 'PM' || match[2] === 'م';
+  const hour = (Number(match[1]) % 12) + (isPm ? 12 : 0);
   return hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
 }
 
@@ -69,6 +66,7 @@ export function SlotGrid({
   onSelectSlot,
 }: SlotGridProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const specialistSlots = useMemo(
     () =>
       availability?.booking_mode === 'specialist'
@@ -110,10 +108,7 @@ export function SlotGrid({
     return (
       <EmptyState
         icon="calendar-outline"
-        title={getBookingErrorMessage(
-          error,
-          "Couldn't load availability for this date.",
-        )} /* TODO i18n */
+        title={getBookingErrorMessage(error, t('booking.availabilityError'))}
       />
     );
   }
@@ -126,8 +121,8 @@ export function SlotGrid({
     return (
       <EmptyState
         icon="calendar-outline"
-        title="No open times on this date" /* TODO i18n */
-        body="Pick another day from the strip above." /* TODO i18n */
+        title={t('booking.noOpenTimes')}
+        body={t('booking.noOpenTimesBody')}
       />
     );
   }
@@ -138,7 +133,7 @@ export function SlotGrid({
         <View key={group.part} style={styles.group}>
           {groups.length > 1 ? (
             <ThemedText variant="captionStrong" color="textSecondary">
-              {DAY_PART_LABEL[group.part]}
+              {t(`booking.${group.part}`)}
             </ThemedText>
           ) : null}
           <View style={styles.grid}>
@@ -165,7 +160,7 @@ export function SlotGrid({
                       accessibilityState={{ selected: isSelected }}
                       accessibilityLabel={
                         showCapacity
-                          ? `${slot.time_slot_str}, ${slot.capacity_remaining} left` // TODO i18n
+                          ? `${slot.time_slot_str}, ${t('booking.spotsLeft', { count: slot.capacity_remaining })}`
                           : slot.time_slot_str
                       }
                       onPress={() => onSelectSlot(slot)}
@@ -189,7 +184,7 @@ export function SlotGrid({
                           variant="captionSmall"
                           color={isSelected ? 'textOnBrand' : 'textTertiary'}
                         >
-                          {slot.capacity_remaining} left {/* TODO i18n */}
+                          {t('booking.spotsLeft', { count: slot.capacity_remaining })}
                         </ThemedText>
                       ) : null}
                     </PressableScale>

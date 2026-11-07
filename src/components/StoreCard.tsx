@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { spacing, useColors } from '@/theme';
@@ -31,18 +32,19 @@ export function StoreCard({
   width = 232,
 }: StoreCardProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   return (
     <Card
       onPress={onPress}
       padding="none"
-      style={{ width, marginRight: spacing.sm }}
+      style={{ width, marginEnd: spacing.sm }}
       accessibilityLabel={name}
     >
       <Photo uri={logo} name={name} style={styles.photo} initialSize={44}>
         {isOpen !== undefined ? (
           <View style={styles.badge}>
             <Pill
-              label={isOpen ? 'Open now' : 'Closed'}
+              label={isOpen ? t('venue.openNow') : t('venue.closed')}
               tone={isOpen ? 'mint' : 'neutral'}
               dot={isOpen}
             />

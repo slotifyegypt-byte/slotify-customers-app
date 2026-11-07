@@ -19,10 +19,11 @@ const FALLBACK = { latitude: 30.0444, longitude: 31.2357 };
 const FRESH_FIX_TIMEOUT_MS = 8000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('location-timeout')), ms)),
-  ]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('location-timeout')), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 // Module-level cache + a single shared in-flight resolution: every screen

@@ -1,4 +1,5 @@
 import { isApiError } from '@/lib/api/errors';
+import i18n from '@/lib/i18n';
 
 /**
  * developer-guide.md §6: the `bookings`/`availability` Edge Functions answer
@@ -30,7 +31,7 @@ export function slotConflictMessage(
 ): string {
   const names = conflicting.map((entry) => entry.service.name).join(', ');
   if (isApiError(error, 'time_in_past')) {
-    const base = getBookingErrorMessage(error, 'That time has already passed — pick another'); // TODO i18n
+    const base = getBookingErrorMessage(error, i18n.t('booking.pastTime'));
     return names ? `${names}: ${base}` : base;
   }
   if (isApiError(error, 'slot_unavailable')) {
@@ -38,7 +39,5 @@ export function slotConflictMessage(
     const reason = getBookingErrorMessage(error, '');
     if (reason) return names ? `${names}: ${reason}` : reason;
   }
-  return names
-    ? `That time for ${names} was just taken — pick another` // TODO i18n
-    : 'That time was just taken — pick another'; // TODO i18n
+  return names ? i18n.t('booking.takenNamed', { names }) : i18n.t('booking.taken');
 }

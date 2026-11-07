@@ -51,7 +51,7 @@ export function BookAgainCard({
 }
 
 const styles = StyleSheet.create({
-  card: { width: 156, marginRight: spacing.sm },
+  card: { width: 156, marginEnd: spacing.sm },
   photo: { width: '100%', height: 88 },
   text: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm, gap: 2 },
   cta: { padding: spacing.sm },

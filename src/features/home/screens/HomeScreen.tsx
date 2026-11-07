@@ -148,14 +148,16 @@ export function HomeScreen() {
             <View style={styles.locationRow}>
               <Ionicons name="location-sharp" size={13} color={colors.brandAccent} />
               <ThemedText variant="caption" color="textSecondary">
-                {location.status === 'denied' ? 'Cairo, Egypt' : t('home.currentLocation')}
+                {location.status === 'denied'
+                  ? t('home.fallbackLocation')
+                  : t('home.currentLocation')}
               </ThemedText>
             </View>
           </View>
           <View>
             <IconButton
               icon="notifications-outline"
-              accessibilityLabel="Notifications"
+              accessibilityLabel={t('a11y.notifications')}
               onPress={() => router.push('/notifications')}
               size={44}
             />
@@ -360,7 +362,7 @@ const createStyles = (colors: Colors) =>
     unreadDot: {
       position: 'absolute',
       top: 9,
-      right: 10,
+      end: 10,
       width: 9,
       height: 9,
       borderRadius: 5,
@@ -383,8 +385,8 @@ const createStyles = (colors: Colors) =>
     },
     searchPlaceholder: { flex: 1 },
     section: { gap: spacing.sm },
-    categoriesRow: { flexDirection: 'row', paddingVertical: 6, paddingLeft: 4 },
-    categorySkeleton: { alignItems: 'center', gap: 8, width: 72, marginRight: spacing.xs },
+    categoriesRow: { flexDirection: 'row', paddingVertical: 6, paddingStart: 4 },
+    categorySkeleton: { alignItems: 'center', gap: 8, width: 72, marginEnd: spacing.xs },
     activeCategory: { alignSelf: 'flex-start' },
     skeletonRow: { flexDirection: 'row', gap: spacing.sm },
     // Horizontal ScrollViews auto-size to exactly the card height, so without this the card shadows get

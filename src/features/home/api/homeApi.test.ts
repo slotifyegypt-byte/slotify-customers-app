@@ -77,7 +77,10 @@ describe('getHomeOffers', () => {
     expect(mockFrom).toHaveBeenCalledWith('promoted_offer_cards');
     const select = calls.find(([method]) => method === 'select');
     expect(String(select?.[1][0])).toContain('business_name');
-    expect(calls).toContainEqual(['order', ['promotion_sort_order', { ascending: true, nullsFirst: false }]]);
+    expect(calls).toContainEqual([
+      'order',
+      ['promotion_sort_order', { ascending: true, nullsFirst: false }],
+    ]);
     expect(offers).toEqual([
       {
         id: 'o1',
