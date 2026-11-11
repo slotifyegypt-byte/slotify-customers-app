@@ -4,7 +4,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -90,7 +89,7 @@ export function ReportSheet({ target, onClose }: ReportSheetProps) {
     <Modal visible={target !== null} transparent animationType="slide" onRequestClose={close}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <Pressable
           style={styles.backdrop}

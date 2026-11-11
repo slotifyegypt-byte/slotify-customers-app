@@ -4,7 +4,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Linking,
-  Platform,
   ScrollView,
   StyleSheet,
 } from 'react-native';
@@ -58,7 +57,7 @@ export function ContactUsScreen() {
       <ScreenHeader title={t('contactUs.title')} />
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <ScrollView
           contentContainerStyle={styles.content}

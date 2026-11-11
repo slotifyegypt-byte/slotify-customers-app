@@ -6,7 +6,6 @@ import {
   FlatList,
   I18nManager,
   KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   TextInput,
   View,
@@ -200,7 +199,7 @@ export function OrderChatScreen() {
     <Screen edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <ChatHeader bookingId={bookingId} />
 
