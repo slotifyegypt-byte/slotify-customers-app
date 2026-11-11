@@ -12,6 +12,9 @@ export default function ProfileStackLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="edit" />
         <Stack.Screen name="favourites" />
+        <Stack.Screen name="loyalty" />
+        <Stack.Screen name="loyalty-card" />
+        <Stack.Screen name="loyalty-join" />
         <Stack.Screen name="my-reviews" />
         <Stack.Screen name="notification-settings" />
         <Stack.Screen name="language" />

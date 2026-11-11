@@ -3952,6 +3952,8 @@ export type Database = {
       get_invite_status: { Args: { p_employee_id: string }; Returns: Json };
       get_my_billing: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_commission: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_loyalty_cards: { Args: Record<PropertyKey, never>; Returns: Json };
+      join_loyalty_program: { Args: { p_join_code: string }; Returns: Json };
       get_my_partner_context: {
         Args: Record<PropertyKey, never>;
         Returns: Json;

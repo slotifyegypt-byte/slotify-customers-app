@@ -74,6 +74,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-apple-authentication',
+    // The camera opens only on Profile → Loyalty cards → Add card, to scan a business's loyalty QR. It takes no photos and keeps no images.
+    ['expo-camera', { cameraPermission: 'Slotify uses your camera to scan a loyalty QR code.', microphonePermission: false, recordAudioAndroid: false }],
     // Without this the layout stays left-to-right even when the phone itself is set to Arabic (only the in-app
     // language switch used to flip it), which gave Arabic text in a mirrored-less layout on first launch.
     ['expo-localization', { supportsRTL: true }],

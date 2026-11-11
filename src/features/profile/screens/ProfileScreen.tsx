@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useFavourites } from '@/features/favourites/hooks/useFavourites';
+import { useMyLoyaltyCards } from '@/features/loyalty/hooks/useMyLoyaltyCards';
 import { openLegalUrl } from '@/lib/legal';
 import { useThemePreferenceStore } from '@/lib/theme/themePreferenceStore';
 import { enter, spacing } from '@/theme';
@@ -28,6 +29,7 @@ export function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { data: profile } = useMyProfile();
   const favourites = useFavourites();
+  const loyaltyCards = useMyLoyaltyCards();
   const logout = useLogout();
   const queryClient = useQueryClient();
   const themePreference = useThemePreferenceStore((state) => state.preference);
@@ -104,6 +106,13 @@ export function ProfileScreen() {
               iconTone="danger"
               value={favouritesCount !== undefined ? String(favouritesCount) : undefined}
               onPress={() => router.push('/(tabs)/profile/favourites')}
+            />
+            <ListRow
+              title={t('loyalty.title')}
+              icon="ribbon-outline"
+              iconTone="brand"
+              value={loyaltyCards.data?.length ? String(loyaltyCards.data.length) : undefined}
+              onPress={() => router.push('/(tabs)/profile/loyalty')}
             />
             <ListRow
               title={t('profile.myReviews')}
