@@ -180,7 +180,7 @@ export function ReviewsTab({
                 <Card>
                   <View style={styles.reviewHeader}>
                     <Avatar
-                      label={(review.customer_name ?? 'Customer').charAt(0).toUpperCase()}
+                      label={(review.customer_name ?? t('venue.reviewsTab.customer')).charAt(0).toUpperCase()}
                       size={40}
                     />
                     <View style={styles.reviewWho}>

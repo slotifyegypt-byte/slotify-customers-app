@@ -13,6 +13,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
 import type { StoreDetail } from '@/features/explore-search/api/schemas';
+import { directional } from '@/lib/direction';
 import { branchToday } from '@/lib/time/branchTime';
 import { enter, radius, spacing, useColors } from '@/theme';
 
@@ -278,7 +279,7 @@ function InfoRow({
           {text}
         </ThemedText>
       </View>
-      {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} /> : null}
+      {onPress ? <Ionicons name={directional('chevron-forward')} size={18} color={colors.textTertiary} /> : null}
     </View>
   );
   if (!onPress) return body;

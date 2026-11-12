@@ -23,6 +23,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'slotify',
   version: '1.0.0',
   orientation: 'portrait',
+  // Phone prompts and the app name in Arabic: ./locales/ar.json. Changing these needs a new native build.
+  locales: { ar: './locales/ar.json' },
   icon: './assets/images/icon.png',
   // The app has light and dark themes (src/theme/ThemeProvider.tsx). 'automatic' lets the native side follow
   // whichever appearance is active: ThemeProvider pins it to the customer's choice with
@@ -78,7 +80,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ['expo-camera', { cameraPermission: 'Slotify uses your camera to scan a loyalty QR code.', microphonePermission: false, recordAudioAndroid: false }],
     // Without this the layout stays left-to-right even when the phone itself is set to Arabic (only the in-app
     // language switch used to flip it), which gave Arabic text in a mirrored-less layout on first launch.
-    ['expo-localization', { supportsRTL: true }],
+    ['expo-localization', { supportsRTL: true, supportedLocales: { ios: ['en', 'ar'], android: ['en', 'ar'] } }],
     // Embeds the brand fonts in the native build so they exist before JavaScript runs (see src/theme/typography.ts).
     // Changing this needs a new native build; nothing breaks before then, the app keeps loading them at runtime.
     [

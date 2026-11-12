@@ -77,7 +77,8 @@
     "exploreNearby": "Explore nearby",
     "topRatedBadge": "#1 Rated",
     "nearbyMapLabel": "Nearby",
-    "fallbackLocation": "Cairo, Egypt"
+    "fallbackLocation": "Cairo, Egypt",
+    "percentOff": "{{percent}}% off"
   },
   "explore": {
     "title": "Nearby",
@@ -134,7 +135,10 @@
     "errorTitle": "Something went wrong",
     "errorBody": "We couldn't run that search.",
     "resultsCount_one": "{{count}} result",
-    "resultsCount_other": "{{count}} results"
+    "resultsCount_other": "{{count}} results",
+    "suggestedBarbers": "Barbers",
+    "suggestedSalons": "Salons",
+    "suggestedSpa": "Spa"
   },
   "category": {
     "nearYou": "{{category}} near you",

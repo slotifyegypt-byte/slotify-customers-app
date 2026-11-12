@@ -1,4 +1,6 @@
+import i18n from '@/lib/i18n';
 import { mockQuery } from '@/test/mockSupabase';
+
 
 import { getCategories, getHomeOffers } from './homeApi';
 
@@ -31,12 +33,30 @@ describe('getCategories', () => {
     const categories = await getCategories();
 
     expect(mockFrom).toHaveBeenCalledWith('categories');
-    expect(calls).toContainEqual(['select', ['id, slug, name, icon_path']]);
+    expect(calls).toContainEqual(['select', ['id, slug, name, name_i18n, icon_path']]);
     expect(calls).toContainEqual(['order', ['sort_order']]);
     expect(categories).toEqual([
       { id: 'c1', slug: 'hair-salon', name: 'Hair salon', description: null },
       { id: 'c2', slug: 'barber', name: 'Barber', description: null },
     ]);
+  });
+
+  it('shows the Arabic name when the app is in Arabic, and the English where the backend has none', async () => {
+    const { builder } = mockQuery({
+      data: [
+        { id: 'c1', slug: 'hair-salon', name: 'Hair salon', name_i18n: { ar: 'صالون شعر' }, icon_path: null },
+        { id: 'c2', slug: 'barber', name: 'Barber', name_i18n: {}, icon_path: null },
+      ],
+      error: null,
+    });
+    mockFrom.mockReturnValue(builder);
+    await i18n.changeLanguage('ar');
+    try {
+      const categories = await getCategories();
+      expect(categories.map((c) => c.name)).toEqual(['صالون شعر', 'Barber']);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('throws an ApiError on failure', async () => {

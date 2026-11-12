@@ -13,7 +13,7 @@
 // bad value is a data bug, and a loud error beats silently showing customers
 // the wrong appointment time.
 
-import i18n from '@/lib/i18n';
+import i18n, { displayLocale } from '@/lib/i18n';
 
 // English month abbreviations are hard-coded (rather than asking Intl for
 // them) so the English output is identical on every JS engine. Arabic uses Intl month names and the
@@ -36,7 +36,7 @@ const MONTH_ABBR = [
 function monthAbbr(month: number): string {
   if (i18n.language?.startsWith('ar')) {
     try {
-      return new Intl.DateTimeFormat('ar', { month: 'short', timeZone: 'UTC' }).format(
+      return new Intl.DateTimeFormat(displayLocale(), { month: 'short', timeZone: 'UTC' }).format(
         new Date(Date.UTC(2026, month - 1, 1)),
       );
     } catch {

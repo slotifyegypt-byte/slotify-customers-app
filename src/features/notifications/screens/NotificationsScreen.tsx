@@ -267,7 +267,7 @@ export function NotificationsScreen() {
             <View style={styles.topRow}>
               <IconButton
                 icon="chevron-back"
-                accessibilityLabel="Back"
+                accessibilityLabel={t('a11y.back')}
                 onPress={() => router.back()}
               />
               {hasUnread && !isError ? (

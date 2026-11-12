@@ -453,6 +453,7 @@ function ClusterBadge({ count }: { count: number }) {
 }
 
 function SelectedStoreCallout({ store }: { store: NearbyStore }) {
+  const { t } = useTranslation();
   const colors = useColors();
   const styles = createStyles(colors);
   return (
@@ -470,7 +471,7 @@ function SelectedStoreCallout({ store }: { store: NearbyStore }) {
         {store.distance_km != null ? (
           <ThemedText variant="caption" color="textSecondary">
             {store.rating > 0 ? ' · ' : ''}
-            {store.distance_km.toFixed(1)} km
+            {t('venue.km', { value: store.distance_km.toFixed(1) })}
           </ThemedText>
         ) : null}
       </View>

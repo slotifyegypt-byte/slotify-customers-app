@@ -4,7 +4,6 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FlatList,
-  I18nManager,
   KeyboardAvoidingView,
   StyleSheet,
   TextInput,
@@ -23,6 +22,7 @@ import { useBookingDetail } from '@/features/booking/hooks/useBookingDetail';
 import { ReportSheet } from '@/features/support/components/ReportSheet';
 import { hiddenKey, useHiddenContentStore } from '@/features/support/store/hiddenContentStore';
 import { isApiError } from '@/lib/api/errors';
+import { displayLocale } from '@/lib/i18n';
 import { radius, spacing, useColors, type Colors } from '@/theme';
 
 import type { BookingMessage } from '../api/schemas';
@@ -31,7 +31,7 @@ import { useBookingChat } from '../hooks/useBookingChat';
 function formatTime(iso: string) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return date.toLocaleTimeString(displayLocale(), { hour: 'numeric', minute: '2-digit' });
 }
 
 function MessageBubble({
@@ -92,7 +92,7 @@ function ChatHeader({ bookingId }: { bookingId: string }) {
   return (
     <View style={styles.header}>
       <IconButton
-        icon={I18nManager.isRTL ? 'chevron-forward' : 'chevron-back'}
+        icon="chevron-back"
         onPress={() => router.back()}
         accessibilityLabel={t('chat.back')}
         size={40}

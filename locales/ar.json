@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "سلوتيفاي",
+  "NSCameraUsageDescription": "يستخدم سلوتيفاي الكاميرا لمسح رمز QR الخاص ببطاقة الولاء.",
+  "NSLocationWhenInUseUsageDescription": "يستخدم سلوتيفاي موقعك أثناء فتح التطبيق لعرض الأنشطة القريبة منك ومدى بُعدها."
+}

@@ -1,3 +1,4 @@
+import 'intl-pluralrules'; // Hermes may lack Intl.PluralRules; this adds it only when missing
 import * as Localization from 'expo-localization';
 import * as SecureStore from 'expo-secure-store';
 import i18n, { changeLanguage } from 'i18next';
@@ -82,6 +83,14 @@ export function setAppLocale(locale: SupportedLocale) {
     return true; // caller should reload the app now
   }
   return false;
+}
+
+/**
+ * The locale dates, numbers and money are written in: Arabic month and day names with Western digits (as the rest of
+ * the app shows numbers), or British English.
+ */
+export function displayLocale(): string {
+  return i18n.language?.startsWith('ar') ? 'ar-EG-u-nu-latn' : 'en-GB';
 }
 
 export default i18n;

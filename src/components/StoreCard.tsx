@@ -65,7 +65,7 @@ export function StoreCard({
           <ThemedText variant="captionStrong">{rating.toFixed(1)}</ThemedText>
           {distanceKm != null ? (
             <ThemedText variant="caption" color="textTertiary">
-              · {distanceKm.toFixed(1)} km
+              · {t('venue.km', { value: distanceKm.toFixed(1) })}
             </ThemedText>
           ) : null}
         </View>

@@ -1,4 +1,4 @@
-import i18n from '@/lib/i18n';
+import i18n, { displayLocale } from '@/lib/i18n';
 import { branchToday } from '@/lib/time/branchTime';
 
 // Calendar dates the customer picks while booking are BRANCH-local
@@ -30,7 +30,8 @@ function ymdToUtc(ymd: string): Date {
 
 // Weekday and month names follow the app language (Arabic readers get Arabic names). `ymd` dates are UTC
 // midnights, so formatting in UTC reads the same calendar day on every phone.
-const intlLocale = () => (i18n.language?.startsWith('ar') ? 'ar' : 'en-US');
+// English keeps its month-first form here ("Mon, Jan 5"); Arabic gets Arabic names with Western digits.
+const intlLocale = () => (i18n.language?.startsWith('ar') ? displayLocale() : 'en-US');
 
 function weekdayShort(date: Date): string {
   try {

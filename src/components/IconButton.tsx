@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { directional } from '@/lib/direction';
 import { radius, shadows, useColors } from '@/theme';
 
 import { PressableScale } from './PressableScale';
@@ -49,7 +50,7 @@ export function IconButton({
       ]}
     >
       <Ionicons
-        name={icon}
+        name={directional(icon)}
         size={Math.round(size * 0.48)}
         color={color ?? (variant === 'tint' ? colors.brand : colors.textPrimary)}
       />

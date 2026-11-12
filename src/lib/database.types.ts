@@ -903,6 +903,8 @@ export type Database = {
           description: string | null;
           icon_path: string | null;
           id: string;
+          name_i18n: Json;
+          description_i18n: Json;
           is_active: boolean;
           name: string;
           slug: string;
@@ -915,6 +917,8 @@ export type Database = {
           description?: string | null;
           icon_path?: string | null;
           id?: string;
+          name_i18n?: Json;
+          description_i18n?: Json;
           is_active?: boolean;
           name: string;
           slug: string;
@@ -926,6 +930,8 @@ export type Database = {
           description?: string | null;
           icon_path?: string | null;
           id?: string;
+          name_i18n?: Json;
+          description_i18n?: Json;
           is_active?: boolean;
           name?: string;
           slug?: string;
@@ -1622,6 +1628,7 @@ export type Database = {
           created_at: string;
           ends_on: string | null;
           id: string;
+          name_i18n: Json;
           is_active: boolean;
           name: string;
           slug: string;
@@ -1634,6 +1641,7 @@ export type Database = {
           created_at?: string;
           ends_on?: string | null;
           id?: string;
+          name_i18n?: Json;
           is_active?: boolean;
           name: string;
           slug: string;
@@ -1645,6 +1653,7 @@ export type Database = {
           created_at?: string;
           ends_on?: string | null;
           id?: string;
+          name_i18n?: Json;
           is_active?: boolean;
           name?: string;
           slug?: string;

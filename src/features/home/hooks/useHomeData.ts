@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 
+import i18n from '@/lib/i18n';
+
 import { getCategories, getHomeOffers } from '../api/homeApi';
 import { homeKeys } from '../api/queryKeys';
 
 export function useCategories() {
   // The category list changes a few times a year: an hour is plenty.
   return useQuery({
-    queryKey: homeKeys.categories,
+    queryKey: [...homeKeys.categories, i18n.language],
     queryFn: getCategories,
     staleTime: 60 * 60_000,
   });

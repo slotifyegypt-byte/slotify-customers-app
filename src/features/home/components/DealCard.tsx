@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Photo } from '@/components/Photo';
@@ -31,6 +32,7 @@ export function DealCard({
   placeholderName,
   onPress,
 }: DealCardProps) {
+  const { t } = useTranslation();
   const colors = useColors();
   const hasPrices = originalPrice != null && discountedPrice != null && !!currency;
 
@@ -58,7 +60,7 @@ export function DealCard({
       {discountPercentage ? (
         <View style={[styles.tag, { backgroundColor: colors.mint }]}>
           <ThemedText variant="label" style={styles.tagText}>
-            {Math.round(discountPercentage)}% off
+            {t('home.percentOff', { percent: Math.round(discountPercentage) })}
           </ThemedText>
         </View>
       ) : null}

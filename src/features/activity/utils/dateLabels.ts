@@ -21,7 +21,7 @@ function dayAsUtc(ymd: string): Date {
 }
 
 // Day-before-month for English, as the rest of the app prints dates ("25 Sep. 2026").
-const intlLocale = (locale: string) => (locale.startsWith('en') ? 'en-GB' : locale);
+const intlLocale = (locale: string) => (locale.startsWith('ar') ? 'ar-EG-u-nu-latn' : locale.startsWith('en') ? 'en-GB' : locale);
 
 function formatDay(ymd: string, locale: string, options: Intl.DateTimeFormatOptions): string {
   try {

@@ -1,8 +1,10 @@
+import { displayLocale } from '@/lib/i18n';
+
 // Money is numeric(12,2) in the database and always paired with the business's
 // ISO 4217 `currency` (EGP, PLN, …) — never assume a currency.
 export function formatMoney(amount: number, currency: string, locale?: string): string {
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(locale ?? displayLocale(), {
       style: 'currency',
       currency,
       // Whole amounts read better without ".00" (300 EGP, not 300.00 EGP).

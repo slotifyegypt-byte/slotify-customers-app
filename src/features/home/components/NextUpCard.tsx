@@ -6,6 +6,7 @@ import { Card } from '@/components/Card';
 import { Photo } from '@/components/Photo';
 import { PressableScale } from '@/components/PressableScale';
 import { ThemedText } from '@/components/ThemedText';
+import { directional } from '@/lib/direction';
 import { radius, shadows, spacing, useColors } from '@/theme';
 
 interface NextUpCardProps {
@@ -73,12 +74,12 @@ export function NextUpCard({
       </View>
 
       <View style={[styles.time, { backgroundColor: colors.onHeroTint }]}>
-        <Ionicons name="time-outline" size={16} color={colors.onHero} />
+        <Ionicons name={directional('time-outline')} size={16} color={colors.onHero} />
         <ThemedText variant="bodyMedium" color="onHero">
           {timeLabel}
         </ThemedText>
         <View style={styles.flex} />
-        <Ionicons name="arrow-forward" size={16} color={colors.onHero} />
+        <Ionicons name={directional('arrow-forward')} size={16} color={colors.onHero} />
       </View>
     </PressableScale>
   );
@@ -92,7 +93,7 @@ export function NoNextUpCard({ onExplore }: { onExplore: () => void }) {
     <Card onPress={onExplore} accessibilityLabel={t('home.exploreNearby')}>
       <View style={styles.empty}>
         <View style={[styles.emptyWell, { backgroundColor: colors.brandTint }]}>
-          <Ionicons name="calendar-outline" size={22} color={colors.brandAccent} />
+          <Ionicons name={directional('calendar-outline')} size={22} color={colors.brandAccent} />
         </View>
         <View style={styles.body}>
           <ThemedText variant="bodyMedium">{t('home.noUpcomingBookings')}</ThemedText>
@@ -100,7 +101,7 @@ export function NoNextUpCard({ onExplore }: { onExplore: () => void }) {
             <ThemedText variant="captionStrong" color="brandAccent">
               {t('home.exploreNearby')}
             </ThemedText>
-            <Ionicons name="arrow-forward" size={12} color={colors.brandAccent} />
+            <Ionicons name={directional('arrow-forward')} size={12} color={colors.brandAccent} />
           </View>
         </View>
       </View>

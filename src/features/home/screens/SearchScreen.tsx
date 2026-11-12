@@ -23,7 +23,7 @@ import { enter, fontFamily, radius, shadows, spacing, useColors, type Colors } f
 // customer-app-api-map.md §4 — no search-history or trending-terms endpoint
 // exists. "Recent" is kept in local component state for this session only,
 // and the suggested searches are a static list for v1, per the doc.
-const TRENDING_SEARCHES = ['Barbers', 'Salons', 'Spa'];
+const TRENDING_SEARCH_KEYS = ['search.suggestedBarbers', 'search.suggestedSalons', 'search.suggestedSpa'] as const;
 
 const MAX_RECENT_SEARCHES = 8;
 
@@ -174,8 +174,8 @@ export function SearchScreen() {
               {t('search.trending')}
             </ThemedText>
             <View style={styles.chipWrap}>
-              {TRENDING_SEARCHES.map((term) => (
-                <Chip key={term} label={term} onPress={() => runSearch(term)} />
+              {TRENDING_SEARCH_KEYS.map((key) => (
+                <Chip key={key} label={t(key)} onPress={() => runSearch(t(key))} />
               ))}
             </View>
           </View>

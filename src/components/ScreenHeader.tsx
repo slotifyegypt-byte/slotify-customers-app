@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '@/theme';
@@ -21,11 +22,12 @@ interface ScreenHeaderProps {
  * shared component so it never drifts screen by screen.
  */
 export function ScreenHeader({ title, subtitle, onBack, right }: ScreenHeaderProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.row}>
       <IconButton
         icon="chevron-back"
-        accessibilityLabel="Back"
+        accessibilityLabel={t('a11y.back')}
         onPress={onBack ?? (() => router.back())}
       />
       <View style={styles.textCol}>

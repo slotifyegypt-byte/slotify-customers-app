@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
+import { directional } from '@/lib/direction';
 import { spacing, useColors } from '@/theme';
 
 import { PressableScale } from './PressableScale';
@@ -32,7 +33,7 @@ export function SectionHeader({ title, onSeeAll }: SectionHeaderProps) {
           <ThemedText variant="bodyMedium" color="brandAccent">
             {t('common.seeAll')}
           </ThemedText>
-          <Ionicons name="chevron-forward" size={15} color={colors.brandAccent} />
+          <Ionicons name={directional('chevron-forward')} size={15} color={colors.brandAccent} />
         </PressableScale>
       ) : null}
     </View>

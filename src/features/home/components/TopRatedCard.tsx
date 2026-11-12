@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -26,6 +27,7 @@ export function TopRatedCard({
   badge,
   onPress,
 }: TopRatedCardProps) {
+  const { t } = useTranslation();
   const colors = useColors();
   return (
     <Card onPress={onPress} padding="none" style={styles.card} accessibilityLabel={name}>
@@ -45,7 +47,7 @@ export function TopRatedCard({
           <ThemedText variant="label">{rating.toFixed(1)}</ThemedText>
           {distanceKm != null ? (
             <ThemedText variant="captionSmall" color="textTertiary">
-              · {distanceKm.toFixed(1)} km
+              · {t('venue.km', { value: distanceKm.toFixed(1) })}
             </ThemedText>
           ) : null}
         </View>

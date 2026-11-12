@@ -77,7 +77,8 @@
     "exploreNearby": "استكشف القريب منك",
     "topRatedBadge": "الأعلى تقييمًا",
     "nearbyMapLabel": "بالقرب منك",
-    "fallbackLocation": "القاهرة، مصر"
+    "fallbackLocation": "القاهرة، مصر",
+    "percentOff": "خصم {{percent}}%"
   },
   "explore": {
     "title": "بالقرب منك",
@@ -146,7 +147,10 @@
     "resultsCount_two": "نتيجتان",
     "resultsCount_few": "{{count}} نتائج",
     "resultsCount_many": "{{count}} نتيجة",
-    "resultsCount_other": "{{count}} نتيجة"
+    "resultsCount_other": "{{count}} نتيجة",
+    "suggestedBarbers": "حلاقة",
+    "suggestedSalons": "صالونات",
+    "suggestedSpa": "سبا"
   },
   "category": {
     "nearYou": "{{category}} بالقرب منك",

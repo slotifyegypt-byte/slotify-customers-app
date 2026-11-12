@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreDetail } from '@/features/explore-search/hooks/useStoreDetail';
+import { directional } from '@/lib/direction';
 import { formatMoney } from '@/lib/money';
 import { enter, spacing, useColors } from '@/theme';
 
@@ -94,14 +95,14 @@ export function ServiceBookingConfigScreen() {
                   <View style={styles.serviceInfo}>
                     <ThemedText variant="h3">{item.name}</ThemedText>
                     <View style={styles.meta}>
-                      <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
+                      <Ionicons name={directional('time-outline')} size={14} color={colors.textTertiary} />
                       <ThemedText variant="caption" color="textSecondary">
                         {t('booking.minutes', { count: item.duration_minutes })}
                       </ThemedText>
                     </View>
                   </View>
                   <ThemedText variant="h3">{formatMoney(item.price, item.currency)}</ThemedText>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+                  <Ionicons name={directional('chevron-forward')} size={18} color={colors.textTertiary} />
                 </View>
               </Card>
             </Animated.View>

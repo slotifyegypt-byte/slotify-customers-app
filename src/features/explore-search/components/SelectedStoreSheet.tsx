@@ -26,6 +26,7 @@ interface SelectedStoreSheetProps {
 
 function Meta({ store, categoryName }: { store: NearbyStore; categoryName?: string }) {
   const colors = useColors();
+  const { t } = useTranslation();
   return (
     <View style={styles.meta}>
       {store.rating > 0 ? (
@@ -41,7 +42,7 @@ function Meta({ store, categoryName }: { store: NearbyStore; categoryName?: stri
       ) : null}
       {store.distance_km != null ? (
         <ThemedText variant="caption" color="textSecondary">
-          {store.distance_km.toFixed(1)} km
+          {t('venue.km', { value: store.distance_km.toFixed(1) })}
         </ThemedText>
       ) : null}
     </View>

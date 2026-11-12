@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps, ReactNode } from 'react';
-import { I18nManager, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { directional } from '@/lib/direction';
 import { radius, spacing, useColors, type ColorToken } from '@/theme';
 
 import { PressableScale } from './PressableScale';
@@ -74,7 +75,7 @@ export function ListRow({
       {trailing ??
         (onPress ? (
           <Ionicons
-            name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
+            name={directional('chevron-forward')}
             size={18}
             color={colors.textTertiary}
           />

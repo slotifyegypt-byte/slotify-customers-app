@@ -69,7 +69,7 @@ export function VenueCard({ store, categoryName, onPress, trailing }: VenueCardP
               ) : null}
               {store.distance_km != null ? (
                 <ThemedText variant="caption" color="textSecondary">
-                  {store.distance_km.toFixed(1)} km
+                  {t('venue.km', { value: store.distance_km.toFixed(1) })}
                 </ThemedText>
               ) : null}
               {isOpen ? <Pill label={t('explore.openNow')} tone="mint" dot /> : null}

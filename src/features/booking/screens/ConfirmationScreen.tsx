@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
 import { useStoreTeam } from '@/features/activity/hooks/useStoreTeam';
+import { directional } from '@/lib/direction';
 import { formatMoney } from '@/lib/money';
 import { formatDate, formatDateTitle, formatHour } from '@/lib/time/branchTime';
 import { enter, radius, shadows, spacing, useColors } from '@/theme';
@@ -143,7 +144,7 @@ export function ConfirmationScreen() {
             </ThemedText>
           </View>
           <View style={[styles.when, { backgroundColor: colors.onHeroTint }]}>
-            <Ionicons name="calendar-outline" size={16} color={colors.onHero} />
+            <Ionicons name={directional('calendar-outline')} size={16} color={colors.onHero} />
             <ThemedText variant="bodyMedium" color="onHero">
               {formatDateTitle(data.booking_date, data.timezone)} ·{' '}
               {formatHour(data.booking_date, data.timezone)}
@@ -267,7 +268,7 @@ function Fact({
           </ThemedText>
         ) : null}
       </View>
-      {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} /> : null}
+      {onPress ? <Ionicons name={directional('chevron-forward')} size={18} color={colors.textTertiary} /> : null}
     </View>
   );
   if (!onPress) return body;

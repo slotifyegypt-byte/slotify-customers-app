@@ -1,4 +1,5 @@
 import { fromPostgrest } from '@/lib/api/errors';
+import { localizedText } from '@/lib/i18n/localized';
 import { publicUrl } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 
@@ -7,13 +8,13 @@ import type { HomePageOffer, StoreCategory } from './schemas';
 export async function getCategories(): Promise<StoreCategory[]> {
   const { data, error } = await supabase
     .from('categories')
-    .select('id, slug, name, icon_path')
+    .select('id, slug, name, name_i18n, icon_path')
     .order('sort_order');
   if (error) throw fromPostgrest(error);
   return (data ?? []).map((row) => ({
     id: row.id,
     slug: row.slug,
-    name: row.name,
+    name: localizedText(row.name, row.name_i18n),
     description: null,
   }));
 }
