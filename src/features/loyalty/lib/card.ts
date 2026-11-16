@@ -11,6 +11,19 @@ export function stampCells(stamps: number, required: number): ('filled' | 'empty
   return Array.from({ length: total }, (_, i) => (i < filled ? 'filled' : 'empty'));
 }
 
+/**
+ * The stamps a card should show. The database turns a full card into a ready reward and starts the next card at 0, but
+ * a customer who has just earned a reward should see the full card, not an empty one: 0 with a reward waiting is drawn
+ * as full, and the next stamp then shows as 1.
+ */
+export function displayStamps(card: {
+  stamps: number;
+  stampsRequired: number;
+  rewardsAvailable: number;
+}): number {
+  return card.rewardsAvailable > 0 && card.stamps === 0 ? card.stampsRequired : card.stamps;
+}
+
 /** One row up to 5 stamps, then two balanced rows. */
 export function stampColumns(required: number): number {
   return required <= 5 ? Math.max(1, required) : Math.ceil(required / 2);

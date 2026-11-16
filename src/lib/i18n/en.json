@@ -586,6 +586,10 @@
       "allowCamera": "Allow the camera to scan the QR code.",
       "allowAction": "Allow camera",
       "cameraOff": "Camera access is off. Turn it on in Settings, or type the code instead."
-    }
+    },
+    "claimHint": "Show your QR code to the team to claim it.",
+    "factReward": "Reward",
+    "factReady": "Ready to claim",
+    "factClaimed": "Claimed"
   }
 }

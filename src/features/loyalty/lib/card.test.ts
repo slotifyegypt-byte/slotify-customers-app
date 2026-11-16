@@ -1,4 +1,4 @@
-import { formatCode, inkOn, stampCells, stampColumns } from './card';
+import { displayStamps, formatCode, inkOn, stampCells, stampColumns } from './card';
 
 describe('formatCode', () => {
   it('shows ten characters as two groups of five, anything else unchanged', () => {
@@ -26,5 +26,21 @@ describe('inkOn', () => {
     expect(inkOn('#0EA5A4')).toBe('#18181B');
     expect(inkOn('#D6336C')).toBe('#FFFFFF');
     expect(inkOn('nonsense')).toBe('#FFFFFF');
+  });
+});
+
+describe('displayStamps', () => {
+  const base = { stampsRequired: 5 };
+  it('shows the stamps as they are', () => {
+    expect(displayStamps({ ...base, stamps: 3, rewardsAvailable: 0 })).toBe(3);
+  });
+  it('shows a full card when a reward is waiting and the next card has not started', () => {
+    expect(displayStamps({ ...base, stamps: 0, rewardsAvailable: 1 })).toBe(5);
+  });
+  it('shows 1 once the next stamp lands, even with the reward still waiting', () => {
+    expect(displayStamps({ ...base, stamps: 1, rewardsAvailable: 1 })).toBe(1);
+  });
+  it('shows an empty card for a brand new member', () => {
+    expect(displayStamps({ ...base, stamps: 0, rewardsAvailable: 0 })).toBe(0);
   });
 });

@@ -17,13 +17,16 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
 }));
 jest.mock('@/lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...a) } }));
-jest.mock('@/lib/api/functions', () => ({ callFunction: (...a: unknown[]) => mockCallFunction(...a) }));
+jest.mock('@/lib/api/functions', () => ({
+  callFunction: (...a: unknown[]) => mockCallFunction(...a),
+}));
 jest.mock('@/lib/config', () => ({
   appConfig: { supabaseUrl: 'https://abc.supabase.co', supabasePublishableKey: 'k' },
   isDev: true,
 }));
 jest.mock('@/lib/theme/themePreferenceStore', () => ({
-  useThemePreferenceStore: (select: (state: { preference: string }) => unknown) => select({ preference: 'light' }),
+  useThemePreferenceStore: (select: (state: { preference: string }) => unknown) =>
+    select({ preference: 'light' }),
 }));
 
 const raw = (over: Record<string, unknown> = {}) => ({
@@ -45,7 +48,9 @@ const raw = (over: Record<string, unknown> = {}) => ({
 });
 
 const wrap = (ui: React.ReactElement) => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
   return render(
     <ThemeProvider>
       <QueryClientProvider client={client}>{ui}</QueryClientProvider>
@@ -62,11 +67,17 @@ beforeEach(() => {
 
 describe('LoyaltyCardsScreen', () => {
   it('lists the cards and opens one', async () => {
-    mockRpc.mockResolvedValue({ data: [raw(), raw({ card_id: 'c2', business_name: 'Zen Spa', code: 'ZZZZZZZZZZ' })], error: null });
+    mockRpc.mockResolvedValue({
+      data: [raw(), raw({ card_id: 'c2', business_name: 'Zen Spa', code: 'ZZZZZZZZZZ' })],
+      error: null,
+    });
     await wrap(<LoyaltyCardsScreen />);
     expect(await screen.findByText('Zen Spa')).toBeOnTheScreen();
     await userEvent.setup().press(screen.getByRole('button', { name: /Glow Studio loyalty card/ }));
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/(tabs)/profile/loyalty-card', params: { id: 'c1' } });
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/(tabs)/profile/loyalty-card',
+      params: { id: 'c1' },
+    });
   });
 
   it('explains how to get a first card when there is none: scan the QR at the counter', async () => {
@@ -87,7 +98,10 @@ describe('LoyaltyCardsScreen', () => {
   });
 
   it('offers a retry when the cards cannot be loaded', async () => {
-    mockRpc.mockResolvedValueOnce({ data: null, error: { code: 'PT500', message: 'boom', details: 'x' } });
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'PT500', message: 'boom', details: 'x' },
+    });
     await wrap(<LoyaltyCardsScreen />);
     expect(await screen.findByText("We couldn't load your cards.")).toBeOnTheScreen();
     mockRpc.mockResolvedValue({ data: [raw()], error: null });
@@ -99,14 +113,24 @@ describe('LoyaltyCardsScreen', () => {
 describe('LoyaltyCardScreen', () => {
   it('shows the card, the code to show at the counter and how it works', async () => {
     mockParams.id = 'c1';
-    mockRpc.mockResolvedValue({ data: [raw({ rewards_available: 1, rewards_redeemed: 2 })], error: null });
+    mockRpc.mockResolvedValue({
+      data: [raw({ rewards_available: 1, rewards_redeemed: 2 })],
+      error: null,
+    });
     await wrap(<LoyaltyCardScreen />);
     expect(await screen.findByText('Show this code at the counter')).toBeOnTheScreen();
     expect(screen.getByText('ABCDE-FGHJK')).toBeOnTheScreen();
     expect(screen.getByLabelText('QR code for card ABCDE-FGHJK')).toBeOnTheScreen();
-    expect(screen.getByText('Rewards ready: 1')).toBeOnTheScreen();
-    expect(screen.getByText('Claimed so far: 2')).toBeOnTheScreen();
-    expect(screen.getByText('You earn stamps on your visits. When the card is full you get Free blow-dry.')).toBeOnTheScreen();
+    // The reward is shown as a banner, with how to claim it, and as the same facts the wallet pass carries.
+    expect(screen.getAllByText('Reward ready').length).toBeGreaterThan(0);
+    expect(screen.getByText('Show your QR code to the team to claim it.')).toBeOnTheScreen();
+    expect(screen.getByText('Ready to claim')).toBeOnTheScreen();
+    expect(screen.getByText('Claimed')).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'You earn stamps on your visits. When the card is full you get Free blow-dry.',
+      ),
+    ).toBeOnTheScreen();
     expect(screen.getByText('Up to 60 minutes')).toBeOnTheScreen();
   });
 
@@ -121,7 +145,9 @@ describe('LoyaltyCardScreen', () => {
     mockParams.id = 'c1';
     mockRpc.mockResolvedValue({ data: [raw({ is_active: false })], error: null });
     await wrap(<LoyaltyCardScreen />);
-    expect(await screen.findByText('This program is paused. Your stamps and rewards are safe.')).toBeOnTheScreen();
+    expect(
+      await screen.findByText('This program is paused. Your stamps and rewards are safe.'),
+    ).toBeOnTheScreen();
   });
 
   it('handles a card that no longer exists', async () => {

@@ -8,7 +8,8 @@ import type { LoyaltyCard } from '../api/schemas';
 import { LoyaltyCardView } from './LoyaltyCardView';
 
 jest.mock('@/lib/theme/themePreferenceStore', () => ({
-  useThemePreferenceStore: (select: (state: { preference: string }) => unknown) => select({ preference: 'light' }),
+  useThemePreferenceStore: (select: (state: { preference: string }) => unknown) =>
+    select({ preference: 'light' }),
 }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
 
@@ -84,9 +85,44 @@ describe('LoyaltyCardView', () => {
     [0, 2],
     [20, 20],
     [5, 5],
-  ])('draws %i filled of %i stamp circles (decorative: hidden from screen readers, which hear the progress in words)', async (stamps, required) => {
-    await view({ ...CARD, stamps, stampsRequired: required });
-    expect(screen.queryAllByTestId('stamp-filled', { includeHiddenElements: true })).toHaveLength(stamps);
-    expect(screen.queryAllByTestId('stamp-empty', { includeHiddenElements: true })).toHaveLength(required - stamps);
+  ])(
+    'draws %i filled of %i stamp circles (decorative: hidden from screen readers, which hear the progress in words)',
+    async (stamps, required) => {
+      await view({ ...CARD, stamps, stampsRequired: required });
+      expect(screen.queryAllByTestId('stamp-filled', { includeHiddenElements: true })).toHaveLength(
+        stamps,
+      );
+      expect(screen.queryAllByTestId('stamp-empty', { includeHiddenElements: true })).toHaveLength(
+        required - stamps,
+      );
+    },
+  );
+
+  it('draws a full card, not an empty one, while a reward is waiting', async () => {
+    await view({ ...CARD, stamps: 0, stampsRequired: 5, rewardsAvailable: 1 });
+    expect(screen.queryAllByTestId('stamp-filled', { includeHiddenElements: true })).toHaveLength(
+      5,
+    );
+    expect(screen.getByText('5 of 5 stamps')).toBeOnTheScreen();
+  });
+
+  it('shows 1 stamp once the next one lands, with the reward still waiting', async () => {
+    await view({ ...CARD, stamps: 1, stampsRequired: 5, rewardsAvailable: 1 });
+    expect(screen.queryAllByTestId('stamp-filled', { includeHiddenElements: true })).toHaveLength(
+      1,
+    );
+    expect(screen.getByText('1 of 5 stamps')).toBeOnTheScreen();
+  });
+
+  it('goes from the full card to 1 stamp when the next stamp arrives', async () => {
+    const screenView = await view({ ...CARD, stamps: 0, stampsRequired: 5, rewardsAvailable: 1 });
+    await screenView.rerender(
+      <ThemeProvider>
+        <LoyaltyCardView card={{ ...CARD, stamps: 1, stampsRequired: 5, rewardsAvailable: 1 }} />
+      </ThemeProvider>,
+    );
+    expect(screen.queryAllByTestId('stamp-filled', { includeHiddenElements: true })).toHaveLength(
+      1,
+    );
   });
 });

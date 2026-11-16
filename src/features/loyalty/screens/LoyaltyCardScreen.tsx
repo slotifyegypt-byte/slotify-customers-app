@@ -12,6 +12,7 @@ import { enter, spacing } from '@/theme';
 
 import { LoyaltyCardView } from '../components/LoyaltyCardView';
 import { QrCode } from '../components/QrCode';
+import { RewardPanel } from '../components/RewardPanel';
 import { WalletButtons } from '../components/WalletButtons';
 import { useMyLoyaltyCards } from '../hooks/useMyLoyaltyCards';
 import { formatCode } from '../lib/card';
@@ -27,7 +28,11 @@ export function LoyaltyCardScreen() {
       <Screen edges={['top']}>
         <ScreenHeader title={t('loyalty.title')} />
         {cards.isLoading ? null : (
-          <EmptyState icon="ribbon-outline" title={t('loyalty.notFoundTitle')} body={t('loyalty.notFoundBody')} />
+          <EmptyState
+            icon="ribbon-outline"
+            title={t('loyalty.notFoundTitle')}
+            body={t('loyalty.notFoundBody')}
+          />
         )}
       </Screen>
     );
@@ -66,16 +71,7 @@ export function LoyaltyCardScreen() {
           </Animated.View>
 
           <Animated.View entering={enter(2)} style={{ gap: spacing.xs }}>
-            <ThemedText variant="bodyMedium">
-              {card.rewardsAvailable > 0
-                ? t('loyalty.rewardsReady', { n: card.rewardsAvailable })
-                : t('loyalty.collect', { need: card.stampsRequired - card.stamps, reward: card.rewardTitle })}
-            </ThemedText>
-            {card.rewardsRedeemed > 0 ? (
-              <ThemedText variant="caption" color="textTertiary">
-                {t('loyalty.rewardsClaimed', { n: card.rewardsRedeemed })}
-              </ThemedText>
-            ) : null}
+            <RewardPanel card={card} />
             {!card.isActive ? (
               <ThemedText variant="caption" color="warning">
                 {t('loyalty.paused')}

@@ -23,6 +23,7 @@ export const useReducedMotion = () => false;
 export const withTiming = <T,>(value: T) => value;
 export const withSpring = <T,>(value: T) => value;
 export const withDelay = <T,>(_ms: number, value: T) => value;
+export const withSequence = <T,>(...values: T[]) => values[values.length - 1] as T;
 export const withRepeat = <T,>(value: T) => value;
 export const cancelAnimation = () => undefined;
 export const Easing = {
@@ -32,6 +33,8 @@ export const Easing = {
   linear: 0,
   cubic: 0,
   quad: 0,
+  back: (f: unknown) => f,
+  bezier: () => 0,
 };
 export const interpolate = (value: number) => value;
 export const createAnimatedComponent = <T,>(component: T) => component;
