@@ -9,9 +9,166 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      advance_installments: {
+        Row: {
+          advance_id: string;
+          amount: number;
+          due_month: string;
+          employee_id: string;
+          id: string;
+          run_id: string | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          advance_id: string;
+          amount: number;
+          due_month: string;
+          employee_id: string;
+          id?: string;
+          run_id?: string | null;
+          status?: string;
+        };
+        Update: {
+          advance_id?: string;
+          amount?: number;
+          due_month?: string;
+          employee_id?: string;
+          id?: string;
+          run_id?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "advance_installments_advance_id_fkey";
+            columns: ["advance_id"];
+            isOneToOne: false;
+            referencedRelation: "employee_advances";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "advance_installments_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "advance_installments_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "payroll_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      assistant_messages: {
+        Row: {
+          blocks: NonNullable<Json>;
+          content: string;
+          created_at: string;
+          id: string;
+          role: Database["public"]["Enums"]["assistant_role"];
+          seq: number;
+          thread_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          blocks?: NonNullable<Json>;
+          content: string;
+          created_at?: string;
+          id?: string;
+          role: Database["public"]["Enums"]["assistant_role"];
+          seq?: never;
+          thread_id: string;
+        };
+        Update: {
+          blocks?: NonNullable<Json>;
+          content?: string;
+          created_at?: string;
+          id?: string;
+          role?: Database["public"]["Enums"]["assistant_role"];
+          seq?: never;
+          thread_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assistant_messages_thread_id_fkey";
+            columns: ["thread_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_threads";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      assistant_threads: {
+        Row: {
+          branch_id: string;
+          created_at: string;
+          employee_id: string;
+          id: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          branch_id: string;
+          created_at?: string;
+          employee_id: string;
+          id?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          branch_id?: string;
+          created_at?: string;
+          employee_id?: string;
+          id?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assistant_threads_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assistant_threads_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assistant_threads_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assistant_threads_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assistant_threads_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       attendance_events: {
         Row: {
           at: string;
+          auto_closed: boolean;
           branch_id: string;
           business_id: string;
           created_at: string;
@@ -25,6 +182,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           at?: string;
+          auto_closed?: boolean;
           branch_id: string;
           business_id: string;
           created_at?: string;
@@ -37,6 +195,7 @@ export type Database = {
         };
         Update: {
           at?: string;
+          auto_closed?: boolean;
           branch_id?: string;
           business_id?: string;
           created_at?: string;
@@ -89,6 +248,110 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "employees";
             referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
+      automation_runs: {
+        Row: {
+          automation_key: string;
+          business_id: string;
+          created_at: string;
+          customer_id: string;
+          dedupe_key: string;
+          id: string;
+          notification_id: string | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          automation_key: string;
+          business_id: string;
+          created_at?: string;
+          customer_id: string;
+          dedupe_key: string;
+          id?: string;
+          notification_id?: string | null;
+          status: string;
+        };
+        Update: {
+          automation_key?: string;
+          business_id?: string;
+          created_at?: string;
+          customer_id?: string;
+          dedupe_key?: string;
+          id?: string;
+          notification_id?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "automation_runs_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "automation_runs_notification_id_fkey";
+            columns: ["notification_id"];
+            isOneToOne: false;
+            referencedRelation: "notifications";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      automations: {
+        Row: {
+          body_ar: string;
+          body_en: string;
+          business_id: string;
+          channel: string;
+          delay_hours: number;
+          enabled: boolean;
+          key: string;
+          title_ar: string;
+          title_en: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body_ar: string;
+          body_en: string;
+          business_id: string;
+          channel?: string;
+          delay_hours?: number;
+          enabled?: boolean;
+          key: string;
+          title_ar: string;
+          title_en: string;
+          updated_at?: string;
+        };
+        Update: {
+          body_ar?: string;
+          body_en?: string;
+          business_id?: string;
+          channel?: string;
+          delay_hours?: number;
+          enabled?: boolean;
+          key?: string;
+          title_ar?: string;
+          title_en?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "automations_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -769,11 +1032,17 @@ export type Database = {
           audience_count: number;
           body: string;
           business_id: string;
+          channel: string;
           created_at: string;
           created_by: string | null;
+          error: string | null;
           id: string;
+          scheduled_at: string | null;
           segment_id: string | null;
           segment_name: string;
+          sent_at: string | null;
+          status: string;
+          template_id: string | null;
           title: string;
         };
         ComputedFields: never;
@@ -781,22 +1050,34 @@ export type Database = {
           audience_count: number;
           body: string;
           business_id: string;
+          channel?: string;
           created_at?: string;
           created_by?: string | null;
+          error?: string | null;
           id?: string;
+          scheduled_at?: string | null;
           segment_id?: string | null;
           segment_name: string;
+          sent_at?: string | null;
+          status?: string;
+          template_id?: string | null;
           title: string;
         };
         Update: {
           audience_count?: number;
           body?: string;
           business_id?: string;
+          channel?: string;
           created_at?: string;
           created_by?: string | null;
+          error?: string | null;
           id?: string;
+          scheduled_at?: string | null;
           segment_id?: string | null;
           segment_name?: string;
+          sent_at?: string | null;
+          status?: string;
+          template_id?: string | null;
           title?: string;
         };
         Relationships: [
@@ -819,6 +1100,13 @@ export type Database = {
             columns: ["segment_id"];
             isOneToOne: false;
             referencedRelation: "segments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "broadcasts_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "message_templates";
             referencedColumns: ["id"];
           },
         ];
@@ -860,6 +1148,77 @@ export type Database = {
           },
         ];
       };
+      business_clients: {
+        Row: {
+          acquired_at: string;
+          alert: string | null;
+          anonymised_at: string | null;
+          business_id: string;
+          created_at: string;
+          custom: NonNullable<Json>;
+          customer_id: string;
+          first_source: string;
+          language: string | null;
+          preferred_employee_id: string | null;
+          preferred_staff_gender: string | null;
+          tags: string[];
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          acquired_at?: string;
+          alert?: string | null;
+          anonymised_at?: string | null;
+          business_id: string;
+          created_at?: string;
+          custom?: NonNullable<Json>;
+          customer_id: string;
+          first_source: string;
+          language?: string | null;
+          preferred_employee_id?: string | null;
+          preferred_staff_gender?: string | null;
+          tags?: string[];
+          updated_at?: string;
+        };
+        Update: {
+          acquired_at?: string;
+          alert?: string | null;
+          anonymised_at?: string | null;
+          business_id?: string;
+          created_at?: string;
+          custom?: NonNullable<Json>;
+          customer_id?: string;
+          first_source?: string;
+          language?: string | null;
+          preferred_employee_id?: string | null;
+          preferred_staff_gender?: string | null;
+          tags?: string[];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "business_clients_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "business_clients_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "business_clients_preferred_employee_id_fkey";
+            columns: ["preferred_employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       businesses: {
         Row: {
           closed_at: string | null;
@@ -897,16 +1256,131 @@ export type Database = {
         };
         Relationships: [];
       };
+      campaign_recipients: {
+        Row: {
+          broadcast_id: string;
+          channel: string;
+          created_at: string;
+          customer_id: string;
+          id: string;
+          notification_id: string | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          broadcast_id: string;
+          channel: string;
+          created_at?: string;
+          customer_id: string;
+          id?: string;
+          notification_id?: string | null;
+          status: string;
+        };
+        Update: {
+          broadcast_id?: string;
+          channel?: string;
+          created_at?: string;
+          customer_id?: string;
+          id?: string;
+          notification_id?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "campaign_recipients_broadcast_id_fkey";
+            columns: ["broadcast_id"];
+            isOneToOne: false;
+            referencedRelation: "broadcasts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "campaign_recipients_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "campaign_recipients_notification_id_fkey";
+            columns: ["notification_id"];
+            isOneToOne: false;
+            referencedRelation: "notifications";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      candidates: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          email: string | null;
+          hired_employee_id: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          opening_id: string;
+          phone: string | null;
+          stage: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          email?: string | null;
+          hired_employee_id?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          opening_id: string;
+          phone?: string | null;
+          stage?: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          email?: string | null;
+          hired_employee_id?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          opening_id?: string;
+          phone?: string | null;
+          stage?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "candidates_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "candidates_hired_employee_id_fkey";
+            columns: ["hired_employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "candidates_opening_id_fkey";
+            columns: ["opening_id"];
+            isOneToOne: false;
+            referencedRelation: "job_openings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       categories: {
         Row: {
           created_at: string;
           description: string | null;
+          description_i18n: NonNullable<Json>;
           icon_path: string | null;
           id: string;
-          name_i18n: Json;
-          description_i18n: Json;
           is_active: boolean;
           name: string;
+          name_i18n: NonNullable<Json>;
           slug: string;
           sort_order: number;
           updated_at: string;
@@ -915,12 +1389,12 @@ export type Database = {
         Insert: {
           created_at?: string;
           description?: string | null;
+          description_i18n?: NonNullable<Json>;
           icon_path?: string | null;
           id?: string;
-          name_i18n?: Json;
-          description_i18n?: Json;
           is_active?: boolean;
           name: string;
+          name_i18n?: NonNullable<Json>;
           slug: string;
           sort_order?: number;
           updated_at?: string;
@@ -928,17 +1402,635 @@ export type Database = {
         Update: {
           created_at?: string;
           description?: string | null;
+          description_i18n?: NonNullable<Json>;
           icon_path?: string | null;
           id?: string;
-          name_i18n?: Json;
-          description_i18n?: Json;
           is_active?: boolean;
           name?: string;
+          name_i18n?: NonNullable<Json>;
           slug?: string;
           sort_order?: number;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      client_consents: {
+        Row: {
+          business_id: string;
+          channel: string;
+          created_at: string;
+          customer_id: string;
+          granted: boolean;
+          id: string;
+          recorded_by: string | null;
+          source: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          channel: string;
+          created_at?: string;
+          customer_id: string;
+          granted: boolean;
+          id?: string;
+          recorded_by?: string | null;
+          source: string;
+        };
+        Update: {
+          business_id?: string;
+          channel?: string;
+          created_at?: string;
+          customer_id?: string;
+          granted?: boolean;
+          id?: string;
+          recorded_by?: string | null;
+          source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_consents_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_consents_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_consents_recorded_by_fkey";
+            columns: ["recorded_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_events: {
+        Row: {
+          branch_id: string | null;
+          business_id: string;
+          customer_id: string;
+          data: NonNullable<Json>;
+          id: string;
+          kind: string;
+          occurred_at: string;
+          ref_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          branch_id?: string | null;
+          business_id: string;
+          customer_id: string;
+          data?: NonNullable<Json>;
+          id?: string;
+          kind: string;
+          occurred_at?: string;
+          ref_id?: string | null;
+        };
+        Update: {
+          branch_id?: string | null;
+          business_id?: string;
+          customer_id?: string;
+          data?: NonNullable<Json>;
+          id?: string;
+          kind?: string;
+          occurred_at?: string;
+          ref_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_events_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_events_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_field_defs: {
+        Row: {
+          business_id: string;
+          id: string;
+          key: string;
+          label: string;
+          label_ar: string | null;
+          options: string[];
+          position: number;
+          template: string | null;
+          type: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          id?: string;
+          key: string;
+          label: string;
+          label_ar?: string | null;
+          options?: string[];
+          position?: number;
+          template?: string | null;
+          type: string;
+        };
+        Update: {
+          business_id?: string;
+          id?: string;
+          key?: string;
+          label?: string;
+          label_ar?: string | null;
+          options?: string[];
+          position?: number;
+          template?: string | null;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_field_defs_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_ledger: {
+        Row: {
+          booking_id: string | null;
+          branch_id: string | null;
+          business_id: string;
+          cash_amount: number;
+          created_at: string;
+          created_by: string | null;
+          credit_delta: number;
+          customer_id: string;
+          id: string;
+          kind: string;
+          meta: NonNullable<Json>;
+          method: string | null;
+          note: string | null;
+          ref_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          booking_id?: string | null;
+          branch_id?: string | null;
+          business_id: string;
+          cash_amount?: number;
+          created_at?: string;
+          created_by?: string | null;
+          credit_delta?: number;
+          customer_id: string;
+          id?: string;
+          kind: string;
+          meta?: NonNullable<Json>;
+          method?: string | null;
+          note?: string | null;
+          ref_id?: string | null;
+        };
+        Update: {
+          booking_id?: string | null;
+          branch_id?: string | null;
+          business_id?: string;
+          cash_amount?: number;
+          created_at?: string;
+          created_by?: string | null;
+          credit_delta?: number;
+          customer_id?: string;
+          id?: string;
+          kind?: string;
+          meta?: NonNullable<Json>;
+          method?: string | null;
+          note?: string | null;
+          ref_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_ledger_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_ledger_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_ledger_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_ledger_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_ledger_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_ledger_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_ledger_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_ledger_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_notes: {
+        Row: {
+          author_id: string | null;
+          body: string;
+          business_id: string;
+          created_at: string;
+          customer_id: string;
+          id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id?: string | null;
+          body: string;
+          business_id: string;
+          created_at?: string;
+          customer_id: string;
+          id?: string;
+        };
+        Update: {
+          author_id?: string | null;
+          body?: string;
+          business_id?: string;
+          created_at?: string;
+          customer_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_notes_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_notes_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_package_uses: {
+        Row: {
+          booking_id: string | null;
+          client_package_id: string;
+          id: string;
+          note: string | null;
+          used_at: string;
+          used_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          booking_id?: string | null;
+          client_package_id: string;
+          id?: string;
+          note?: string | null;
+          used_at?: string;
+          used_by?: string | null;
+        };
+        Update: {
+          booking_id?: string | null;
+          client_package_id?: string;
+          id?: string;
+          note?: string | null;
+          used_at?: string;
+          used_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_package_uses_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_package_uses_client_package_id_fkey";
+            columns: ["client_package_id"];
+            isOneToOne: false;
+            referencedRelation: "client_packages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_package_uses_used_by_fkey";
+            columns: ["used_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_packages: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          customer_id: string;
+          expires_at: string | null;
+          id: string;
+          name: string;
+          package_id: string | null;
+          price_paid: number;
+          sessions_remaining: number;
+          sessions_total: number;
+          sold_by: string | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          customer_id: string;
+          expires_at?: string | null;
+          id?: string;
+          name: string;
+          package_id?: string | null;
+          price_paid: number;
+          sessions_remaining: number;
+          sessions_total: number;
+          sold_by?: string | null;
+          status?: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          customer_id?: string;
+          expires_at?: string | null;
+          id?: string;
+          name?: string;
+          package_id?: string | null;
+          price_paid?: number;
+          sessions_remaining?: number;
+          sessions_total?: number;
+          sold_by?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_packages_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_packages_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_packages_package_id_fkey";
+            columns: ["package_id"];
+            isOneToOne: false;
+            referencedRelation: "packages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_packages_sold_by_fkey";
+            columns: ["sold_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_referrals: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          referred_customer_id: string;
+          referrer_customer_id: string;
+          rewarded_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          referred_customer_id: string;
+          referrer_customer_id: string;
+          rewarded_at?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          referred_customer_id?: string;
+          referrer_customer_id?: string;
+          rewarded_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_referrals_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_referrals_referred_customer_id_fkey";
+            columns: ["referred_customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_referrals_referrer_customer_id_fkey";
+            columns: ["referrer_customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_tasks: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          customer_id: string;
+          done_at: string | null;
+          done_by: string | null;
+          due_at: string | null;
+          id: string;
+          kind: string;
+          ref_id: string | null;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          customer_id: string;
+          done_at?: string | null;
+          done_by?: string | null;
+          due_at?: string | null;
+          id?: string;
+          kind: string;
+          ref_id?: string | null;
+          title: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          customer_id?: string;
+          done_at?: string | null;
+          done_by?: string | null;
+          due_at?: string | null;
+          id?: string;
+          kind?: string;
+          ref_id?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_tasks_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_tasks_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_tasks_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_tasks_done_by_fkey";
+            columns: ["done_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      commission_clawbacks: {
+        Row: {
+          amount: number;
+          employee_id: string;
+          item_id: string;
+          run_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          employee_id: string;
+          item_id: string;
+          run_id: string;
+        };
+        Update: {
+          amount?: number;
+          employee_id?: string;
+          item_id?: string;
+          run_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "commission_clawbacks_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "commission_clawbacks_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "payroll_runs";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       commission_entries: {
         Row: {
@@ -1004,6 +2096,49 @@ export type Database = {
             columns: ["statement_id"];
             isOneToOne: false;
             referencedRelation: "commission_statements";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      commission_rules: {
+        Row: {
+          business_id: string;
+          category_id: string | null;
+          created_at: string;
+          id: string;
+          rate: number;
+          service_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          category_id?: string | null;
+          created_at?: string;
+          id?: string;
+          rate: number;
+          service_id?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          category_id?: string | null;
+          created_at?: string;
+          id?: string;
+          rate?: number;
+          service_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "commission_rules_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "commission_rules_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
             referencedColumns: ["id"];
           },
         ];
@@ -1078,6 +2213,225 @@ export type Database = {
             foreignKeyName: "commission_statements_business_id_fkey";
             columns: ["business_id"];
             isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      commission_tiers: {
+        Row: {
+          business_id: string;
+          id: string;
+          min_revenue: number;
+          rate: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          id?: string;
+          min_revenue: number;
+          rate: number;
+        };
+        Update: {
+          business_id?: string;
+          id?: string;
+          min_revenue?: number;
+          rate?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "commission_tiers_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      company_holidays: {
+        Row: {
+          branch_id: string | null;
+          business_id: string;
+          created_at: string;
+          date: string;
+          id: string;
+          name: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          branch_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          date: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          branch_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          date?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "company_holidays_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_holidays_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_holidays_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_holidays_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_holidays_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      crm_audit_log: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          business_id: string;
+          created_at: string;
+          customer_id: string | null;
+          details: NonNullable<Json>;
+          id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          customer_id?: string | null;
+          details?: NonNullable<Json>;
+          id?: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          customer_id?: string | null;
+          details?: NonNullable<Json>;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "crm_audit_log_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "crm_audit_log_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      crm_category_intervals: {
+        Row: {
+          business_id: string;
+          category_id: string;
+          interval_days: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          category_id: string;
+          interval_days: number;
+        };
+        Update: {
+          business_id?: string;
+          category_id?: string;
+          interval_days?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "crm_category_intervals_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "crm_category_intervals_category_id_business_id_fkey";
+            columns: ["category_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "service_categories";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
+      crm_settings: {
+        Row: {
+          at_risk_factor: number;
+          business_id: string;
+          default_interval_days: number;
+          lapsed_days: number;
+          lost_days: number;
+          loyal_visits: number;
+          rebook_window_days: number;
+          updated_at: string;
+          vip_spend: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          at_risk_factor?: number;
+          business_id: string;
+          default_interval_days?: number;
+          lapsed_days?: number;
+          lost_days?: number;
+          loyal_visits?: number;
+          rebook_window_days?: number;
+          updated_at?: string;
+          vip_spend?: number;
+        };
+        Update: {
+          at_risk_factor?: number;
+          business_id?: string;
+          default_interval_days?: number;
+          lapsed_days?: number;
+          lost_days?: number;
+          loyal_visits?: number;
+          rebook_window_days?: number;
+          updated_at?: string;
+          vip_spend?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "crm_settings_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: true;
             referencedRelation: "businesses";
             referencedColumns: ["id"];
           },
@@ -1161,6 +2515,249 @@ export type Database = {
           },
         ];
       };
+      discount_offers: {
+        Row: {
+          active: boolean;
+          business_id: string;
+          code: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          max_uses: number | null;
+          min_spend: number;
+          name: string;
+          per_client_limit: number | null;
+          segment_id: string | null;
+          service_id: string | null;
+          valid_from: string | null;
+          valid_to: string | null;
+          value: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          business_id: string;
+          code: string;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          max_uses?: number | null;
+          min_spend?: number;
+          name: string;
+          per_client_limit?: number | null;
+          segment_id?: string | null;
+          service_id?: string | null;
+          valid_from?: string | null;
+          valid_to?: string | null;
+          value: number;
+        };
+        Update: {
+          active?: boolean;
+          business_id?: string;
+          code?: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          max_uses?: number | null;
+          min_spend?: number;
+          name?: string;
+          per_client_limit?: number | null;
+          segment_id?: string | null;
+          service_id?: string | null;
+          valid_from?: string | null;
+          valid_to?: string | null;
+          value?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "discount_offers_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_offers_segment_id_fkey";
+            columns: ["segment_id"];
+            isOneToOne: false;
+            referencedRelation: "segments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_offers_service_id_business_id_fkey";
+            columns: ["service_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
+      discount_redemptions: {
+        Row: {
+          amount_off: number;
+          booking_id: string | null;
+          business_id: string;
+          created_at: string;
+          customer_id: string;
+          discount_id: string;
+          id: string;
+          redeemed_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_off: number;
+          booking_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          customer_id: string;
+          discount_id: string;
+          id?: string;
+          redeemed_by?: string | null;
+        };
+        Update: {
+          amount_off?: number;
+          booking_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          customer_id?: string;
+          discount_id?: string;
+          id?: string;
+          redeemed_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "discount_redemptions_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_redemptions_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_redemptions_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_redemptions_discount_id_fkey";
+            columns: ["discount_id"];
+            isOneToOne: false;
+            referencedRelation: "discount_offers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_redemptions_redeemed_by_fkey";
+            columns: ["redeemed_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      document_templates: {
+        Row: {
+          body_ar: string;
+          body_en: string;
+          key: string;
+          name_ar: string;
+          name_en: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body_ar: string;
+          body_en: string;
+          key: string;
+          name_ar: string;
+          name_en: string;
+        };
+        Update: {
+          body_ar?: string;
+          body_en?: string;
+          key?: string;
+          name_ar?: string;
+          name_en?: string;
+        };
+        Relationships: [];
+      };
+      employee_advances: {
+        Row: {
+          amount: number;
+          business_id: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          decision_note: string | null;
+          employee_id: string;
+          first_month: string;
+          id: string;
+          installments: number;
+          reason: string | null;
+          requested_by: string | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          business_id: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          decision_note?: string | null;
+          employee_id: string;
+          first_month: string;
+          id?: string;
+          installments: number;
+          reason?: string | null;
+          requested_by?: string | null;
+          status?: string;
+        };
+        Update: {
+          amount?: number;
+          business_id?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          decision_note?: string | null;
+          employee_id?: string;
+          first_month?: string;
+          id?: string;
+          installments?: number;
+          reason?: string | null;
+          requested_by?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "employee_advances_decided_by_fkey";
+            columns: ["decided_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "employee_advances_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+          {
+            foreignKeyName: "employee_advances_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       employee_branches: {
         Row: {
           branch_id: string;
@@ -1222,11 +2819,50 @@ export type Database = {
           },
         ];
       };
+      employee_checklists: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          employee_id: string;
+          id: string;
+          items: NonNullable<Json>;
+          kind: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          employee_id: string;
+          id?: string;
+          items?: NonNullable<Json>;
+          kind: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          employee_id?: string;
+          id?: string;
+          items?: NonNullable<Json>;
+          kind?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "employee_checklists_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
       employee_documents: {
         Row: {
           business_id: string;
           category: Database["public"]["Enums"]["document_category"];
           created_at: string;
+          delete_reason: string | null;
+          deleted_at: string | null;
+          deleted_by: string | null;
           employee_id: string | null;
           expires_on: string | null;
           file_path: string;
@@ -1235,6 +2871,7 @@ export type Database = {
           sign_status: Database["public"]["Enums"]["document_sign_status"];
           signature_requested_at: string | null;
           signed_at: string | null;
+          source: string;
           updated_at: string;
           uploaded_by: string | null;
         };
@@ -1243,6 +2880,9 @@ export type Database = {
           business_id: string;
           category: Database["public"]["Enums"]["document_category"];
           created_at?: string;
+          delete_reason?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           employee_id?: string | null;
           expires_on?: string | null;
           file_path: string;
@@ -1251,6 +2891,7 @@ export type Database = {
           sign_status?: Database["public"]["Enums"]["document_sign_status"];
           signature_requested_at?: string | null;
           signed_at?: string | null;
+          source?: string;
           updated_at?: string;
           uploaded_by?: string | null;
         };
@@ -1258,6 +2899,9 @@ export type Database = {
           business_id?: string;
           category?: Database["public"]["Enums"]["document_category"];
           created_at?: string;
+          delete_reason?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           employee_id?: string | null;
           expires_on?: string | null;
           file_path?: string;
@@ -1266,6 +2910,7 @@ export type Database = {
           sign_status?: Database["public"]["Enums"]["document_sign_status"];
           signature_requested_at?: string | null;
           signed_at?: string | null;
+          source?: string;
           updated_at?: string;
           uploaded_by?: string | null;
         };
@@ -1275,6 +2920,13 @@ export type Database = {
             columns: ["business_id"];
             isOneToOne: false;
             referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "employee_documents_deleted_by_fkey";
+            columns: ["deleted_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
             referencedColumns: ["id"];
           },
           {
@@ -1293,9 +2945,68 @@ export type Database = {
           },
         ];
       };
+      employee_goals: {
+        Row: {
+          actual_manual: number | null;
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          employee_id: string;
+          id: string;
+          kpi: string;
+          period_end: string;
+          period_start: string;
+          target: number;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actual_manual?: number | null;
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          employee_id: string;
+          id?: string;
+          kpi: string;
+          period_end: string;
+          period_start: string;
+          target: number;
+          title: string;
+        };
+        Update: {
+          actual_manual?: number | null;
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          employee_id?: string;
+          id?: string;
+          kpi?: string;
+          period_end?: string;
+          period_start?: string;
+          target?: number;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "employee_goals_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "employee_goals_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
       employee_hours: {
         Row: {
           branch_id: string;
+          break_minutes: number;
           created_at: string;
           day_of_week: number;
           employee_id: string;
@@ -1307,6 +3018,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           branch_id: string;
+          break_minutes?: number;
           created_at?: string;
           day_of_week: number;
           employee_id: string;
@@ -1317,6 +3029,7 @@ export type Database = {
         };
         Update: {
           branch_id?: string;
+          break_minutes?: number;
           created_at?: string;
           day_of_week?: number;
           employee_id?: string;
@@ -1395,9 +3108,49 @@ export type Database = {
           },
         ];
       };
+      employee_private: {
+        Row: {
+          bank_account_enc: string | null;
+          bank_name: string | null;
+          business_id: string;
+          employee_id: string;
+          national_id_enc: string | null;
+          updated_at: string;
+          wallet_number_enc: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          bank_account_enc?: string | null;
+          bank_name?: string | null;
+          business_id: string;
+          employee_id: string;
+          national_id_enc?: string | null;
+          updated_at?: string;
+          wallet_number_enc?: string | null;
+        };
+        Update: {
+          bank_account_enc?: string | null;
+          bank_name?: string | null;
+          business_id?: string;
+          employee_id?: string;
+          national_id_enc?: string | null;
+          updated_at?: string;
+          wallet_number_enc?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "employee_private_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
       employee_special_days: {
         Row: {
           branch_id: string | null;
+          break_minutes: number;
           created_at: string;
           date: string;
           employee_id: string;
@@ -1411,6 +3164,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           branch_id?: string | null;
+          break_minutes?: number;
           created_at?: string;
           date: string;
           employee_id: string;
@@ -1423,6 +3177,7 @@ export type Database = {
         };
         Update: {
           branch_id?: string | null;
+          break_minutes?: number;
           created_at?: string;
           date?: string;
           employee_id?: string;
@@ -1452,53 +3207,134 @@ export type Database = {
       };
       employees: {
         Row: {
+          address: string | null;
+          archive_reason: string | null;
+          archived_at: string | null;
           avatar_path: string | null;
           bio: string | null;
           business_id: string;
+          certifications: string[];
+          contract_end: string | null;
+          contract_start: string | null;
           created_at: string;
+          date_of_birth: string | null;
+          department: string | null;
           email: string | null;
+          emergency_contact_name: string | null;
+          emergency_contact_phone: string | null;
+          emergency_contact_relation: string | null;
+          employment_type: string | null;
           first_name: string;
+          gender: string | null;
           hire_date: string | null;
+          hr_notes: string | null;
           id: string;
           is_owner: boolean;
+          is_system: boolean;
           job_title: string | null;
+          languages: string[];
           last_name: string | null;
+          last_working_day: string | null;
+          legal_name_ar: string | null;
+          legal_name_en: string | null;
+          manager_id: string | null;
+          marital_status: string | null;
+          nationality: string | null;
+          personal_email: string | null;
           phone: string | null;
+          probation_end: string | null;
+          provides_services: boolean;
+          skills: string[];
+          social_insurance_no: string | null;
           status: Database["public"]["Enums"]["employee_status"];
           updated_at: string;
           user_id: string | null;
         };
         ComputedFields: never;
         Insert: {
+          address?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
           avatar_path?: string | null;
           bio?: string | null;
           business_id: string;
+          certifications?: string[];
+          contract_end?: string | null;
+          contract_start?: string | null;
           created_at?: string;
+          date_of_birth?: string | null;
+          department?: string | null;
           email?: string | null;
+          emergency_contact_name?: string | null;
+          emergency_contact_phone?: string | null;
+          emergency_contact_relation?: string | null;
+          employment_type?: string | null;
           first_name: string;
+          gender?: string | null;
           hire_date?: string | null;
+          hr_notes?: string | null;
           id?: string;
           is_owner?: boolean;
+          is_system?: boolean;
           job_title?: string | null;
+          languages?: string[];
           last_name?: string | null;
+          last_working_day?: string | null;
+          legal_name_ar?: string | null;
+          legal_name_en?: string | null;
+          manager_id?: string | null;
+          marital_status?: string | null;
+          nationality?: string | null;
+          personal_email?: string | null;
           phone?: string | null;
+          probation_end?: string | null;
+          provides_services?: boolean;
+          skills?: string[];
+          social_insurance_no?: string | null;
           status?: Database["public"]["Enums"]["employee_status"];
           updated_at?: string;
           user_id?: string | null;
         };
         Update: {
+          address?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
           avatar_path?: string | null;
           bio?: string | null;
           business_id?: string;
+          certifications?: string[];
+          contract_end?: string | null;
+          contract_start?: string | null;
           created_at?: string;
+          date_of_birth?: string | null;
+          department?: string | null;
           email?: string | null;
+          emergency_contact_name?: string | null;
+          emergency_contact_phone?: string | null;
+          emergency_contact_relation?: string | null;
+          employment_type?: string | null;
           first_name?: string;
+          gender?: string | null;
           hire_date?: string | null;
+          hr_notes?: string | null;
           id?: string;
           is_owner?: boolean;
+          is_system?: boolean;
           job_title?: string | null;
+          languages?: string[];
           last_name?: string | null;
+          last_working_day?: string | null;
+          legal_name_ar?: string | null;
+          legal_name_en?: string | null;
+          manager_id?: string | null;
+          marital_status?: string | null;
+          nationality?: string | null;
+          personal_email?: string | null;
           phone?: string | null;
+          probation_end?: string | null;
+          provides_services?: boolean;
+          skills?: string[];
+          social_insurance_no?: string | null;
           status?: Database["public"]["Enums"]["employee_status"];
           updated_at?: string;
           user_id?: string | null;
@@ -1509,6 +3345,13 @@ export type Database = {
             columns: ["business_id"];
             isOneToOne: false;
             referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "employees_manager_id_fkey";
+            columns: ["manager_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
             referencedColumns: ["id"];
           },
         ];
@@ -1564,6 +3407,767 @@ export type Database = {
             columns: ["customer_id"];
             isOneToOne: false;
             referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      gift_cards: {
+        Row: {
+          balance: number;
+          business_id: string;
+          buyer_customer_id: string | null;
+          code: string;
+          created_at: string;
+          created_by: string | null;
+          expires_at: string | null;
+          id: string;
+          initial_amount: number;
+          method: string | null;
+          note: string | null;
+          recipient_name: string | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          balance: number;
+          business_id: string;
+          buyer_customer_id?: string | null;
+          code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          initial_amount: number;
+          method?: string | null;
+          note?: string | null;
+          recipient_name?: string | null;
+          status?: string;
+        };
+        Update: {
+          balance?: number;
+          business_id?: string;
+          buyer_customer_id?: string | null;
+          code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          initial_amount?: number;
+          method?: string | null;
+          note?: string | null;
+          recipient_name?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gift_cards_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gift_cards_buyer_customer_id_fkey";
+            columns: ["buyer_customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gift_cards_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      hr_audit_log: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          business_id: string;
+          created_at: string;
+          details: NonNullable<Json>;
+          entity: string | null;
+          entity_id: string | null;
+          id: string;
+          subject_employee_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          entity?: string | null;
+          entity_id?: string | null;
+          id?: string;
+          subject_employee_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          entity?: string | null;
+          entity_id?: string | null;
+          id?: string;
+          subject_employee_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "hr_audit_log_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "hr_audit_log_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "hr_audit_log_subject_employee_id_fkey";
+            columns: ["subject_employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      hr_records: {
+        Row: {
+          acknowledged_at: string | null;
+          business_id: string;
+          created_at: string;
+          details: string | null;
+          employee_id: string;
+          id: string;
+          issued_by: string | null;
+          issued_on: string;
+          kind: string;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          acknowledged_at?: string | null;
+          business_id: string;
+          created_at?: string;
+          details?: string | null;
+          employee_id: string;
+          id?: string;
+          issued_by?: string | null;
+          issued_on?: string;
+          kind: string;
+          title: string;
+        };
+        Update: {
+          acknowledged_at?: string | null;
+          business_id?: string;
+          created_at?: string;
+          details?: string | null;
+          employee_id?: string;
+          id?: string;
+          issued_by?: string | null;
+          issued_on?: string;
+          kind?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "hr_records_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+          {
+            foreignKeyName: "hr_records_issued_by_fkey";
+            columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      hr_reminder_log: {
+        Row: {
+          entity_id: string;
+          kind: string;
+          recipient_id: string;
+          sent_on: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          entity_id: string;
+          kind: string;
+          recipient_id: string;
+          sent_on?: string;
+        };
+        Update: {
+          entity_id?: string;
+          kind?: string;
+          recipient_id?: string;
+          sent_on?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "hr_reminder_log_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      hr_settings: {
+        Row: {
+          allow_early_payroll: boolean;
+          auto_close_after_minutes: number | null;
+          business_id: string;
+          creator_cannot_approve: boolean;
+          late_grace_minutes: number;
+          max_daily_hours: number;
+          max_deduction_pct: number | null;
+          max_weekly_hours: number;
+          min_session_minutes: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          allow_early_payroll?: boolean;
+          auto_close_after_minutes?: number | null;
+          business_id: string;
+          creator_cannot_approve?: boolean;
+          late_grace_minutes?: number;
+          max_daily_hours?: number;
+          max_deduction_pct?: number | null;
+          max_weekly_hours?: number;
+          min_session_minutes?: number;
+          updated_at?: string;
+        };
+        Update: {
+          allow_early_payroll?: boolean;
+          auto_close_after_minutes?: number | null;
+          business_id?: string;
+          creator_cannot_approve?: boolean;
+          late_grace_minutes?: number;
+          max_daily_hours?: number;
+          max_deduction_pct?: number | null;
+          max_weekly_hours?: number;
+          min_session_minutes?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "hr_settings_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: true;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      job_openings: {
+        Row: {
+          branch_id: string | null;
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          status: string;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          branch_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          status?: string;
+          title: string;
+        };
+        Update: {
+          branch_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          status?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_openings_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_openings_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_openings_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_openings_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_openings_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_openings_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      leave_policy_rules: {
+        Row: {
+          business_id: string;
+          carry_over_cap: number;
+          days_per_year: number;
+          document_after_days: number | null;
+          id: string;
+          leave_type: Database["public"]["Enums"]["leave_type"];
+          min_years: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          carry_over_cap?: number;
+          days_per_year: number;
+          document_after_days?: number | null;
+          id?: string;
+          leave_type: Database["public"]["Enums"]["leave_type"];
+          min_years?: number;
+        };
+        Update: {
+          business_id?: string;
+          carry_over_cap?: number;
+          days_per_year?: number;
+          document_after_days?: number | null;
+          id?: string;
+          leave_type?: Database["public"]["Enums"]["leave_type"];
+          min_years?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leave_policy_rules_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      loyalty_cards: {
+        Row: {
+          business_id: string;
+          code: string;
+          created_at: string;
+          customer_id: string;
+          id: string;
+          last_activity_at: string;
+          program_id: string;
+          rewards_available: number;
+          rewards_redeemed: number;
+          stamps: number;
+          stamps_total: number;
+          updated_at: string;
+          version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          code?: string;
+          created_at?: string;
+          customer_id: string;
+          id?: string;
+          last_activity_at?: string;
+          program_id: string;
+          rewards_available?: number;
+          rewards_redeemed?: number;
+          stamps?: number;
+          stamps_total?: number;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          business_id?: string;
+          code?: string;
+          created_at?: string;
+          customer_id?: string;
+          id?: string;
+          last_activity_at?: string;
+          program_id?: string;
+          rewards_available?: number;
+          rewards_redeemed?: number;
+          stamps?: number;
+          stamps_total?: number;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_cards_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_cards_program_id_business_id_fkey";
+            columns: ["program_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "loyalty_programs";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
+      loyalty_events: {
+        Row: {
+          booking_id: string | null;
+          branch_id: string | null;
+          business_id: string;
+          card_id: string;
+          created_at: string;
+          employee_id: string | null;
+          id: string;
+          kind: Database["public"]["Enums"]["loyalty_event_kind"];
+          note: string | null;
+          rewards_delta: number;
+          stamps_delta: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          booking_id?: string | null;
+          branch_id?: string | null;
+          business_id: string;
+          card_id: string;
+          created_at?: string;
+          employee_id?: string | null;
+          id?: string;
+          kind: Database["public"]["Enums"]["loyalty_event_kind"];
+          note?: string | null;
+          rewards_delta?: number;
+          stamps_delta?: number;
+        };
+        Update: {
+          booking_id?: string | null;
+          branch_id?: string | null;
+          business_id?: string;
+          card_id?: string;
+          created_at?: string;
+          employee_id?: string | null;
+          id?: string;
+          kind?: Database["public"]["Enums"]["loyalty_event_kind"];
+          note?: string | null;
+          rewards_delta?: number;
+          stamps_delta?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_events_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_events_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_events_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_events_card_id_fkey";
+            columns: ["card_id"];
+            isOneToOne: false;
+            referencedRelation: "loyalty_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_events_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      loyalty_programs: {
+        Row: {
+          auto_stamp: boolean;
+          birthday_stamps: number;
+          brand_color: string;
+          business_id: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          join_code: string;
+          min_booking_total: number;
+          name: string;
+          referral_stamps: number;
+          reward_description: string | null;
+          reward_service_id: string | null;
+          reward_title: string;
+          stamps_required: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          auto_stamp?: boolean;
+          birthday_stamps?: number;
+          brand_color?: string;
+          business_id: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          join_code?: string;
+          min_booking_total?: number;
+          name: string;
+          referral_stamps?: number;
+          reward_description?: string | null;
+          reward_service_id?: string | null;
+          reward_title: string;
+          stamps_required: number;
+          updated_at?: string;
+        };
+        Update: {
+          auto_stamp?: boolean;
+          birthday_stamps?: number;
+          brand_color?: string;
+          business_id?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          join_code?: string;
+          min_booking_total?: number;
+          name?: string;
+          referral_stamps?: number;
+          reward_description?: string | null;
+          reward_service_id?: string | null;
+          reward_title?: string;
+          stamps_required?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_programs_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: true;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_programs_reward_service_fkey";
+            columns: ["reward_service_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
+      loyalty_tiers: {
+        Row: {
+          business_id: string;
+          id: string;
+          min_stamps_total: number;
+          name: string;
+          perk: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          id?: string;
+          min_stamps_total: number;
+          name: string;
+          perk?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          id?: string;
+          min_stamps_total?: number;
+          name?: string;
+          perk?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_tiers_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      message_outbox: {
+        Row: {
+          body: string;
+          business_id: string;
+          channel: string;
+          created_at: string;
+          customer_id: string;
+          error: string | null;
+          id: string;
+          origin: string;
+          origin_id: string | null;
+          sent_at: string | null;
+          status: string;
+          title: string | null;
+          to_phone: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          business_id: string;
+          channel: string;
+          created_at?: string;
+          customer_id: string;
+          error?: string | null;
+          id?: string;
+          origin: string;
+          origin_id?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          title?: string | null;
+          to_phone: string;
+        };
+        Update: {
+          body?: string;
+          business_id?: string;
+          channel?: string;
+          created_at?: string;
+          customer_id?: string;
+          error?: string | null;
+          id?: string;
+          origin?: string;
+          origin_id?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          title?: string | null;
+          to_phone?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "message_outbox_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "message_outbox_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      message_templates: {
+        Row: {
+          body: string;
+          business_id: string;
+          channel: string;
+          created_at: string;
+          id: string;
+          is_system: boolean;
+          key: string | null;
+          language: string;
+          name: string;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          business_id: string;
+          channel?: string;
+          created_at?: string;
+          id?: string;
+          is_system?: boolean;
+          key?: string | null;
+          language?: string;
+          name: string;
+          title: string;
+        };
+        Update: {
+          body?: string;
+          business_id?: string;
+          channel?: string;
+          created_at?: string;
+          id?: string;
+          is_system?: boolean;
+          key?: string | null;
+          language?: string;
+          name?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
             referencedColumns: ["id"];
           },
         ];
@@ -1628,9 +4232,9 @@ export type Database = {
           created_at: string;
           ends_on: string | null;
           id: string;
-          name_i18n: Json;
           is_active: boolean;
           name: string;
+          name_i18n: NonNullable<Json>;
           slug: string;
           sort_order: number;
           starts_on: string | null;
@@ -1641,9 +4245,9 @@ export type Database = {
           created_at?: string;
           ends_on?: string | null;
           id?: string;
-          name_i18n?: Json;
           is_active?: boolean;
           name: string;
+          name_i18n?: NonNullable<Json>;
           slug: string;
           sort_order?: number;
           starts_on?: string | null;
@@ -1653,9 +4257,9 @@ export type Database = {
           created_at?: string;
           ends_on?: string | null;
           id?: string;
-          name_i18n?: Json;
           is_active?: boolean;
           name?: string;
+          name_i18n?: NonNullable<Json>;
           slug?: string;
           sort_order?: number;
           starts_on?: string | null;
@@ -1761,6 +4365,107 @@ export type Database = {
           },
         ];
       };
+      one_on_ones: {
+        Row: {
+          author_id: string | null;
+          business_id: string;
+          created_at: string;
+          employee_id: string;
+          held_on: string;
+          id: string;
+          notes: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          employee_id: string;
+          held_on: string;
+          id?: string;
+          notes: string;
+        };
+        Update: {
+          author_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          employee_id?: string;
+          held_on?: string;
+          id?: string;
+          notes?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "one_on_ones_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "one_on_ones_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
+      packages: {
+        Row: {
+          active: boolean;
+          business_id: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          price: number;
+          service_id: string | null;
+          sessions: number;
+          validity_days: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          business_id: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          price: number;
+          service_id?: string | null;
+          sessions: number;
+          validity_days?: number | null;
+        };
+        Update: {
+          active?: boolean;
+          business_id?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          price?: number;
+          service_id?: string | null;
+          sessions?: number;
+          validity_days?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "packages_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "packages_service_id_business_id_fkey";
+            columns: ["service_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
       pay_settings: {
         Row: {
           business_id: string;
@@ -1770,7 +4475,9 @@ export type Database = {
           hourly_rate: number | null;
           monthly_salary: number | null;
           overtime_multiplier: number;
+          overtime_policy: string;
           pay_type: Database["public"]["Enums"]["pay_type"];
+          product_commission_rate: number;
           regular_hours_per_month: number;
           updated_at: string;
         };
@@ -1783,7 +4490,9 @@ export type Database = {
           hourly_rate?: number | null;
           monthly_salary?: number | null;
           overtime_multiplier?: number;
+          overtime_policy?: string;
           pay_type?: Database["public"]["Enums"]["pay_type"];
+          product_commission_rate?: number;
           regular_hours_per_month?: number;
           updated_at?: string;
         };
@@ -1795,7 +4504,9 @@ export type Database = {
           hourly_rate?: number | null;
           monthly_salary?: number | null;
           overtime_multiplier?: number;
+          overtime_policy?: string;
           pay_type?: Database["public"]["Enums"]["pay_type"];
+          product_commission_rate?: number;
           regular_hours_per_month?: number;
           updated_at?: string;
         };
@@ -1813,6 +4524,7 @@ export type Database = {
         Row: {
           amount: number;
           business_id: string;
+          category: string;
           created_at: string;
           created_by: string | null;
           id: string;
@@ -1824,6 +4536,7 @@ export type Database = {
         Insert: {
           amount: number;
           business_id: string;
+          category?: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -1834,6 +4547,7 @@ export type Database = {
         Update: {
           amount?: number;
           business_id?: string;
+          category?: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -1865,27 +4579,94 @@ export type Database = {
           },
         ];
       };
+      payroll_hour_overrides: {
+        Row: {
+          approved_by: string | null;
+          created_at: string;
+          employee_id: string;
+          hours: number;
+          note: string | null;
+          run_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approved_by?: string | null;
+          created_at?: string;
+          employee_id: string;
+          hours: number;
+          note?: string | null;
+          run_id: string;
+        };
+        Update: {
+          approved_by?: string | null;
+          created_at?: string;
+          employee_id?: string;
+          hours?: number;
+          note?: string | null;
+          run_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payroll_hour_overrides_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payroll_hour_overrides_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payroll_hour_overrides_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "payroll_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       payroll_lines: {
         Row: {
           adjustments_total: number;
+          advance_deduction: number;
+          banked_hours: number;
           base_pay: number;
           branch_id: string;
           business_id: string;
           commission: number;
+          commission_clawback: number;
+          commission_detail: NonNullable<Json>;
           commission_revenue: number;
+          cost_shared: boolean;
           created_at: string;
           employee_id: string;
           employee_name: string;
+          employer_cost: number;
+          fallback_hours: number;
           flags: string[];
           id: string;
+          income_tax: number;
           leave_deduction: number;
+          net_pay: number;
           overtime_hours: number;
           overtime_pay: number;
+          overtime_policy: string | null;
           paid_leave_days: number;
           paid_leave_pay: number;
           pay_type: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method: string | null;
+          payment_status: string;
+          product_commission: number;
           regular_hours: number;
           run_id: string;
+          si_employee: number;
+          si_employer: number;
+          stamp_solidarity: number;
+          statutory_configured: boolean;
           total_pay: number;
           unpaid_leave_days: number;
           updated_at: string;
@@ -1893,48 +4674,82 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           adjustments_total?: number;
+          advance_deduction?: number;
+          banked_hours?: number;
           base_pay?: number;
           branch_id: string;
           business_id: string;
           commission?: number;
+          commission_clawback?: number;
+          commission_detail?: NonNullable<Json>;
           commission_revenue?: number;
+          cost_shared?: boolean;
           created_at?: string;
           employee_id: string;
           employee_name: string;
+          employer_cost?: number;
+          fallback_hours?: number;
           flags?: string[];
           id?: string;
+          income_tax?: number;
           leave_deduction?: number;
+          net_pay?: number;
           overtime_hours?: number;
           overtime_pay?: number;
+          overtime_policy?: string | null;
           paid_leave_days?: number;
           paid_leave_pay?: number;
           pay_type?: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method?: string | null;
+          payment_status?: string;
+          product_commission?: number;
           regular_hours?: number;
           run_id: string;
+          si_employee?: number;
+          si_employer?: number;
+          stamp_solidarity?: number;
+          statutory_configured?: boolean;
           total_pay?: number;
           unpaid_leave_days?: number;
           updated_at?: string;
         };
         Update: {
           adjustments_total?: number;
+          advance_deduction?: number;
+          banked_hours?: number;
           base_pay?: number;
           branch_id?: string;
           business_id?: string;
           commission?: number;
+          commission_clawback?: number;
+          commission_detail?: NonNullable<Json>;
           commission_revenue?: number;
+          cost_shared?: boolean;
           created_at?: string;
           employee_id?: string;
           employee_name?: string;
+          employer_cost?: number;
+          fallback_hours?: number;
           flags?: string[];
           id?: string;
+          income_tax?: number;
           leave_deduction?: number;
+          net_pay?: number;
           overtime_hours?: number;
           overtime_pay?: number;
+          overtime_policy?: string | null;
           paid_leave_days?: number;
           paid_leave_pay?: number;
           pay_type?: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method?: string | null;
+          payment_status?: string;
+          product_commission?: number;
           regular_hours?: number;
           run_id?: string;
+          si_employee?: number;
+          si_employer?: number;
+          stamp_solidarity?: number;
+          statutory_configured?: boolean;
           total_pay?: number;
           unpaid_leave_days?: number;
           updated_at?: string;
@@ -1951,6 +4766,106 @@ export type Database = {
             foreignKeyName: "payroll_lines_run_id_fkey";
             columns: ["run_id"];
             isOneToOne: false;
+            referencedRelation: "payroll_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payroll_rule_sets: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          effective_from: string;
+          holiday_work_premium_pct: number;
+          id: string;
+          name: string;
+          notes: string | null;
+          si_employee_pct: number;
+          si_employer_pct: number;
+          si_max_base: number | null;
+          si_min_base: number;
+          solidarity_pct: number;
+          stamp_pct: number;
+          tax_brackets: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          effective_from: string;
+          holiday_work_premium_pct?: number;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          si_employee_pct?: number;
+          si_employer_pct?: number;
+          si_max_base?: number | null;
+          si_min_base?: number;
+          solidarity_pct?: number;
+          stamp_pct?: number;
+          tax_brackets?: NonNullable<Json>;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          effective_from?: string;
+          holiday_work_premium_pct?: number;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          si_employee_pct?: number;
+          si_employer_pct?: number;
+          si_max_base?: number | null;
+          si_min_base?: number;
+          solidarity_pct?: number;
+          stamp_pct?: number;
+          tax_brackets?: NonNullable<Json>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payroll_rule_sets_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payroll_rule_sets_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payroll_run_snapshots: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          run_id: string;
+          snapshot: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          run_id: string;
+          snapshot: NonNullable<Json>;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          run_id?: string;
+          snapshot?: NonNullable<Json>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payroll_run_snapshots_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: true;
             referencedRelation: "payroll_runs";
             referencedColumns: ["id"];
           },
@@ -2039,6 +4954,145 @@ export type Database = {
           {
             foreignKeyName: "payroll_runs_created_by_fkey";
             columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payslips: {
+        Row: {
+          branch_id: string;
+          business_id: string;
+          employee_id: string;
+          generated_at: string;
+          id: string;
+          line_id: string;
+          period_end: string;
+          period_start: string;
+          run_id: string;
+          snapshot: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          branch_id: string;
+          business_id: string;
+          employee_id: string;
+          generated_at?: string;
+          id?: string;
+          line_id: string;
+          period_end: string;
+          period_start: string;
+          run_id: string;
+          snapshot: NonNullable<Json>;
+        };
+        Update: {
+          branch_id?: string;
+          business_id?: string;
+          employee_id?: string;
+          generated_at?: string;
+          id?: string;
+          line_id?: string;
+          period_end?: string;
+          period_start?: string;
+          run_id?: string;
+          snapshot?: NonNullable<Json>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payslips_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payslips_line_id_fkey";
+            columns: ["line_id"];
+            isOneToOne: true;
+            referencedRelation: "payroll_lines";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payslips_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "payroll_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      performance_reviews: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          cycle_id: string | null;
+          due_on: string | null;
+          employee_id: string;
+          id: string;
+          kind: string;
+          manager_at: string | null;
+          manager_id: string | null;
+          manager_notes: string | null;
+          manager_rating: number | null;
+          self_at: string | null;
+          self_notes: string | null;
+          self_rating: number | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          cycle_id?: string | null;
+          due_on?: string | null;
+          employee_id: string;
+          id?: string;
+          kind?: string;
+          manager_at?: string | null;
+          manager_id?: string | null;
+          manager_notes?: string | null;
+          manager_rating?: number | null;
+          self_at?: string | null;
+          self_notes?: string | null;
+          self_rating?: number | null;
+          status?: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          cycle_id?: string | null;
+          due_on?: string | null;
+          employee_id?: string;
+          id?: string;
+          kind?: string;
+          manager_at?: string | null;
+          manager_id?: string | null;
+          manager_notes?: string | null;
+          manager_rating?: number | null;
+          self_at?: string | null;
+          self_notes?: string | null;
+          self_rating?: number | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "performance_reviews_cycle_id_fkey";
+            columns: ["cycle_id"];
+            isOneToOne: false;
+            referencedRelation: "review_cycles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "performance_reviews_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+          {
+            foreignKeyName: "performance_reviews_manager_id_fkey";
+            columns: ["manager_id"];
             isOneToOne: false;
             referencedRelation: "employees";
             referencedColumns: ["id"];
@@ -2172,6 +5226,99 @@ export type Database = {
             columns: ["business_id"];
             isOneToOne: false;
             referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      product_sales: {
+        Row: {
+          amount: number;
+          branch_id: string;
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          employee_id: string;
+          id: string;
+          note: string | null;
+          product_id: string | null;
+          product_name: string;
+          sold_on: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          branch_id: string;
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          employee_id: string;
+          id?: string;
+          note?: string | null;
+          product_id?: string | null;
+          product_name: string;
+          sold_on: string;
+        };
+        Update: {
+          amount?: number;
+          branch_id?: string;
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          employee_id?: string;
+          id?: string;
+          note?: string | null;
+          product_id?: string | null;
+          product_name?: string;
+          sold_on?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_sales_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_sales_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_sales_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_sales_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_sales_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_sales_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_sales_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
             referencedColumns: ["id"];
           },
         ];
@@ -2604,6 +5751,190 @@ export type Database = {
         };
         Relationships: [];
       };
+      queue_tickets: {
+        Row: {
+          branch_id: string;
+          business_id: string;
+          called_at: string | null;
+          called_by: string | null;
+          customer_name: string | null;
+          finished_at: string | null;
+          id: string;
+          issued_at: string;
+          issued_by: string | null;
+          number: number;
+          queue_date: string;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        ComputedFields: never;
+        Insert: {
+          branch_id: string;
+          business_id: string;
+          called_at?: string | null;
+          called_by?: string | null;
+          customer_name?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          issued_at?: string;
+          issued_by?: string | null;
+          number: number;
+          queue_date: string;
+          status?: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        Update: {
+          branch_id?: string;
+          business_id?: string;
+          called_at?: string | null;
+          called_by?: string | null;
+          customer_name?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          issued_at?: string;
+          issued_by?: string | null;
+          number?: number;
+          queue_date?: string;
+          status?: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "queue_tickets_branch_id_business_id_fkey";
+            columns: ["branch_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id", "business_id"];
+          },
+          {
+            foreignKeyName: "queue_tickets_branch_id_business_id_fkey";
+            columns: ["branch_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id", "business_id"];
+          },
+          {
+            foreignKeyName: "queue_tickets_branch_id_business_id_fkey";
+            columns: ["branch_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id", "business_id"];
+          },
+          {
+            foreignKeyName: "queue_tickets_branch_id_business_id_fkey";
+            columns: ["branch_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id", "business_id"];
+          },
+          {
+            foreignKeyName: "queue_tickets_called_by_fkey";
+            columns: ["called_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "queue_tickets_issued_by_fkey";
+            columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      report_schedules: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          frequency: string;
+          id: string;
+          last_sent_on: string | null;
+          recipient_ids: string[];
+          report: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          frequency: string;
+          id?: string;
+          last_sent_on?: string | null;
+          recipient_ids?: string[];
+          report: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          frequency?: string;
+          id?: string;
+          last_sent_on?: string | null;
+          recipient_ids?: string[];
+          report?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_schedules_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_schedules_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      review_cycles: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          due_on: string;
+          id: string;
+          name: string;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          due_on: string;
+          id?: string;
+          name: string;
+          status?: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          due_on?: string;
+          id?: string;
+          name?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "review_cycles_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_cycles_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       reviews: {
         Row: {
           booking_id: string;
@@ -2672,6 +6003,102 @@ export type Database = {
           },
         ];
       };
+      rota_shifts: {
+        Row: {
+          branch_id: string;
+          break_minutes: number;
+          business_id: string;
+          created_at: string;
+          created_by: string | null;
+          date: string;
+          employee_id: string | null;
+          ends_at: string;
+          id: string;
+          note: string | null;
+          starts_at: string;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          branch_id: string;
+          break_minutes?: number;
+          business_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          date: string;
+          employee_id?: string | null;
+          ends_at: string;
+          id?: string;
+          note?: string | null;
+          starts_at: string;
+          status?: string;
+        };
+        Update: {
+          branch_id?: string;
+          break_minutes?: number;
+          business_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          date?: string;
+          employee_id?: string | null;
+          ends_at?: string;
+          id?: string;
+          note?: string | null;
+          starts_at?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rota_shifts_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rota_shifts_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rota_shifts_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rota_shifts_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "search_promoted_branch_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rota_shifts_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rota_shifts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rota_shifts_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       segment_rules: {
         Row: {
           created_at: string;
@@ -2679,7 +6106,8 @@ export type Database = {
           id: string;
           operator: Database["public"]["Enums"]["segment_operator"];
           segment_id: string;
-          value: number;
+          text_value: string | null;
+          value: number | null;
         };
         ComputedFields: never;
         Insert: {
@@ -2688,7 +6116,8 @@ export type Database = {
           id?: string;
           operator: Database["public"]["Enums"]["segment_operator"];
           segment_id: string;
-          value: number;
+          text_value?: string | null;
+          value?: number | null;
         };
         Update: {
           created_at?: string;
@@ -2696,11 +6125,39 @@ export type Database = {
           id?: string;
           operator?: Database["public"]["Enums"]["segment_operator"];
           segment_id?: string;
-          value?: number;
+          text_value?: string | null;
+          value?: number | null;
         };
         Relationships: [
           {
             foreignKeyName: "segment_rules_segment_id_fkey";
+            columns: ["segment_id"];
+            isOneToOne: false;
+            referencedRelation: "segments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      segment_snapshots: {
+        Row: {
+          day: string;
+          member_count: number;
+          segment_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          day: string;
+          member_count: number;
+          segment_id: string;
+        };
+        Update: {
+          day?: string;
+          member_count?: number;
+          segment_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "segment_snapshots_segment_id_fkey";
             columns: ["segment_id"];
             isOneToOne: false;
             referencedRelation: "segments";
@@ -2942,6 +6399,102 @@ export type Database = {
           },
         ];
       };
+      shift_swaps: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          id: string;
+          requester_id: string;
+          shift_id: string;
+          status: string;
+          target_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          id?: string;
+          requester_id: string;
+          shift_id: string;
+          status?: string;
+          target_id: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          id?: string;
+          requester_id?: string;
+          shift_id?: string;
+          status?: string;
+          target_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shift_swaps_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shift_swaps_requester_id_fkey";
+            columns: ["requester_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shift_swaps_shift_id_fkey";
+            columns: ["shift_id"];
+            isOneToOne: false;
+            referencedRelation: "rota_shifts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shift_swaps_target_id_fkey";
+            columns: ["target_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      shift_templates: {
+        Row: {
+          break_minutes: number;
+          business_id: string;
+          ends_at: string;
+          id: string;
+          name: string;
+          starts_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          break_minutes?: number;
+          business_id: string;
+          ends_at: string;
+          id?: string;
+          name: string;
+          starts_at: string;
+        };
+        Update: {
+          break_minutes?: number;
+          business_id?: string;
+          ends_at?: string;
+          id?: string;
+          name?: string;
+          starts_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shift_templates_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stock_movements: {
         Row: {
           booking_item_id: string | null;
@@ -2954,6 +6507,7 @@ export type Database = {
           movement_type: Database["public"]["Enums"]["stock_movement_type"];
           note: string | null;
           qty_change: number;
+          reason: string | null;
           supplier: string | null;
           total_cost: number | null;
           unit_cost: number | null;
@@ -2970,6 +6524,7 @@ export type Database = {
           movement_type: Database["public"]["Enums"]["stock_movement_type"];
           note?: string | null;
           qty_change: number;
+          reason?: string | null;
           supplier?: string | null;
           total_cost?: number | null;
           unit_cost?: number | null;
@@ -2985,6 +6540,7 @@ export type Database = {
           movement_type?: Database["public"]["Enums"]["stock_movement_type"];
           note?: string | null;
           qty_change?: number;
+          reason?: string | null;
           supplier?: string | null;
           total_cost?: number | null;
           unit_cost?: number | null;
@@ -3171,11 +6727,15 @@ export type Database = {
       };
       time_off_requests: {
         Row: {
+          attachment_path: string | null;
           business_id: string;
           created_at: string;
           days: number;
           employee_id: string;
           ends_on: string;
+          exceeds_balance: boolean;
+          half_day: boolean;
+          hours: number | null;
           id: string;
           leave_type: Database["public"]["Enums"]["leave_type"];
           note: string | null;
@@ -3185,14 +6745,19 @@ export type Database = {
           starts_on: string;
           status: Database["public"]["Enums"]["time_off_status"];
           updated_at: string;
+          working_days: number | null;
         };
         ComputedFields: never;
         Insert: {
+          attachment_path?: string | null;
           business_id: string;
           created_at?: string;
           days: number;
           employee_id: string;
           ends_on: string;
+          exceeds_balance?: boolean;
+          half_day?: boolean;
+          hours?: number | null;
           id?: string;
           leave_type: Database["public"]["Enums"]["leave_type"];
           note?: string | null;
@@ -3202,13 +6767,18 @@ export type Database = {
           starts_on: string;
           status?: Database["public"]["Enums"]["time_off_status"];
           updated_at?: string;
+          working_days?: number | null;
         };
         Update: {
+          attachment_path?: string | null;
           business_id?: string;
           created_at?: string;
           days?: number;
           employee_id?: string;
           ends_on?: string;
+          exceeds_balance?: boolean;
+          half_day?: boolean;
+          hours?: number | null;
           id?: string;
           leave_type?: Database["public"]["Enums"]["leave_type"];
           note?: string | null;
@@ -3218,6 +6788,7 @@ export type Database = {
           starts_on?: string;
           status?: Database["public"]["Enums"]["time_off_status"];
           updated_at?: string;
+          working_days?: number | null;
         };
         Relationships: [
           {
@@ -3232,6 +6803,121 @@ export type Database = {
             columns: ["reviewed_by"];
             isOneToOne: false;
             referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      trainings: {
+        Row: {
+          business_id: string;
+          completed_on: string | null;
+          created_at: string;
+          document_id: string | null;
+          employee_id: string;
+          expires_on: string | null;
+          id: string;
+          name: string;
+          provider: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          completed_on?: string | null;
+          created_at?: string;
+          document_id?: string | null;
+          employee_id: string;
+          expires_on?: string | null;
+          id?: string;
+          name: string;
+          provider?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          completed_on?: string | null;
+          created_at?: string;
+          document_id?: string | null;
+          employee_id?: string;
+          expires_on?: string | null;
+          id?: string;
+          name?: string;
+          provider?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trainings_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "employee_documents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "trainings_employee_id_business_id_fkey";
+            columns: ["employee_id", "business_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id", "business_id"];
+          },
+        ];
+      };
+      wallet_apple_registrations: {
+        Row: {
+          card_id: string;
+          created_at: string;
+          device_id: string;
+          push_token: string;
+          pushed_version: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          card_id: string;
+          created_at?: string;
+          device_id: string;
+          push_token: string;
+          pushed_version?: number;
+          updated_at?: string;
+        };
+        Update: {
+          card_id?: string;
+          created_at?: string;
+          device_id?: string;
+          push_token?: string;
+          pushed_version?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wallet_apple_registrations_card_id_fkey";
+            columns: ["card_id"];
+            isOneToOne: false;
+            referencedRelation: "loyalty_cards";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      wallet_google_passes: {
+        Row: {
+          card_id: string;
+          created_at: string;
+          synced_version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          card_id: string;
+          created_at?: string;
+          synced_version?: number;
+        };
+        Update: {
+          card_id?: string;
+          created_at?: string;
+          synced_version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wallet_google_passes_card_id_fkey";
+            columns: ["card_id"];
+            isOneToOne: true;
+            referencedRelation: "loyalty_cards";
             referencedColumns: ["id"];
           },
         ];
@@ -3464,6 +7150,10 @@ export type Database = {
     };
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: Json };
+      acknowledge_hr_record: {
+        Args: { p_record_id: string };
+        Returns: undefined;
+      };
       add_attendance_event: {
         Args: {
           p_at: string;
@@ -3474,6 +7164,7 @@ export type Database = {
         };
         Returns: {
           at: string;
+          auto_closed: boolean;
           branch_id: string;
           business_id: string;
           created_at: string;
@@ -3491,33 +7182,87 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      add_attendance_shift: {
+        Args: {
+          p_branch_id: string;
+          p_clock_in: string;
+          p_clock_out: string;
+          p_employee_id: string;
+          p_note: string;
+        };
+        Returns: Json;
+      };
+      add_client_note: {
+        Args: { p_body: string; p_customer_id: string };
+        Returns: string;
+      };
+      add_client_task: {
+        Args: { p_customer_id: string; p_due_at?: string; p_title: string };
+        Returns: string;
+      };
+      add_hr_record: {
+        Args: {
+          p_details: string;
+          p_employee_id: string;
+          p_issued_on?: string;
+          p_kind: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
+      add_loyalty_stamp: {
+        Args: { p_branch_id: string; p_code: string; p_note?: string };
+        Returns: Json;
+      };
+      add_one_on_one: {
+        Args: { p_employee_id: string; p_held_on: string; p_notes: string };
+        Returns: string;
+      };
       add_payroll_adjustment: {
         Args: {
           p_amount: number;
+          p_category?: string;
           p_kind: Database["public"]["Enums"]["payroll_adjustment_kind"];
           p_line_id: string;
           p_note?: string;
         };
         Returns: {
           adjustments_total: number;
+          advance_deduction: number;
+          banked_hours: number;
           base_pay: number;
           branch_id: string;
           business_id: string;
           commission: number;
+          commission_clawback: number;
+          commission_detail: NonNullable<Json>;
           commission_revenue: number;
+          cost_shared: boolean;
           created_at: string;
           employee_id: string;
           employee_name: string;
+          employer_cost: number;
+          fallback_hours: number;
           flags: string[];
           id: string;
+          income_tax: number;
           leave_deduction: number;
+          net_pay: number;
           overtime_hours: number;
           overtime_pay: number;
+          overtime_policy: string | null;
           paid_leave_days: number;
           paid_leave_pay: number;
           pay_type: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method: string | null;
+          payment_status: string;
+          product_commission: number;
           regular_hours: number;
           run_id: string;
+          si_employee: number;
+          si_employer: number;
+          stamp_solidarity: number;
+          statutory_configured: boolean;
           total_pay: number;
           unpaid_leave_days: number;
           updated_at: string;
@@ -3529,8 +7274,22 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      add_store_credit: {
+        Args: {
+          p_amount: number;
+          p_customer_id: string;
+          p_method?: string;
+          p_note?: string;
+        };
+        Returns: string;
+      };
       adjust_stock: {
-        Args: { p_note?: string; p_qty_change: number; p_stock_id: string };
+        Args: {
+          p_note?: string;
+          p_qty_change: number;
+          p_reason?: string;
+          p_stock_id: string;
+        };
         Returns: {
           branch_id: string;
           business_id: string;
@@ -3550,9 +7309,40 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      adjust_store_credit: {
+        Args: { p_customer_id: string; p_delta: number; p_note: string };
+        Returns: string;
+      };
+      admin_add_note: {
+        Args: {
+          p_body: string;
+          p_business_id?: string;
+          p_customer_id?: string;
+        };
+        Returns: string;
+      };
+      admin_add_placement: {
+        Args: {
+          p_branch_id: string;
+          p_ends_on: string;
+          p_note?: string;
+          p_offer_id: string;
+          p_placement: string;
+          p_starts_on: string;
+        };
+        Returns: string;
+      };
       admin_adjust_commission: {
         Args: { p_amount: number; p_business_id: string; p_note: string };
         Returns: string;
+      };
+      admin_announcement_audience: {
+        Args: {
+          p_audience: string;
+          p_business_id?: string;
+          p_customer_id?: string;
+        };
+        Returns: Json;
       };
       admin_billing_overview: {
         Args: Record<PropertyKey, never>;
@@ -3566,12 +7356,137 @@ export type Database = {
         Args: { p_business_id: string; p_note?: string; p_until?: string };
         Returns: undefined;
       };
+      admin_dashboard: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_delete_note: { Args: { p_id: string }; Returns: undefined };
+      admin_delete_review: {
+        Args: { p_reason: string; p_review_id: string };
+        Returns: Json;
+      };
+      admin_end_subscription: {
+        Args: { p_business_id: string; p_note?: string };
+        Returns: undefined;
+      };
+      admin_get_booking: { Args: { p_booking_id: string }; Returns: Json };
+      admin_get_business: { Args: { p_business_id: string }; Returns: Json };
+      admin_get_customer: { Args: { p_customer_id: string }; Returns: Json };
+      admin_get_settings: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_grant_trial: {
         Args: { p_business_id: string; p_days: number; p_tier?: string };
         Returns: undefined;
       };
+      admin_health: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_insights: { Args: { p_days?: number }; Returns: Json };
+      admin_list_activity: {
+        Args: {
+          p_business_id?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+        };
+        Returns: Json;
+      };
+      admin_list_announcements: { Args: { p_limit?: number }; Returns: Json };
+      admin_list_billing_events: {
+        Args: { p_business_id?: string; p_limit?: number };
+        Returns: Json;
+      };
+      admin_list_bookings: {
+        Args: {
+          p_business_id?: string;
+          p_from?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_source?: string;
+          p_status?: string;
+          p_to?: string;
+        };
+        Returns: Json;
+      };
+      admin_list_businesses: {
+        Args: {
+          p_filter?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+        };
+        Returns: Json;
+      };
+      admin_list_customers: {
+        Args: {
+          p_filter?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_sort?: string;
+        };
+        Returns: Json;
+      };
+      admin_list_notes: {
+        Args: { p_business_id?: string; p_customer_id?: string };
+        Returns: Json;
+      };
+      admin_list_placements: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      admin_list_promotion_orders: {
+        Args: { p_limit?: number; p_status?: string };
+        Returns: Json;
+      };
+      admin_list_reviews: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_rating?: string;
+          p_replied?: string;
+          p_search?: string;
+        };
+        Returns: Json;
+      };
+      admin_list_statements: {
+        Args: { p_limit?: number; p_status?: string };
+        Returns: Json;
+      };
+      admin_list_tickets: { Args: { p_status?: string }; Returns: Json };
+      admin_log_action: {
+        Args: {
+          p_action: string;
+          p_business_id?: string;
+          p_details?: Json;
+          p_summary: string;
+          p_target_id?: string;
+          p_target_type?: string;
+        };
+        Returns: undefined;
+      };
+      admin_pulse: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_record_manual_payment: {
+        Args: {
+          p_business_id: string;
+          p_extra_seats?: number;
+          p_plan_id: string;
+          p_reference?: string;
+        };
+        Returns: string;
+      };
+      admin_remove_placement: {
+        Args: { p_id: string; p_kind: string };
+        Returns: undefined;
+      };
       admin_run_billing_cycle: {
         Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      admin_search: { Args: { p_limit?: number; p_q: string }; Returns: Json };
+      admin_send_announcement: {
+        Args: {
+          p_audience: string;
+          p_body: string;
+          p_business_id?: string;
+          p_customer_id?: string;
+          p_title: string;
+        };
         Returns: Json;
       };
       admin_set_commission_rate: {
@@ -3590,6 +7505,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      admin_update_settings: { Args: { p_changes: Json }; Returns: Json };
       admin_waive_statement: {
         Args: { p_note?: string; p_statement_id: string };
         Returns: undefined;
@@ -3682,6 +7598,7 @@ export type Database = {
           scheduled_minutes: number;
         }[];
       };
+      anonymise_client: { Args: { p_customer_id: string }; Returns: undefined };
       apply_billing_payment: {
         Args: {
           p_amount_minor?: number;
@@ -3697,6 +7614,10 @@ export type Database = {
         };
         Returns: string;
       };
+      apply_client_template: {
+        Args: { p_template: string };
+        Returns: undefined;
+      };
       apply_commission_payment: {
         Args: {
           p_amount_minor: number;
@@ -3711,6 +7632,16 @@ export type Database = {
         };
         Returns: string;
       };
+      apply_discount: {
+        Args: {
+          p_base_amount: number;
+          p_booking_id?: string;
+          p_code: string;
+          p_customer_id: string;
+        };
+        Returns: Json;
+      };
+      apply_leave_policies: { Args: { p_year: number }; Returns: number };
       apply_promotion_payment: {
         Args: {
           p_amount_minor: number;
@@ -3725,7 +7656,64 @@ export type Database = {
         };
         Returns: string;
       };
-      archive_employee: { Args: { p_employee_id: string }; Returns: undefined };
+      approve_scheduled_hours: {
+        Args: { p_line_id: string; p_note?: string };
+        Returns: {
+          adjustments_total: number;
+          advance_deduction: number;
+          banked_hours: number;
+          base_pay: number;
+          branch_id: string;
+          business_id: string;
+          commission: number;
+          commission_clawback: number;
+          commission_detail: NonNullable<Json>;
+          commission_revenue: number;
+          cost_shared: boolean;
+          created_at: string;
+          employee_id: string;
+          employee_name: string;
+          employer_cost: number;
+          fallback_hours: number;
+          flags: string[];
+          id: string;
+          income_tax: number;
+          leave_deduction: number;
+          net_pay: number;
+          overtime_hours: number;
+          overtime_pay: number;
+          overtime_policy: string | null;
+          paid_leave_days: number;
+          paid_leave_pay: number;
+          pay_type: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method: string | null;
+          payment_status: string;
+          product_commission: number;
+          regular_hours: number;
+          run_id: string;
+          si_employee: number;
+          si_employer: number;
+          stamp_solidarity: number;
+          statutory_configured: boolean;
+          total_pay: number;
+          unpaid_leave_days: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "payroll_lines";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      archive_employee: {
+        Args: {
+          p_employee_id: string;
+          p_last_working_day?: string;
+          p_reason?: string;
+        };
+        Returns: undefined;
+      };
       attendance_log: {
         Args: {
           p_branch_id: string;
@@ -3741,9 +7729,11 @@ export type Database = {
           employee_name: string;
           late_minutes: number;
           left_early_minutes: number;
+          needs_review: boolean;
           scheduled_end: string;
           scheduled_minutes: number;
           scheduled_start: string;
+          sessions: Json;
           status: string;
           worked_minutes: number;
         }[];
@@ -3758,16 +7748,25 @@ export type Database = {
         Returns: Json;
       };
       can_switch_to_plan: { Args: { p_plan_id: string }; Returns: Json };
+      cancel_advance: { Args: { p_advance_id: string }; Returns: undefined };
+      cancel_campaign: { Args: { p_campaign_id: string }; Returns: undefined };
+      cancel_client_package: {
+        Args: { p_client_package_id: string; p_refund_to_credit?: boolean };
+        Returns: number;
+      };
       cancel_promotion_order: {
         Args: { p_order_id: string };
         Returns: undefined;
       };
       cancel_time_off: { Args: { p_request_id: string }; Returns: undefined };
+      claim_open_shift: { Args: { p_shift_id: string }; Returns: undefined };
+      claim_pending_emails: { Args: { p_limit?: number }; Returns: Json };
       claim_pending_pushes: { Args: { p_limit?: number }; Returns: Json };
       clock_in: {
         Args: { p_branch_id: string };
         Returns: {
           at: string;
+          auto_closed: boolean;
           branch_id: string;
           business_id: string;
           created_at: string;
@@ -3789,6 +7788,7 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: {
           at: string;
+          auto_closed: boolean;
           branch_id: string;
           business_id: string;
           created_at: string;
@@ -3807,6 +7807,10 @@ export type Database = {
         };
       };
       close_business: { Args: { p_confirm_name: string }; Returns: Json };
+      complete_client_task: {
+        Args: { p_done?: boolean; p_task_id: string };
+        Returns: undefined;
+      };
       copy_branch_setup: {
         Args: { p_from_branch_id: string; p_to_branch_id: string };
         Returns: Json;
@@ -3818,6 +7822,61 @@ export type Database = {
           p_to_branch_ids: string[];
         };
         Returns: undefined;
+      };
+      copy_rota_week: {
+        Args: {
+          p_branch_id: string;
+          p_from_monday: string;
+          p_to_monday: string;
+        };
+        Returns: number;
+      };
+      correct_stock_cost: {
+        Args: { p_note?: string; p_stock_id: string; p_unit_cost: number };
+        Returns: {
+          branch_id: string;
+          business_id: string;
+          cost_per_unit: number | null;
+          created_at: string;
+          id: string;
+          product_id: string;
+          qty_on_hand: number;
+          reorder_threshold: number;
+          sku: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "branch_stock";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      count_stock: {
+        Args: {
+          p_counted: number;
+          p_note?: string;
+          p_reason?: string;
+          p_stock_id: string;
+        };
+        Returns: {
+          branch_id: string;
+          business_id: string;
+          cost_per_unit: number | null;
+          created_at: string;
+          id: string;
+          product_id: string;
+          qty_on_hand: number;
+          reorder_threshold: number;
+          sku: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "branch_stock";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       create_booking: {
         Args: {
@@ -3869,18 +7928,125 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_segment_tasks: {
+        Args: { p_segment_id: string; p_title: string };
+        Returns: number;
+      };
+      create_staff_member: {
+        Args: {
+          p_branch_ids: string[];
+          p_first_name: string;
+          p_hire_date?: string;
+          p_job_title?: string;
+          p_last_name?: string;
+          p_phone?: string;
+        };
+        Returns: string;
+      };
+      decide_advance: {
+        Args: { p_advance_id: string; p_approve: boolean; p_note?: string };
+        Returns: undefined;
+      };
+      decide_shift_swap: {
+        Args: { p_approve: boolean; p_swap_id: string };
+        Returns: undefined;
+      };
       decide_time_off: {
-        Args: { p_approve: boolean; p_reason?: string; p_request_id: string };
+        Args: {
+          p_approve: boolean;
+          p_override?: boolean;
+          p_reason?: string;
+          p_request_id: string;
+        };
         Returns: undefined;
       };
       delete_attendance_event: {
-        Args: { p_event_id: string };
+        Args: { p_event_id: string; p_reason?: string };
         Returns: undefined;
       };
+      delete_client_note: { Args: { p_note_id: string }; Returns: undefined };
       delete_customer_account: { Args: { p_user_id: string }; Returns: Json };
+      delete_document: {
+        Args: { p_document_id: string; p_reason?: string };
+        Returns: undefined;
+      };
+      delete_goal: { Args: { p_goal_id: string }; Returns: undefined };
+      delete_message_template: {
+        Args: { p_template_id: string };
+        Returns: undefined;
+      };
       delete_partner_account: { Args: { p_user_id: string }; Returns: Json };
+      delete_payroll_rule_set: { Args: { p_id: string }; Returns: undefined };
       delete_payroll_run: { Args: { p_run_id: string }; Returns: undefined };
+      delete_product_sale: { Args: { p_id: string }; Returns: undefined };
+      delete_report_schedule: { Args: { p_id: string }; Returns: undefined };
+      delete_rota_shift: { Args: { p_id: string }; Returns: undefined };
+      delete_shift_template: { Args: { p_id: string }; Returns: undefined };
+      delete_training: { Args: { p_id: string }; Returns: undefined };
+      distribute_tips: {
+        Args: { p_rule: string; p_run_id: string; p_total: number };
+        Returns: number;
+      };
+      export_clients: {
+        Args: { p_branch_id?: string };
+        Returns: {
+          acquired_at: string;
+          date_of_birth: string;
+          email: string;
+          first_name: string;
+          first_source: string;
+          gender: Database["public"]["Enums"]["gender"];
+          last_name: string;
+          last_visit_at: string;
+          lifecycle: string;
+          phone: string;
+          spend: number;
+          tags: string[];
+          visits: number;
+        }[];
+      };
+      export_segment: {
+        Args: { p_segment_id: string };
+        Returns: {
+          email: string;
+          first_name: string;
+          last_name: string;
+          last_visit_at: string;
+          lifecycle: string;
+          phone: string;
+          spend: number;
+          tags: string[];
+          visits: number;
+        }[];
+      };
+      find_duplicate_clients: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          clients: Json;
+          phone_digits: string;
+        }[];
+      };
       forget_push_tokens: { Args: { p_tokens: string[] }; Returns: number };
+      get_automations: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          body_ar: string;
+          body_en: string;
+          channel: string;
+          delay_hours: number;
+          enabled: boolean;
+          key: string;
+          last_sent_at: string;
+          rebooked_30d: number;
+          sent_30d: number;
+          title_ar: string;
+          title_en: string;
+        }[];
+      };
+      get_branch_closure_impact: {
+        Args: { p_branch_id: string };
+        Returns: Json;
+      };
       get_branch_customers: {
         Args: { p_branch_id: string; p_customer_ids?: string[] };
         Returns: {
@@ -3889,6 +8055,25 @@ export type Database = {
           first_name: string;
           last_name: string;
           phone: string;
+        }[];
+      };
+      get_branch_reviews: {
+        Args: { p_branch_id: string; p_limit?: number };
+        Returns: {
+          booking_id: string;
+          comment: string;
+          created_at: string;
+          customer_id: string;
+          customer_name: string;
+          id: string;
+          open_task_id: string;
+          rating: number;
+          replied_at: string;
+          reply: string;
+          reviewer_name: string;
+          services: string[];
+          staff: string[];
+          visited_at: string;
         }[];
       };
       get_branch_team: {
@@ -3914,6 +8099,156 @@ export type Database = {
           segment_name: string;
           sent_by_name: string;
           title: string;
+        }[];
+      };
+      get_business_clients: {
+        Args: {
+          p_branch_id?: string;
+          p_lifecycle?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_sort?: string;
+          p_source?: string;
+          p_tag?: string;
+        };
+        Returns: {
+          acquired_at: string;
+          alert: string;
+          avg_spend: number;
+          cancelled: number;
+          created_at: string;
+          customer_id: string;
+          days_since_last: number;
+          editable: boolean;
+          email: string;
+          expected_interval_days: number;
+          first_name: string;
+          first_source: string;
+          has_app: boolean;
+          last_name: string;
+          last_visit_at: string;
+          lifecycle: string;
+          next_booking_at: string;
+          no_shows: number;
+          overdue_days: number;
+          phone: string;
+          rewards_ready: number;
+          spend: number;
+          tags: string[];
+          total_count: number;
+          visits: number;
+        }[];
+      };
+      get_campaigns: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          audience_count: number;
+          body: string;
+          channel: string;
+          created_at: string;
+          delivered: number;
+          id: string;
+          read: number;
+          rebooked: number;
+          scheduled_at: string;
+          segment_id: string;
+          segment_name: string;
+          sent_at: string;
+          sent_by_name: string;
+          skipped: number;
+          status: string;
+          template_id: string;
+          title: string;
+        }[];
+      };
+      get_channel_status: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_checklist: {
+        Args: { p_employee_id: string; p_kind: string };
+        Returns: Json;
+      };
+      get_client_fields: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          key: string;
+          label: string;
+          label_ar: string;
+          options: string[];
+          position: number;
+          template: string;
+          type: string;
+        }[];
+      };
+      get_client_ledger: {
+        Args: { p_customer_id: string; p_limit?: number };
+        Returns: {
+          booking_id: string;
+          by_name: string;
+          cash_amount: number;
+          created_at: string;
+          credit_delta: number;
+          id: string;
+          kind: string;
+          meta: Json;
+          method: string;
+          note: string;
+        }[];
+      };
+      get_client_money: { Args: { p_customer_id: string }; Returns: Json };
+      get_client_notes: {
+        Args: { p_customer_id: string };
+        Returns: {
+          author_id: string;
+          author_name: string;
+          body: string;
+          created_at: string;
+          id: string;
+        }[];
+      };
+      get_client_packages: {
+        Args: { p_customer_id: string };
+        Returns: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          name: string;
+          price_paid: number;
+          sessions_remaining: number;
+          sessions_total: number;
+          status: string;
+        }[];
+      };
+      get_client_profile: { Args: { p_customer_id: string }; Returns: Json };
+      get_client_tags: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          clients: number;
+          tag: string;
+        }[];
+      };
+      get_client_tasks: {
+        Args: { p_customer_id?: string; p_include_done?: boolean };
+        Returns: {
+          created_at: string;
+          customer_id: string;
+          customer_name: string;
+          done_at: string;
+          due_at: string;
+          id: string;
+          kind: string;
+          title: string;
+        }[];
+      };
+      get_client_timeline: {
+        Args: { p_before?: string; p_customer_id: string; p_limit?: number };
+        Returns: {
+          branch_id: string;
+          data: Json;
+          id: string;
+          kind: string;
+          occurred_at: string;
+          ref_id: string;
         }[];
       };
       get_clients: {
@@ -3953,27 +8288,190 @@ export type Database = {
           rate: number;
         }[];
       };
+      get_crm_actions: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_crm_audit: {
+        Args: { p_limit?: number };
+        Returns: {
+          action: string;
+          actor_name: string;
+          created_at: string;
+          customer_id: string;
+          details: Json;
+          id: string;
+        }[];
+      };
+      get_crm_insights: {
+        Args: { p_branch_id?: string; p_months?: number };
+        Returns: Json;
+      };
+      get_crm_settings: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_discounts: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          active: boolean;
+          amount_off: number;
+          code: string;
+          id: string;
+          kind: string;
+          max_uses: number;
+          min_spend: number;
+          name: string;
+          per_client_limit: number;
+          segment_id: string;
+          service_id: string;
+          uses: number;
+          valid_from: string;
+          valid_to: string;
+          value: number;
+        }[];
+      };
       get_employee_permissions: {
         Args: { p_employee_id: string };
         Returns: Json;
       };
+      get_employee_private: {
+        Args: { p_employee_id: string; p_reveal?: boolean };
+        Returns: Json;
+      };
+      get_employee_profile: { Args: { p_employee_id: string }; Returns: Json };
+      get_former_employee: { Args: { p_employee_id: string }; Returns: Json };
+      get_gift_cards: {
+        Args: { p_status?: string };
+        Returns: {
+          balance: number;
+          buyer_name: string;
+          code: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          initial_amount: number;
+          recipient_name: string;
+          status: string;
+        }[];
+      };
+      get_hours_change_impact: {
+        Args: { p_branch_id: string; p_hours: Json };
+        Returns: Json;
+      };
+      get_hr_settings: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          allow_early_payroll: boolean;
+          auto_close_after_minutes: number | null;
+          business_id: string;
+          creator_cannot_approve: boolean;
+          late_grace_minutes: number;
+          max_daily_hours: number;
+          max_deduction_pct: number | null;
+          max_weekly_hours: number;
+          min_session_minutes: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "hr_settings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       get_invite_preview: { Args: { p_token: string }; Returns: Json };
       get_invite_status: { Args: { p_employee_id: string }; Returns: Json };
+      get_loyalty_members: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string };
+        Returns: {
+          card_id: string;
+          customer_name: string;
+          last_activity_at: string;
+          rewards_available: number;
+          rewards_redeemed: number;
+          stamps: number;
+          stamps_total: number;
+          total_count: number;
+        }[];
+      };
+      get_loyalty_program: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_loyalty_tiers: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          min_stamps_total: number;
+          name: string;
+          perk: string;
+        }[];
+      };
+      get_message_templates: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          body: string;
+          channel: string;
+          id: string;
+          is_system: boolean;
+          key: string;
+          language: string;
+          name: string;
+          title: string;
+        }[];
+      };
       get_my_billing: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_commission: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_loyalty_cards: { Args: Record<PropertyKey, never>; Returns: Json };
-      join_loyalty_program: { Args: { p_join_code: string }; Returns: Json };
       get_my_partner_context: {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
       get_my_promotions: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_packages: {
+        Args: { p_include_archived?: boolean };
+        Returns: {
+          active: boolean;
+          description: string;
+          id: string;
+          name: string;
+          price: number;
+          service_id: string;
+          service_name: string;
+          sessions: number;
+          sold: number;
+          validity_days: number;
+        }[];
+      };
+      get_queue: {
+        Args: { p_branch_id: string };
+        Returns: {
+          called_at: string;
+          customer_name: string;
+          finished_at: string;
+          issued_at: string;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+          ticket_id: string;
+          ticket_number: number;
+        }[];
+      };
       get_review_stats: {
         Args: { p_branch_id: string };
         Returns: {
           average_rating: number;
           rating_distribution: Json;
           total_reviews: number;
+        }[];
+      };
+      get_segment_audience: {
+        Args: { p_segment_id: string };
+        Returns: {
+          customer_id: string;
+          email: string;
+          first_name: string;
+          has_app: boolean;
+          last_name: string;
+          last_visit_at: string;
+          lifecycle: string;
+          phone: string;
+          push_ok: boolean;
+          sms_ok: boolean;
+          spend: number;
+          tags: string[];
+          visits: number;
+          whatsapp_ok: boolean;
         }[];
       };
       get_segment_members: {
@@ -3990,6 +8488,14 @@ export type Database = {
         }[];
       };
       get_segments: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_service_coverage: {
+        Args: { p_branch_id: string };
+        Returns: {
+          providers: number;
+          service_id: string;
+          service_name: string;
+        }[];
+      };
       get_time_off_balance: {
         Args: { p_employee_id: string; p_year?: number };
         Returns: {
@@ -4000,6 +8506,93 @@ export type Database = {
           remaining: number;
         }[];
       };
+      hire_candidate: {
+        Args: {
+          p_branch_ids: string[];
+          p_candidate_id: string;
+          p_hire_date: string;
+          p_job_title?: string;
+        };
+        Returns: string;
+      };
+      hr_report_attendance: {
+        Args: { p_branch_id: string; p_from: string; p_to: string };
+        Returns: {
+          absent_days: number;
+          employee_name: string;
+          late_days: number;
+          late_minutes: number;
+          scheduled_days: number;
+          worked_minutes: number;
+        }[];
+      };
+      hr_report_commission: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          clawback: number;
+          commission: number;
+          employee_name: string;
+          month: string;
+          net_commission: number;
+        }[];
+      };
+      hr_report_document_expiry: {
+        Args: { p_days?: number };
+        Returns: {
+          category: Database["public"]["Enums"]["document_category"];
+          days_left: number;
+          document_name: string;
+          employee_name: string;
+          expires_on: string;
+        }[];
+      };
+      hr_report_headcount: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          branch_name: string;
+          department: string;
+          employment_type: string;
+          people: number;
+        }[];
+      };
+      hr_report_leave_liability: {
+        Args: { p_year?: number };
+        Returns: {
+          daily_rate: number;
+          employee_name: string;
+          liability: number;
+          remaining_days: number;
+        }[];
+      };
+      hr_report_overtime: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          banked_hours: number;
+          employee_name: string;
+          overtime_hours: number;
+          overtime_pay: number;
+        }[];
+      };
+      hr_report_payroll_cost: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          branch_name: string;
+          department: string;
+          employer_cost: number;
+          gross: number;
+          net: number;
+          people: number;
+        }[];
+      };
+      hr_report_turnover: {
+        Args: { p_months?: number };
+        Returns: {
+          headcount_end: number;
+          joined: number;
+          left_count: number;
+          month: string;
+        }[];
+      };
       import_clients: {
         Args: { p_branch_id: string; p_rows: Json };
         Returns: Json;
@@ -4007,6 +8600,7 @@ export type Database = {
       invite_employee: {
         Args: {
           p_branch_ids: string[];
+          p_email?: string;
           p_first_name: string;
           p_job_title?: string;
           p_last_name?: string;
@@ -4014,7 +8608,368 @@ export type Database = {
         };
         Returns: Json;
       };
+      join_loyalty_program: { Args: { p_join_code: string }; Returns: Json };
+      leave_encashment: { Args: { p_employee_id: string }; Returns: Json };
+      list_advances: {
+        Args: { p_employee_id?: string };
+        Returns: {
+          amount: number;
+          created_at: string;
+          decision_note: string;
+          deducted: number;
+          employee_id: string;
+          employee_name: string;
+          first_month: string;
+          id: string;
+          installments: number;
+          reason: string;
+          remaining: number;
+          status: string;
+        }[];
+      };
+      list_candidates: {
+        Args: { p_opening_id?: string };
+        Returns: {
+          created_at: string;
+          email: string;
+          hired_employee_id: string;
+          id: string;
+          name: string;
+          notes: string;
+          opening_id: string;
+          opening_title: string;
+          phone: string;
+          stage: string;
+        }[];
+      };
+      list_deleted_documents: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          category: Database["public"]["Enums"]["document_category"];
+          delete_reason: string;
+          deleted_at: string;
+          deleted_by_name: string;
+          employee_id: string;
+          id: string;
+          name: string;
+          owner_name: string;
+          restorable_until: string;
+        }[];
+      };
+      list_former_employees: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          archive_reason: string;
+          archived_at: string;
+          hire_date: string;
+          id: string;
+          job_title: string;
+          last_working_day: string;
+          name: string;
+        }[];
+      };
+      list_goals: {
+        Args: { p_employee_id: string };
+        Returns: {
+          actual: number;
+          id: string;
+          kpi: string;
+          manual: boolean;
+          period_end: string;
+          period_start: string;
+          target: number;
+          title: string;
+        }[];
+      };
+      list_hr_audit: {
+        Args: { p_employee_id?: string; p_limit?: number };
+        Returns: {
+          action: string;
+          actor_name: string;
+          created_at: string;
+          details: Json;
+          entity: string;
+          id: string;
+          subject_name: string;
+        }[];
+      };
+      list_hr_records: {
+        Args: { p_employee_id: string };
+        Returns: {
+          acknowledged_at: string;
+          details: string;
+          id: string;
+          issued_by_name: string;
+          issued_on: string;
+          kind: string;
+          title: string;
+        }[];
+      };
+      list_hr_reminders: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          days_left: number;
+          due_on: string;
+          employee_id: string;
+          employee_name: string;
+          kind: string;
+          label: string;
+        }[];
+      };
+      list_invites: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          created_at: string;
+          email: string;
+          employee_id: string;
+          expires_at: string;
+          job_title: string;
+          name: string;
+          phone: string;
+          status: string;
+        }[];
+      };
+      list_job_openings: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          branch_id: string;
+          branch_name: string;
+          candidates: number;
+          created_at: string;
+          description: string;
+          id: string;
+          status: string;
+          title: string;
+        }[];
+      };
+      list_one_on_ones: {
+        Args: { p_employee_id: string };
+        Returns: {
+          author_name: string;
+          held_on: string;
+          id: string;
+          notes: string;
+        }[];
+      };
+      list_product_sales: {
+        Args: { p_branch_id: string; p_from: string; p_to: string };
+        Returns: {
+          amount: number;
+          employee_id: string;
+          employee_name: string;
+          id: string;
+          note: string;
+          product_name: string;
+          sold_on: string;
+        }[];
+      };
+      list_report_schedules: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          frequency: string;
+          id: string;
+          last_sent_on: string;
+          recipients: number;
+          report: string;
+        }[];
+      };
+      list_reviews: {
+        Args: { p_employee_id?: string };
+        Returns: {
+          cycle_name: string;
+          due_on: string;
+          employee_id: string;
+          employee_name: string;
+          id: string;
+          kind: string;
+          manager_name: string;
+          manager_notes: string;
+          manager_rating: number;
+          self_notes: string;
+          self_rating: number;
+          status: string;
+        }[];
+      };
+      list_trainings: {
+        Args: { p_employee_id: string };
+        Returns: {
+          completed_on: string;
+          document_id: string;
+          document_name: string;
+          expires_on: string;
+          id: string;
+          name: string;
+          provider: string;
+          status: string;
+        }[];
+      };
+      lookup_loyalty_card: { Args: { p_code: string }; Returns: Json };
+      mark_email_failed: {
+        Args: { p_error: string; p_id: string };
+        Returns: undefined;
+      };
+      mark_email_sent: {
+        Args: { p_id: string; p_provider_id: string };
+        Returns: undefined;
+      };
       mark_messages_read: { Args: { p_booking_id: string }; Returns: number };
+      merge_clients: {
+        Args: { p_keep: string; p_remove: string };
+        Returns: undefined;
+      };
+      move_candidate: {
+        Args: { p_id: string; p_stage: string };
+        Returns: undefined;
+      };
+      my_month_summary: {
+        Args: { p_from: string; p_to: string };
+        Returns: Json;
+      };
+      payroll_business_summary: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          base_pay: number;
+          branches: number;
+          employee_id: string;
+          employee_name: string;
+          run_ids: string[];
+          total_pay: number;
+        }[];
+      };
+      payroll_cost_by_month: {
+        Args: { p_months?: number };
+        Returns: {
+          branch_id: string;
+          branch_name: string;
+          employer_cost: number;
+          gross: number;
+          month: string;
+          net: number;
+          people: number;
+        }[];
+      };
+      payroll_payment_batch: {
+        Args: { p_run_id: string };
+        Returns: {
+          account: string;
+          bank_name: string;
+          employee_name: string;
+          line_id: string;
+          net_pay: number;
+          payment_method: string;
+          payment_status: string;
+          wallet: string;
+        }[];
+      };
+      pending_approvers: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          approver_id: string;
+          approver_name: string;
+          request_id: string;
+        }[];
+      };
+      performance_staff: {
+        Args: { p_branch_id: string; p_from: string; p_to: string };
+        Returns: {
+          avg_rating: number;
+          booked_minutes: number;
+          cancelled: number;
+          completed: number;
+          employee_id: string;
+          employee_name: string;
+          no_show_rate: number;
+          no_shows: number;
+          revenue: number;
+          reviews: number;
+          scheduled_minutes: number;
+          utilisation: number;
+        }[];
+      };
+      preview_time_off: {
+        Args: {
+          p_ends_on: string;
+          p_leave_type: Database["public"]["Enums"]["leave_type"];
+          p_starts_on: string;
+        };
+        Returns: Json;
+      };
+      publish_rota: {
+        Args: { p_branch_id: string; p_week_start: string };
+        Returns: number;
+      };
+      queue_call: {
+        Args: { p_branch_id: string; p_ticket_id?: string };
+        Returns: {
+          branch_id: string;
+          business_id: string;
+          called_at: string | null;
+          called_by: string | null;
+          customer_name: string | null;
+          finished_at: string | null;
+          id: string;
+          issued_at: string;
+          issued_by: string | null;
+          number: number;
+          queue_date: string;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        SetofOptions: {
+          from: "*";
+          to: "queue_tickets";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      queue_finish: {
+        Args: {
+          p_status: Database["public"]["Enums"]["queue_ticket_status"];
+          p_ticket_id: string;
+        };
+        Returns: {
+          branch_id: string;
+          business_id: string;
+          called_at: string | null;
+          called_by: string | null;
+          customer_name: string | null;
+          finished_at: string | null;
+          id: string;
+          issued_at: string;
+          issued_by: string | null;
+          number: number;
+          queue_date: string;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        SetofOptions: {
+          from: "*";
+          to: "queue_tickets";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      queue_issue_ticket: {
+        Args: { p_branch_id: string; p_customer_name?: string };
+        Returns: {
+          branch_id: string;
+          business_id: string;
+          called_at: string | null;
+          called_by: string | null;
+          customer_name: string | null;
+          finished_at: string | null;
+          id: string;
+          issued_at: string;
+          issued_by: string | null;
+          number: number;
+          queue_date: string;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        SetofOptions: {
+          from: "*";
+          to: "queue_tickets";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       quote_plan_checkout: {
         Args: { p_extra_seats?: number; p_plan_id: string };
         Returns: Json;
@@ -4029,9 +8984,45 @@ export type Database = {
         };
         Returns: Json;
       };
+      rate_limit_hit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number };
+        Returns: boolean;
+      };
       recalculate_payroll_run: {
         Args: { p_run_id: string };
         Returns: undefined;
+      };
+      record_payment: {
+        Args: {
+          p_amount: number;
+          p_booking_id?: string;
+          p_branch_id?: string;
+          p_customer_id: string;
+          p_method: string;
+          p_note?: string;
+          p_use_credit?: number;
+        };
+        Returns: string;
+      };
+      record_product_sale: {
+        Args: {
+          p_amount: number;
+          p_branch_id: string;
+          p_employee_id: string;
+          p_note?: string;
+          p_product_id?: string;
+          p_product_name: string;
+          p_sold_on?: string;
+        };
+        Returns: string;
+      };
+      redeem_gift_card: {
+        Args: { p_amount?: number; p_code: string; p_customer_id: string };
+        Returns: number;
+      };
+      redeem_loyalty_reward: {
+        Args: { p_branch_id: string; p_code: string };
+        Returns: Json;
       };
       regenerate_invite: { Args: { p_employee_id: string }; Returns: Json };
       register_push_token: {
@@ -4042,28 +9033,49 @@ export type Database = {
         };
         Returns: undefined;
       };
+      remove_company_holiday: {
+        Args: { p_branch_id?: string; p_date: string };
+        Returns: undefined;
+      };
       remove_payroll_adjustment: {
         Args: { p_adjustment_id: string };
         Returns: {
           adjustments_total: number;
+          advance_deduction: number;
+          banked_hours: number;
           base_pay: number;
           branch_id: string;
           business_id: string;
           commission: number;
+          commission_clawback: number;
+          commission_detail: NonNullable<Json>;
           commission_revenue: number;
+          cost_shared: boolean;
           created_at: string;
           employee_id: string;
           employee_name: string;
+          employer_cost: number;
+          fallback_hours: number;
           flags: string[];
           id: string;
+          income_tax: number;
           leave_deduction: number;
+          net_pay: number;
           overtime_hours: number;
           overtime_pay: number;
+          overtime_policy: string | null;
           paid_leave_days: number;
           paid_leave_pay: number;
           pay_type: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method: string | null;
+          payment_status: string;
+          product_commission: number;
           regular_hours: number;
           run_id: string;
+          si_employee: number;
+          si_employer: number;
+          stamp_solidarity: number;
+          statutory_configured: boolean;
           total_pay: number;
           unpaid_leave_days: number;
           updated_at: string;
@@ -4075,9 +9087,31 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      render_candidate_offer: {
+        Args: {
+          p_candidate_id: string;
+          p_lang?: string;
+          p_start_date?: string;
+        };
+        Returns: string;
+      };
+      render_document_template: {
+        Args: { p_employee_id: string; p_key: string; p_lang?: string };
+        Returns: string;
+      };
       reply_to_review: {
         Args: { p_reply: string; p_review_id: string };
         Returns: undefined;
+      };
+      request_advance: {
+        Args: {
+          p_amount: number;
+          p_employee_id?: string;
+          p_first_month: string;
+          p_installments: number;
+          p_reason?: string;
+        };
+        Returns: string;
       };
       request_document_signature: {
         Args: { p_document_id: string };
@@ -4085,6 +9119,9 @@ export type Database = {
           business_id: string;
           category: Database["public"]["Enums"]["document_category"];
           created_at: string;
+          delete_reason: string | null;
+          deleted_at: string | null;
+          deleted_by: string | null;
           employee_id: string | null;
           expires_on: string | null;
           file_path: string;
@@ -4093,6 +9130,7 @@ export type Database = {
           sign_status: Database["public"]["Enums"]["document_sign_status"];
           signature_requested_at: string | null;
           signed_at: string | null;
+          source: string;
           updated_at: string;
           uploaded_by: string | null;
         };
@@ -4103,9 +9141,17 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      request_shift_swap: {
+        Args: { p_shift_id: string; p_target_id: string };
+        Returns: string;
+      };
       request_time_off: {
         Args: {
+          p_allow_exceed?: boolean;
+          p_attachment_path?: string;
           p_ends_on: string;
+          p_half_day?: boolean;
+          p_hours?: number;
           p_leave_type: Database["public"]["Enums"]["leave_type"];
           p_note?: string;
           p_starts_on: string;
@@ -4121,28 +9167,49 @@ export type Database = {
         };
         Returns: Json;
       };
+      reset_loyalty_join_code: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
       resolve_payroll_flag: {
         Args: { p_flag: string; p_line_id: string };
         Returns: {
           adjustments_total: number;
+          advance_deduction: number;
+          banked_hours: number;
           base_pay: number;
           branch_id: string;
           business_id: string;
           commission: number;
+          commission_clawback: number;
+          commission_detail: NonNullable<Json>;
           commission_revenue: number;
+          cost_shared: boolean;
           created_at: string;
           employee_id: string;
           employee_name: string;
+          employer_cost: number;
+          fallback_hours: number;
           flags: string[];
           id: string;
+          income_tax: number;
           leave_deduction: number;
+          net_pay: number;
           overtime_hours: number;
           overtime_pay: number;
+          overtime_policy: string | null;
           paid_leave_days: number;
           paid_leave_pay: number;
           pay_type: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method: string | null;
+          payment_status: string;
+          product_commission: number;
           regular_hours: number;
           run_id: string;
+          si_employee: number;
+          si_employer: number;
+          stamp_solidarity: number;
+          statutory_configured: boolean;
           total_pay: number;
           unpaid_leave_days: number;
           updated_at: string;
@@ -4153,6 +9220,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      respond_shift_swap: {
+        Args: { p_accept: boolean; p_swap_id: string };
+        Returns: undefined;
       };
       restock_product: {
         Args: {
@@ -4181,7 +9252,196 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      restore_document: { Args: { p_document_id: string }; Returns: undefined };
       revoke_invite: { Args: { p_employee_id: string }; Returns: undefined };
+      save_automation: {
+        Args: {
+          p_body_ar?: string;
+          p_body_en?: string;
+          p_channel?: string;
+          p_delay_hours?: number;
+          p_enabled: boolean;
+          p_key: string;
+          p_title_ar?: string;
+          p_title_en?: string;
+        };
+        Returns: undefined;
+      };
+      save_candidate: {
+        Args: {
+          p_email: string;
+          p_id?: string;
+          p_name: string;
+          p_notes: string;
+          p_opening_id: string;
+          p_phone: string;
+        };
+        Returns: string;
+      };
+      save_client_fields: { Args: { p_fields: Json }; Returns: undefined };
+      save_commission_rules: {
+        Args: { p_rules: Json; p_tiers: Json };
+        Returns: undefined;
+      };
+      save_crm_settings: { Args: { p_settings: Json }; Returns: undefined };
+      save_discount: {
+        Args: {
+          p_active?: boolean;
+          p_code: string;
+          p_discount_id: string;
+          p_kind: string;
+          p_max_uses?: number;
+          p_min_spend?: number;
+          p_name: string;
+          p_per_client_limit?: number;
+          p_segment_id?: string;
+          p_service_id?: string;
+          p_valid_from?: string;
+          p_valid_to?: string;
+          p_value: number;
+        };
+        Returns: string;
+      };
+      save_goal: {
+        Args: {
+          p_actual_manual?: number;
+          p_employee_id: string;
+          p_from: string;
+          p_id?: string;
+          p_kpi: string;
+          p_target: number;
+          p_title: string;
+          p_to: string;
+        };
+        Returns: string;
+      };
+      save_job_opening: {
+        Args: {
+          p_branch_id: string;
+          p_description: string;
+          p_id?: string;
+          p_status?: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
+      save_leave_policy_rules: { Args: { p_rules: Json }; Returns: undefined };
+      save_loyalty_extras: {
+        Args: {
+          p_birthday_stamps: number;
+          p_referral_stamps: number;
+          p_reward_service_id?: string;
+        };
+        Returns: Json;
+      };
+      save_loyalty_program: {
+        Args: {
+          p_auto_stamp?: boolean;
+          p_brand_color: string;
+          p_is_active: boolean;
+          p_min_booking_total: number;
+          p_name: string;
+          p_reward_description: string;
+          p_reward_title: string;
+          p_stamps_required: number;
+        };
+        Returns: Json;
+      };
+      save_loyalty_tiers: { Args: { p_tiers: Json }; Returns: undefined };
+      save_message_template: {
+        Args: {
+          p_body: string;
+          p_channel: string;
+          p_language: string;
+          p_name: string;
+          p_template_id: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
+      save_package: {
+        Args: {
+          p_active?: boolean;
+          p_description: string;
+          p_name: string;
+          p_package_id: string;
+          p_price: number;
+          p_service_id?: string;
+          p_sessions: number;
+          p_validity_days?: number;
+        };
+        Returns: string;
+      };
+      save_pay_settings: {
+        Args: {
+          p_commission_rate: number;
+          p_employee_id: string;
+          p_hourly_rate: number;
+          p_monthly_salary: number;
+          p_overtime_multiplier: number;
+          p_overtime_policy?: string;
+          p_pay_type: Database["public"]["Enums"]["pay_type"];
+          p_product_commission_rate?: number;
+          p_regular_hours: number;
+        };
+        Returns: {
+          business_id: string;
+          commission_rate: number;
+          created_at: string;
+          employee_id: string;
+          hourly_rate: number | null;
+          monthly_salary: number | null;
+          overtime_multiplier: number;
+          overtime_policy: string;
+          pay_type: Database["public"]["Enums"]["pay_type"];
+          product_commission_rate: number;
+          regular_hours_per_month: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "pay_settings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      save_payroll_rule_set: {
+        Args: {
+          p_effective_from: string;
+          p_holiday_work_premium_pct: number;
+          p_name: string;
+          p_notes?: string;
+          p_si_employee_pct: number;
+          p_si_employer_pct: number;
+          p_si_max_base: number;
+          p_si_min_base: number;
+          p_solidarity_pct: number;
+          p_stamp_pct: number;
+          p_tax_brackets: Json;
+        };
+        Returns: string;
+      };
+      save_report_schedule: {
+        Args: {
+          p_frequency: string;
+          p_recipient_ids: string[];
+          p_report: string;
+        };
+        Returns: string;
+      };
+      save_rota_shift: {
+        Args: {
+          p_branch_id: string;
+          p_break?: number;
+          p_date: string;
+          p_employee_id: string;
+          p_ends: string;
+          p_id?: string;
+          p_note?: string;
+          p_starts: string;
+        };
+        Returns: string;
+      };
       save_segment: {
         Args: {
           p_color?: string;
@@ -4192,6 +9452,41 @@ export type Database = {
           p_segment_id: string;
         };
         Returns: string;
+      };
+      save_shift_template: {
+        Args: {
+          p_break?: number;
+          p_ends: string;
+          p_id?: string;
+          p_name: string;
+          p_starts: string;
+        };
+        Returns: string;
+      };
+      save_training: {
+        Args: {
+          p_completed_on: string;
+          p_document_id?: string;
+          p_employee_id: string;
+          p_expires_on: string;
+          p_id?: string;
+          p_name: string;
+          p_provider: string;
+        };
+        Returns: string;
+      };
+      schedule_week_check: {
+        Args: { p_branch_id: string; p_week_start: string };
+        Returns: {
+          days_worked: number;
+          employee_id: string;
+          employee_name: string;
+          no_rest_day: boolean;
+          over_daily: boolean;
+          over_weekly: boolean;
+          overlap: boolean;
+          total_minutes: number;
+        }[];
       };
       search_branches: {
         Args: {
@@ -4225,15 +9520,106 @@ export type Database = {
           timezone: string;
         }[];
       };
+      search_hr_audit: {
+        Args: {
+          p_action?: string;
+          p_employee_id?: string;
+          p_from?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_to?: string;
+        };
+        Returns: {
+          action: string;
+          actor_name: string;
+          created_at: string;
+          details: Json;
+          entity: string;
+          id: string;
+          subject_name: string;
+        }[];
+      };
+      seed_egypt_holidays: { Args: { p_year: number }; Returns: number };
+      sell_gift_card: {
+        Args: {
+          p_amount: number;
+          p_buyer_customer_id?: string;
+          p_method: string;
+          p_note?: string;
+          p_recipient_name?: string;
+          p_valid_days?: number;
+        };
+        Returns: Json;
+      };
+      sell_package: {
+        Args: {
+          p_branch_id?: string;
+          p_customer_id: string;
+          p_method: string;
+          p_package_id: string;
+          p_price?: number;
+          p_use_credit?: number;
+        };
+        Returns: string;
+      };
       send_broadcast: {
         Args: { p_body: string; p_segment_id: string; p_title: string };
         Returns: Json;
       };
+      send_campaign: {
+        Args: {
+          p_body: string;
+          p_channel?: string;
+          p_scheduled_at?: string;
+          p_segment_id: string;
+          p_template_id?: string;
+          p_title: string;
+        };
+        Returns: Json;
+      };
+      send_test_campaign: {
+        Args: { p_body: string; p_title: string };
+        Returns: undefined;
+      };
       set_branch_status: {
         Args: {
           p_branch_id: string;
+          p_confirm?: boolean;
+          p_notify?: boolean;
           p_status: Database["public"]["Enums"]["branch_status"];
         };
+        Returns: Json;
+      };
+      set_client_consent: {
+        Args: {
+          p_channel: string;
+          p_customer_id: string;
+          p_granted: boolean;
+          p_source: string;
+        };
+        Returns: undefined;
+      };
+      set_client_details: {
+        Args: {
+          p_alert?: string;
+          p_custom?: Json;
+          p_customer_id: string;
+          p_language?: string;
+          p_preferred_employee_id?: string;
+          p_preferred_staff_gender?: string;
+        };
+        Returns: undefined;
+      };
+      set_client_referrer: {
+        Args: { p_customer_id: string; p_referrer_id: string };
+        Returns: undefined;
+      };
+      set_client_tags: {
+        Args: { p_customer_id: string; p_tags: string[] };
+        Returns: string[];
+      };
+      set_company_holiday: {
+        Args: { p_branch_id?: string; p_date: string; p_name: string };
         Returns: undefined;
       };
       set_employee_branches: {
@@ -4244,12 +9630,73 @@ export type Database = {
         Args: { p_branch_id: string; p_employee_id: string; p_keys: string[] };
         Returns: string[];
       };
+      set_employee_private: {
+        Args: {
+          p_bank_account: string;
+          p_bank_name: string;
+          p_employee_id: string;
+          p_national_id: string;
+          p_wallet_number: string;
+        };
+        Returns: undefined;
+      };
+      set_line_payment: {
+        Args: { p_line_id: string; p_method?: string; p_status: string };
+        Returns: {
+          adjustments_total: number;
+          advance_deduction: number;
+          banked_hours: number;
+          base_pay: number;
+          branch_id: string;
+          business_id: string;
+          commission: number;
+          commission_clawback: number;
+          commission_detail: NonNullable<Json>;
+          commission_revenue: number;
+          cost_shared: boolean;
+          created_at: string;
+          employee_id: string;
+          employee_name: string;
+          employer_cost: number;
+          fallback_hours: number;
+          flags: string[];
+          id: string;
+          income_tax: number;
+          leave_deduction: number;
+          net_pay: number;
+          overtime_hours: number;
+          overtime_pay: number;
+          overtime_policy: string | null;
+          paid_leave_days: number;
+          paid_leave_pay: number;
+          pay_type: Database["public"]["Enums"]["pay_type"] | null;
+          payment_method: string | null;
+          payment_status: string;
+          product_commission: number;
+          regular_hours: number;
+          run_id: string;
+          si_employee: number;
+          si_employer: number;
+          stamp_solidarity: number;
+          statutory_configured: boolean;
+          total_pay: number;
+          unpaid_leave_days: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "payroll_lines";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       set_owner: {
         Args: { p_employee_id: string; p_is_owner: boolean };
         Returns: undefined;
       };
       set_payroll_run_status: {
         Args: {
+          p_reason?: string;
           p_run_id: string;
           p_status: Database["public"]["Enums"]["payroll_run_status"];
         };
@@ -4274,12 +9721,19 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      set_provides_services: {
+        Args: { p_employee_id: string; p_provides: boolean };
+        Returns: undefined;
+      };
       sign_document: {
         Args: { p_document_id: string };
         Returns: {
           business_id: string;
           category: Database["public"]["Enums"]["document_category"];
           created_at: string;
+          delete_reason: string | null;
+          deleted_at: string | null;
+          deleted_by: string | null;
           employee_id: string | null;
           expires_on: string | null;
           file_path: string;
@@ -4288,6 +9742,7 @@ export type Database = {
           sign_status: Database["public"]["Enums"]["document_sign_status"];
           signature_requested_at: string | null;
           signed_at: string | null;
+          source: string;
           updated_at: string;
           uploaded_by: string | null;
         };
@@ -4297,6 +9752,41 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      staffing_suggestions: {
+        Args: { p_branch_id: string; p_from: string; p_to: string };
+        Returns: {
+          avg_bookings: number;
+          day_of_week: number;
+          hour: number;
+          staffed: number;
+          understaffed: boolean;
+        }[];
+      };
+      start_checklist: {
+        Args: { p_employee_id: string; p_kind: string };
+        Returns: string;
+      };
+      start_free_trial: { Args: { p_plan_id: string }; Returns: Json };
+      start_probation_review: {
+        Args: { p_employee_id: string };
+        Returns: string;
+      };
+      start_review_cycle: {
+        Args: { p_due_on: string; p_employee_ids?: string[]; p_name: string };
+        Returns: string;
+      };
+      submit_manager_review: {
+        Args: { p_notes: string; p_rating: number; p_review_id: string };
+        Returns: undefined;
+      };
+      submit_self_review: {
+        Args: { p_notes: string; p_rating: number; p_review_id: string };
+        Returns: undefined;
+      };
+      toggle_checklist_item: {
+        Args: { p_checklist_id: string; p_done: boolean; p_key: string };
+        Returns: Json;
       };
       track_product: {
         Args: {
@@ -4329,6 +9819,96 @@ export type Database = {
         };
         Returns: undefined;
       };
+      update_employee_profile: {
+        Args: { p: Json; p_employee_id: string };
+        Returns: undefined;
+      };
+      update_hr_settings: {
+        Args: {
+          p_allow_early_payroll: boolean;
+          p_auto_close_after_minutes?: number;
+          p_creator_cannot_approve: boolean;
+          p_late_grace_minutes?: number;
+          p_max_daily_hours?: number;
+          p_max_deduction_pct: number;
+          p_max_weekly_hours: number;
+          p_min_session_minutes: number;
+        };
+        Returns: {
+          allow_early_payroll: boolean;
+          auto_close_after_minutes: number | null;
+          business_id: string;
+          creator_cannot_approve: boolean;
+          late_grace_minutes: number;
+          max_daily_hours: number;
+          max_deduction_pct: number | null;
+          max_weekly_hours: number;
+          min_session_minutes: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "hr_settings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      use_package_session: {
+        Args: {
+          p_booking_id?: string;
+          p_client_package_id: string;
+          p_note?: string;
+        };
+        Returns: number;
+      };
+      void_gift_card: { Args: { p_gift_card_id: string }; Returns: undefined };
+      wallet_apple_drop_device: {
+        Args: { p_device_id: string; p_push_token: string };
+        Returns: undefined;
+      };
+      wallet_apple_register: {
+        Args: { p_card_id: string; p_device_id: string; p_push_token: string };
+        Returns: undefined;
+      };
+      wallet_apple_serials: {
+        Args: { p_device_id: string; p_since: string };
+        Returns: {
+          card_id: string;
+          updated_at: string;
+        }[];
+      };
+      wallet_apple_unregister: {
+        Args: { p_card_id: string; p_device_id: string };
+        Returns: undefined;
+      };
+      wallet_card_by_id: { Args: { p_card_id: string }; Returns: Json };
+      wallet_card_for_user: {
+        Args: { p_card_id: string; p_user_id: string };
+        Returns: Json;
+      };
+      wallet_google_register: {
+        Args: { p_card_id: string };
+        Returns: undefined;
+      };
+      wallet_mark_synced: {
+        Args: {
+          p_card_id: string;
+          p_device_id: string;
+          p_kind: string;
+          p_version: number;
+        };
+        Returns: undefined;
+      };
+      wallet_pending_sync: {
+        Args: { p_limit: number };
+        Returns: {
+          card_id: string;
+          device_id: string;
+          kind: string;
+          push_token: string;
+          version: number;
+        }[];
+      };
     };
     Enums: {
       amenity:
@@ -4336,8 +9916,11 @@ export type Database = {
         | "card_payments"
         | "wheelchair_accessible"
         | "wifi"
-        | "kids_friendly";
+        | "kids_friendly"
+        | "pet_friendly"
+        | "instapay";
       app_kind: "customer" | "partner";
+      assistant_role: "user" | "assistant";
       attendance_kind: "clock_in" | "clock_out";
       attendance_source: "app" | "manual";
       booking_mode: "specialist" | "capacity";
@@ -4366,6 +9949,7 @@ export type Database = {
         | "maternity"
         | "paternity"
         | "public_holiday";
+      loyalty_event_kind: "earn" | "stamp" | "redeem";
       message_sender: "customer" | "branch";
       notification_type:
         | "booking_created"
@@ -4381,9 +9965,26 @@ export type Database = {
       pay_type: "hourly" | "salaried";
       payroll_adjustment_kind: "bonus" | "deduction";
       payroll_run_status: "draft" | "review" | "approved" | "paid";
-      segment_field: "lifetime_spend" | "visit_count" | "last_visit_days";
+      queue_ticket_status:
+        "waiting" | "serving" | "done" | "no_show" | "cancelled";
+      segment_field:
+        | "lifetime_spend"
+        | "visit_count"
+        | "last_visit_days"
+        | "no_show_count"
+        | "cancelled_count"
+        | "avg_spend"
+        | "days_since_first_visit"
+        | "upcoming_bookings"
+        | "rewards_ready"
+        | "overdue_days"
+        | "birthday_in_days"
+        | "lifecycle"
+        | "first_source"
+        | "tag"
+        | "consent";
       segment_match: "all" | "any";
-      segment_operator: "lt" | "lte" | "gt" | "gte" | "eq";
+      segment_operator: "lt" | "lte" | "gt" | "gte" | "eq" | "neq";
       stock_movement_type: "restock" | "consumption" | "adjustment";
       subscription_status:
         "trialing" | "active" | "past_due" | "canceled" | "comped";
@@ -4522,8 +10123,11 @@ export const Constants = {
         "wheelchair_accessible",
         "wifi",
         "kids_friendly",
+        "pet_friendly",
+        "instapay",
       ],
       app_kind: ["customer", "partner"],
+      assistant_role: ["user", "assistant"],
       attendance_kind: ["clock_in", "clock_out"],
       attendance_source: ["app", "manual"],
       booking_mode: ["specialist", "capacity"],
@@ -4559,6 +10163,7 @@ export const Constants = {
         "paternity",
         "public_holiday",
       ],
+      loyalty_event_kind: ["earn", "stamp", "redeem"],
       message_sender: ["customer", "branch"],
       notification_type: [
         "booking_created",
@@ -4575,9 +10180,32 @@ export const Constants = {
       pay_type: ["hourly", "salaried"],
       payroll_adjustment_kind: ["bonus", "deduction"],
       payroll_run_status: ["draft", "review", "approved", "paid"],
-      segment_field: ["lifetime_spend", "visit_count", "last_visit_days"],
+      queue_ticket_status: [
+        "waiting",
+        "serving",
+        "done",
+        "no_show",
+        "cancelled",
+      ],
+      segment_field: [
+        "lifetime_spend",
+        "visit_count",
+        "last_visit_days",
+        "no_show_count",
+        "cancelled_count",
+        "avg_spend",
+        "days_since_first_visit",
+        "upcoming_bookings",
+        "rewards_ready",
+        "overdue_days",
+        "birthday_in_days",
+        "lifecycle",
+        "first_source",
+        "tag",
+        "consent",
+      ],
       segment_match: ["all", "any"],
-      segment_operator: ["lt", "lte", "gt", "gte", "eq"],
+      segment_operator: ["lt", "lte", "gt", "gte", "eq", "neq"],
       stock_movement_type: ["restock", "consumption", "adjustment"],
       subscription_status: [
         "trialing",
