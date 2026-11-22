@@ -67,7 +67,7 @@ Use these; do not re-implement them per screen.
   no picture. `Avatar` is for people.
 - `Skeleton`: loading placeholders in the shape of the final content (no bare spinners for page loads).
 - `EmptyState` (`icon`, `title`, `body`, action), `SectionHeader` (title + "See all"), `ScreenHeader`
-  (back button + title + subtitle + `right`), `SegmentedControl`, `ConfirmDialog`, `StoreCard`,
+  (back button + title + subtitle + `right`), `SegmentedControl`, `ConfirmDialog`,
   `PressableScale` (any tappable surface), `FloatingTabBar` (the bottom bar: a floating pill, real liquid glass on
   iOS 26 via `expo-glass-effect`, with a drop that springs and stretches between tabs; it stays in the layout flow).
   Venue and chat use the same rules.
