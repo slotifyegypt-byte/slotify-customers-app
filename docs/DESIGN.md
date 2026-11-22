@@ -100,7 +100,8 @@ Use these; do not re-implement them per screen.
 The app runs in a browser at phone size. A dev server is already running at **http://localhost:8083** (do not start
 another one on the same port).
 
-- Sign in as a demo customer (`lina@slotify.dev` / `password123`) with the saved session:
+- Against a local database seeded from the Backend's `supabase/seed.sql` (the hosted project has no demo data), sign in as
+  a demo customer (`lina@slotify.dev` / `password123`) with the saved session:
   `storageState` file `/private/tmp/claude-501/-Users-omar-soudy-Desktop-Slotify-slotify-partners-web/9fb035d1-e7ac-4eb7-9233-f2e94ec1413b/scratchpad/lina-state.json`.
 - Use a **new browser context** (never the shared default one) at `{ width: 390, height: 844 }`,
   `deviceScaleFactor: 2`; also check `320` wide. Add `?theme=dark` to any address to see dark mode (it sticks for
