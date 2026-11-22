@@ -1,4 +1,5 @@
 import { fromPostgrest } from '@/lib/api/errors';
+import { publicUrl } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { branchToday } from '@/lib/time/branchTime';
 
@@ -106,4 +107,50 @@ export async function getStoreReviewStats(branchId: string): Promise<VenueReview
     .single();
   if (error) throw fromPostgrest(error);
   return toReviewStats(data);
+}
+
+export interface BranchDeal {
+  id: string;
+  title: string;
+  description: string | null;
+  photo: string | null;
+  originalPrice: number | null;
+  offerPrice: number | null;
+  discountPercentage: number | null;
+  serviceId: string | null;
+  endsOn: string;
+}
+
+// The branch's own deals running today (its page shows them whether or not they are promoted on the home screen).
+// RLS already limits customers to running deals at live branches; the dates are repeated here in the branch's time
+// zone because a login that is also partner staff can read every deal of its business.
+export async function getBranchDeals(branchId: string, timeZone: string): Promise<BranchDeal[]> {
+  const today = branchToday(timeZone);
+  const { data, error } = await supabase
+    .from('offers')
+    .select('id, title, description, image_path, original_price, offer_price, service_id, ends_on')
+    .eq('branch_id', branchId)
+    .eq('is_active', true)
+    .lte('starts_on', today)
+    .gte('ends_on', today)
+    .order('ends_on');
+  if (error) throw fromPostgrest(error);
+  return (data ?? []).map((row) => {
+    const original = row.original_price == null ? null : Number(row.original_price);
+    const offer = row.offer_price == null ? null : Number(row.offer_price);
+    return {
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      photo: publicUrl(row.image_path),
+      originalPrice: original,
+      offerPrice: offer,
+      discountPercentage:
+        original && offer != null && offer < original
+          ? Math.round((1 - offer / original) * 100)
+          : null,
+      serviceId: row.service_id,
+      endsOn: row.ends_on,
+    };
+  });
 }

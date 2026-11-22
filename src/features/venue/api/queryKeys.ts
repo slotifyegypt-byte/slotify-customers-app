@@ -1,6 +1,7 @@
 export const venueKeys = {
   all: ['venue'] as const,
   gallery: (storeId: string) => [...venueKeys.all, 'gallery', storeId] as const,
+  deals: (storeId: string) => [...venueKeys.all, 'deals', storeId] as const,
   team: (storeId: string) => [...venueKeys.all, 'team', storeId] as const,
   calendar: (storeId: string) => [...venueKeys.all, 'calendar', storeId] as const,
   specialDays: (storeId: string, timezone?: string) =>

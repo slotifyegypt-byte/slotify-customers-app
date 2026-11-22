@@ -2,6 +2,7 @@ import { mockQuery } from '@/test/mockSupabase';
 
 import { toService } from './mappers';
 import {
+  getBranchDeals,
   getStoreCalendar,
   getStoreGallery,
   getStoreReviews,
@@ -414,5 +415,53 @@ describe('getStoreReviewStats', () => {
       code: 'branch_not_found',
       status: 404,
     });
+  });
+});
+
+describe('getBranchDeals', () => {
+  it("reads the branch's deals running today, in the branch's time zone, ending soonest first", async () => {
+    jest.useFakeTimers({
+      now: new Date('2026-11-22T23:30:00Z'),
+      doNotFake: ['nextTick', 'setImmediate'],
+    });
+    const { builder, calls } = mockQuery({
+      data: [
+        {
+          id: 'o1',
+          title: 'Blow-dry Week',
+          description: null,
+          image_path: 'offers/b1/x.png',
+          original_price: 200,
+          offer_price: 160,
+          service_id: 's1',
+          ends_on: '2026-11-29',
+        },
+      ],
+      error: null,
+    });
+    mockFrom.mockReturnValue(builder);
+
+    const deals = await getBranchDeals('b1', 'Africa/Cairo');
+
+    expect(mockFrom).toHaveBeenCalledWith('offers');
+    expect(calls).toContainEqual(['eq', ['branch_id', 'b1']]);
+    expect(calls).toContainEqual(['eq', ['is_active', true]]);
+    // 23:30 UTC is already the 23rd in Cairo.
+    expect(calls).toContainEqual(['lte', ['starts_on', '2026-11-23']]);
+    expect(calls).toContainEqual(['gte', ['ends_on', '2026-11-23']]);
+    expect(deals).toEqual([
+      {
+        id: 'o1',
+        title: 'Blow-dry Week',
+        description: null,
+        photo: 'https://cdn.test/public-media/offers/b1/x.png',
+        originalPrice: 200,
+        offerPrice: 160,
+        discountPercentage: 20,
+        serviceId: 's1',
+        endsOn: '2026-11-29',
+      },
+    ]);
+    jest.useRealTimers();
   });
 });

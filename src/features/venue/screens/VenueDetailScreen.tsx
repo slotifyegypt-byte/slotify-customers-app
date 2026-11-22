@@ -21,6 +21,7 @@ import {
   useFavouriteCheck,
   useToggleFavourite,
 } from '@/features/favourites/hooks/useToggleFavourite';
+import { DealCard } from '@/features/home/components/DealCard';
 import { useCategories } from '@/features/home/hooks/useHomeData';
 import { useMyProfile } from '@/features/profile/hooks/useProfile';
 import { useMyReviews } from '@/features/reviews/hooks/useMyReviews';
@@ -34,6 +35,7 @@ import { ReviewsTab } from '../components/ReviewsTab';
 import { ServicesTab } from '../components/ServicesTab';
 import { VenueHeader } from '../components/VenueHeader';
 import { VenueTabBar, type VenueTab } from '../components/VenueTabBar';
+import { useVenueDeals } from '../hooks/useVenueDeals';
 import { useVenueGallery } from '../hooks/useVenueGallery';
 import { useVenueHours } from '../hooks/useVenueHours';
 import { useVenueReviewStats, useVenueReviews } from '../hooks/useVenueReviews';
@@ -61,6 +63,7 @@ export function VenueDetailScreen() {
   const { add, remove } = useToggleFavourite(storeId);
 
   const gallery = useVenueGallery(storeId);
+  const deals = useVenueDeals(storeId, storeDetail.data?.timezone);
   const team = useVenueTeam(storeId);
 
   const services = useStoreServices(storeId);
@@ -210,6 +213,33 @@ export function VenueDetailScreen() {
           onOpenDirections={handleOpenDirections}
         />
 
+        {deals.data?.length ? (
+          <View style={styles.deals}>
+            <ThemedText variant="h3" style={styles.dealsTitle}>
+              {t('venue.deals')}
+            </ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.dealsRow}
+            >
+              {deals.data.map((deal) => (
+                <DealCard
+                  key={deal.id}
+                  title={deal.title}
+                  photo={deal.photo}
+                  discountPercentage={deal.discountPercentage}
+                  originalPrice={deal.originalPrice}
+                  discountedPrice={deal.offerPrice}
+                  currency={store.currency}
+                  placeholderName={store.name}
+                  onPress={() => setActiveTab('services')}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
         <VenueTabBar active={activeTab} onChange={setActiveTab} />
 
         <Animated.View key={activeTab} entering={enter(0)}>
@@ -352,6 +382,9 @@ function VenueSkeleton({ onBack }: { onBack: () => void }) {
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
+    deals: { gap: spacing.sm, paddingTop: spacing.md },
+    dealsTitle: { paddingHorizontal: spacing.gutter },
+    dealsRow: { gap: spacing.sm, paddingHorizontal: spacing.gutter },
     screen: { padding: 0 },
     errorBack: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, alignItems: 'flex-start' },
     bottomSpacer: { height: spacing.xl },

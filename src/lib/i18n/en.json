@@ -78,7 +78,9 @@
     "topRatedBadge": "#1 Rated",
     "nearbyMapLabel": "Nearby",
     "fallbackLocation": "Cairo, Egypt",
-    "percentOff": "{{percent}}% off"
+    "percentOff": "{{percent}}% off",
+    "featured": "Featured",
+    "featuredBadge": "Featured"
   },
   "explore": {
     "title": "Nearby",
@@ -543,7 +545,8 @@
       "bookService": "Book {{name}}",
       "upTo": "Up to {{count}} at once",
       "book": "Book"
-    }
+    },
+    "deals": "Deals"
   },
   "time": {
     "justNow": "Just now",

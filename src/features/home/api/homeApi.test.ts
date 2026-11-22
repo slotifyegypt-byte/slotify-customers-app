@@ -1,8 +1,7 @@
 import i18n from '@/lib/i18n';
 import { mockQuery } from '@/test/mockSupabase';
 
-
-import { getCategories, getHomeOffers } from './homeApi';
+import { getCategories, getFeaturedBranches, getHomeOffers } from './homeApi';
 
 const mockFrom = jest.fn();
 
@@ -44,7 +43,13 @@ describe('getCategories', () => {
   it('shows the Arabic name when the app is in Arabic, and the English where the backend has none', async () => {
     const { builder } = mockQuery({
       data: [
-        { id: 'c1', slug: 'hair-salon', name: 'Hair salon', name_i18n: { ar: 'صالون شعر' }, icon_path: null },
+        {
+          id: 'c1',
+          slug: 'hair-salon',
+          name: 'Hair salon',
+          name_i18n: { ar: 'صالون شعر' },
+          icon_path: null,
+        },
         { id: 'c2', slug: 'barber', name: 'Barber', name_i18n: {}, icon_path: null },
       ],
       error: null,
@@ -169,5 +174,37 @@ describe('getHomeOffers', () => {
     const { builder } = mockQuery({ data: null, error: { code: '42501', message: 'nope' } });
     mockFrom.mockReturnValue(builder);
     await expect(getHomeOffers()).rejects.toMatchObject({ code: 'forbidden' });
+  });
+});
+
+describe('getFeaturedBranches', () => {
+  it('reads the branches paid to be featured on the home screen, in placement order', async () => {
+    const { builder, calls } = mockQuery({
+      data: [
+        {
+          id: 'b1',
+          business_name: 'Glamour Studio',
+          branch_name: 'Maadi',
+          logo_path: 'businesses/x/logo.png',
+          rating_avg: 4.6,
+        },
+        { id: null, business_name: null, branch_name: null, logo_path: null, rating_avg: null },
+      ],
+      error: null,
+    });
+    mockFrom.mockReturnValue(builder);
+
+    const featured = await getFeaturedBranches();
+
+    expect(mockFrom).toHaveBeenCalledWith('promoted_branch_cards');
+    expect(calls).toContainEqual(['order', ['promotion_sort_order', { ascending: true }]]);
+    expect(featured).toEqual([
+      {
+        id: 'b1',
+        name: 'Glamour Studio – Maadi',
+        logo: 'https://cdn.test/public-media/businesses/x/logo.png',
+        rating: 4.6,
+      },
+    ]);
   });
 });

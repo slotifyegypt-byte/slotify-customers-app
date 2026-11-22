@@ -29,7 +29,7 @@ import { HScrollFade } from '../components/HScrollFade';
 import { NearbyMapPreview } from '../components/NearbyMapPreview';
 import { NextUpCard, NoNextUpCard } from '../components/NextUpCard';
 import { TopRatedCard } from '../components/TopRatedCard';
-import { useCategories, useHomeOffers } from '../hooks/useHomeData';
+import { useCategories, useFeaturedBranches, useHomeOffers } from '../hooks/useHomeData';
 import { formatCountdown, selectNextUpBooking } from '../utils/countdown';
 import { greetingKeyForHour } from '../utils/greeting';
 
@@ -42,6 +42,7 @@ export function HomeScreen() {
   const unread = useUnreadNotificationCount();
   const categories = useCategories();
   const offers = useHomeOffers();
+  const featured = useFeaturedBranches();
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const selectedCategory = useMemo(
@@ -282,6 +283,31 @@ export function HomeScreen() {
         >
           <NearbyMapPreview pins={mapPins} region={mapRegion} onPress={goExplore} />
         </Animated.View>
+
+        {featured.data?.length ? (
+          <Animated.View entering={enter(6)} style={styles.section}>
+            <SectionHeader title={t('home.featured')} />
+            <View style={styles.hscrollWrap}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.hscrollContent}
+              >
+                {featured.data.map((store) => (
+                  <TopRatedCard
+                    key={store.id}
+                    name={store.name}
+                    logo={store.logo}
+                    rating={store.rating}
+                    badge={t('home.featuredBadge')}
+                    onPress={() => router.push(`/venue/${store.id}`)}
+                  />
+                ))}
+              </ScrollView>
+              <HScrollFade />
+            </View>
+          </Animated.View>
+        ) : null}
 
         <Animated.View entering={enter(6)} style={styles.section}>
           <SectionHeader title={t('home.topRatedNearYou')} onSeeAll={goExplore} />

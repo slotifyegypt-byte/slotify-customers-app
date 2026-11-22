@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import i18n from '@/lib/i18n';
 
-import { getCategories, getHomeOffers } from '../api/homeApi';
+import { getCategories, getFeaturedBranches, getHomeOffers } from '../api/homeApi';
 import { homeKeys } from '../api/queryKeys';
 
 export function useCategories() {
@@ -16,4 +16,9 @@ export function useCategories() {
 
 export function useHomeOffers() {
   return useQuery({ queryKey: homeKeys.offers, queryFn: getHomeOffers });
+}
+
+/** Branches featured on the home screen (paid placements). */
+export function useFeaturedBranches() {
+  return useQuery({ queryKey: homeKeys.featured, queryFn: getFeaturedBranches });
 }

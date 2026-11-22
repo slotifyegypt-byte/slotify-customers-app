@@ -78,7 +78,9 @@
     "topRatedBadge": "الأعلى تقييمًا",
     "nearbyMapLabel": "بالقرب منك",
     "fallbackLocation": "القاهرة، مصر",
-    "percentOff": "خصم {{percent}}%"
+    "percentOff": "خصم {{percent}}%",
+    "featured": "مميز",
+    "featuredBadge": "مميز"
   },
   "explore": {
     "title": "بالقرب منك",
@@ -579,7 +581,8 @@
       "bookService": "احجز {{name}}",
       "upTo": "حتى {{count}} في الوقت نفسه",
       "book": "احجز"
-    }
+    },
+    "deals": "العروض"
   },
   "time": {
     "justNow": "الآن",

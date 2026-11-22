@@ -59,3 +59,32 @@ export async function getHomeOffers(): Promise<HomePageOffer[]> {
     ];
   });
 }
+
+export interface FeaturedBranch {
+  id: string;
+  name: string;
+  logo: string | null;
+  rating: number;
+}
+
+// The home screen's Featured row: branches whose owners paid for a running 'home_promoted' placement (or that Slotify
+// featured), in placement order. The view only holds running placements at live branches.
+export async function getFeaturedBranches(): Promise<FeaturedBranch[]> {
+  const { data, error } = await supabase
+    .from('promoted_branch_cards')
+    .select('id, business_name, branch_name, logo_path, rating_avg')
+    .order('promotion_sort_order', { ascending: true });
+  if (error) throw fromPostgrest(error);
+  return (data ?? []).flatMap((row) =>
+    row.id && row.business_name && row.branch_name
+      ? [
+          {
+            id: row.id,
+            name: `${row.business_name} – ${row.branch_name}`,
+            logo: publicUrl(row.logo_path),
+            rating: row.rating_avg ?? 0,
+          },
+        ]
+      : [],
+  );
+}
