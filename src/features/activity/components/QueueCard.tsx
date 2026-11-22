@@ -13,7 +13,7 @@ import {
   checkInWindow,
   queueStatus,
 } from '@/features/booking/utils/queue';
-import { formatHour } from '@/lib/time/branchTime';
+import { branchLocalDate, formatHour } from '@/lib/time/branchTime';
 import { spacing } from '@/theme';
 
 /** Re-renders every half minute, so the window opens and "early" turns into a place in line on its own. */
@@ -33,8 +33,11 @@ function useMinuteClock(): Date {
 export function QueueCard({ booking }: { booking: BookingRead }) {
   const { t } = useTranslation();
   const now = useMinuteClock();
-  const window = checkInWindow(booking, now);
-  const isToday = window !== 'closed' || booking.booking_status === 'completed';
+  const phase = checkInWindow(booking, now);
+  // The queue is for today only: no request for a booking on any other day.
+  const isToday =
+    branchLocalDate(booking.booking_date, booking.timezone) ===
+    branchLocalDate(now, booking.timezone);
   const ticket = useMyQueueTicket(booking.id, booking.venue_available && isToday);
   const checkIn = useCheckIn(booking.id);
   const status = ticket.data ? queueStatus(ticket.data, now) : null;
@@ -76,7 +79,7 @@ export function QueueCard({ booking }: { booking: BookingRead }) {
 
   if (!booking.venue_available || ticket.isLoading) return null;
 
-  if (window === 'early') {
+  if (phase === 'early') {
     const opens = new Date(
       Date.parse(booking.booking_date) - CHECK_IN_OPENS_MIN * 60_000,
     ).toISOString();
@@ -87,7 +90,7 @@ export function QueueCard({ booking }: { booking: BookingRead }) {
     );
   }
 
-  if (window !== 'open') return null;
+  if (phase !== 'open') return null;
 
   return (
     <Card>
