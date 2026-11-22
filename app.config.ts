@@ -127,10 +127,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-location',
       {
         // Location is only read while the app is open, to show nearby businesses and how far away
-        // they are. Nothing runs in the background, so the plugin's default "Always" and motion
+        // they are, and once when "I'm here" checks the customer is at the branch. Nothing runs in the background, so the plugin's default "Always" and motion
         // strings (it adds them unless told not to) are removed rather than shipped unused.
         locationWhenInUsePermission:
-          'Slotify uses your location while the app is open to show businesses near you and how far away they are.',
+          'Slotify uses your location while the app is open to show businesses near you and how far away they are, and to check you have arrived when you tap "I\'m here".',
         locationAlwaysAndWhenInUsePermission: false,
         locationAlwaysPermission: false,
         motionUsagePermission: false,
