@@ -197,7 +197,8 @@
     "version": "Slotify v{{version}}",
     "privacyPolicy": "Privacy policy",
     "termsOfService": "Terms of service",
-    "deleteLearnMore": "Learn more"
+    "deleteLearnMore": "Learn more",
+    "blocked": "Blocked"
   },
   "editProfile": {
     "title": "Edit profile",
@@ -618,5 +619,26 @@
     "factReward": "Reward",
     "factReady": "Ready to claim",
     "factClaimed": "Claimed"
+  },
+  "safety": {
+    "block": "Block",
+    "blockBusinessTitle": "Block {{name}}?",
+    "blockBusinessBody": "They won't be able to message you or send you offers. Your bookings stay as they are. You can unblock them any time in Profile, Blocked.",
+    "blockReviewerTitle": "Block this person?",
+    "blockReviewerBody": "You won't see their reviews any more. They won't be told. You can unblock them any time in Profile, Blocked.",
+    "cancel": "Cancel",
+    "blockedBanner": "You blocked this business. They can't message you.",
+    "unblock": "Unblock",
+    "failedTitle": "Something went wrong",
+    "failedBody": "Please check your connection and try again.",
+    "blockedTitle": "Blocked",
+    "blockedSubtitle": "Businesses you block can't message you or send you offers. People you block don't show up in reviews.",
+    "kindBusiness": "Business",
+    "kindPerson": "Reviewer",
+    "emptyTitle": "Nobody is blocked",
+    "emptyBody": "You can block a business from its chat, or a reviewer from their review.",
+    "errorTitle": "Couldn't load your blocked list",
+    "errorBody": "Check your connection and try again.",
+    "inappropriate": "Please remove offensive language and try again."
   }
 }

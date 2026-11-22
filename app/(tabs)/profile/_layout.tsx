@@ -20,6 +20,7 @@ export default function ProfileStackLayout() {
         <Stack.Screen name="language" />
         <Stack.Screen name="help" />
         <Stack.Screen name="contact" />
+        <Stack.Screen name="blocked" />
       </Stack>
     </ErrorBoundary>
   );

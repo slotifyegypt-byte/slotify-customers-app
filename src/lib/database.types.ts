@@ -2437,6 +2437,52 @@ export type Database = {
           },
         ];
       };
+      customer_blocks: {
+        Row: {
+          blocked_business_id: string | null;
+          blocked_customer_id: string | null;
+          created_at: string;
+          customer_id: string;
+          id: string;
+        };
+        Insert: {
+          blocked_business_id?: string | null;
+          blocked_customer_id?: string | null;
+          created_at?: string;
+          customer_id: string;
+          id?: string;
+        };
+        Update: {
+          blocked_business_id?: string | null;
+          blocked_customer_id?: string | null;
+          created_at?: string;
+          customer_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_blocks_blocked_business_id_fkey";
+            columns: ["blocked_business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "customer_blocks_blocked_customer_id_fkey";
+            columns: ["blocked_customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "customer_blocks_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       customers: {
         Row: {
           avatar_path: string | null;
@@ -7789,6 +7835,38 @@ export type Database = {
         };
         Returns: Json;
       };
+      block_business: {
+        Args: { p_branch_id: string };
+        Returns: {
+          blocked_business_id: string | null;
+          blocked_customer_id: string | null;
+          created_at: string;
+          customer_id: string;
+          id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "customer_blocks";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      block_reviewer: {
+        Args: { p_review_id: string };
+        Returns: {
+          blocked_business_id: string | null;
+          blocked_customer_id: string | null;
+          created_at: string;
+          customer_id: string;
+          id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "customer_blocks";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       can_switch_to_plan: { Args: { p_plan_id: string }; Returns: Json };
       cancel_advance: { Args: { p_advance_id: string }; Returns: undefined };
       cancel_campaign: { Args: { p_campaign_id: string }; Returns: undefined };
@@ -8455,6 +8533,16 @@ export type Database = {
         }[];
       };
       get_my_billing: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_blocks: {
+        Args: never;
+        Returns: {
+          block_id: string;
+          branch_ids: string[];
+          created_at: string;
+          kind: string;
+          name: string;
+        }[];
+      };
       get_my_commission: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_loyalty_cards: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_partner_context: {
@@ -9960,6 +10048,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      unblock: { Args: { p_block_id: string }; Returns: undefined };
       update_client: {
         Args: {
           p_customer_id: string;

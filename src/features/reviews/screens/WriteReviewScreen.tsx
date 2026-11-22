@@ -67,7 +67,9 @@ export function WriteReviewScreen() {
         ? t('reviews.alreadyReviewed')
         : isApiError(error, 'forbidden')
           ? t('reviews.notEligible')
-          : t('reviews.submitErrorBody');
+          : isApiError(error, 'inappropriate_language')
+            ? t('safety.inappropriate')
+            : t('reviews.submitErrorBody');
       Alert.alert(t('reviews.submitError'), body);
     }
   };

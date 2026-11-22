@@ -3,6 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
   type ListRenderItemInfo,
 } from 'react-native';
 
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
 import { Photo } from '@/components/Photo';
@@ -19,6 +21,7 @@ import { Screen } from '@/components/Screen';
 import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
 import { useBookingDetail } from '@/features/booking/hooks/useBookingDetail';
+import { useBlockActions, useMyBlocks } from '@/features/safety/hooks/useBlocks';
 import { ReportSheet } from '@/features/support/components/ReportSheet';
 import { hiddenKey, useHiddenContentStore } from '@/features/support/store/hiddenContentStore';
 import { isApiError } from '@/lib/api/errors';
@@ -81,36 +84,96 @@ function MessageBubble({
 
 function ChatHeader({ bookingId }: { bookingId: string }) {
   const { t } = useTranslation();
-  const styles = createStyles(useColors());
+  const colors = useColors();
+  const styles = createStyles(colors);
   const booking = useBookingDetail(bookingId);
   const data = booking.data;
+  const blocks = useMyBlocks();
+  const actions = useBlockActions();
+  const [confirming, setConfirming] = useState(false);
   // The API has no dedicated order/reference-number field (customer-app-api-map.md
   // §9), so a compact stand-in is derived from the booking id rather than inventing a backend field.
   const orderRef = bookingId.slice(-4).toUpperCase();
   const name = data?.store_name ?? '';
+  const branchId = data?.store_id;
+  // A blocked business carries its branch ids, so this chat knows it is with a business the customer blocked.
+  const block = branchId
+    ? blocks.data?.find((b) => b.kind === 'business' && b.branchIds.includes(branchId))
+    : undefined;
+  const failed = () => Alert.alert(t('safety.failedTitle'), t('safety.failedBody'));
 
   return (
-    <View style={styles.header}>
-      <IconButton
-        icon="chevron-back"
-        onPress={() => router.back()}
-        accessibilityLabel={t('chat.back')}
-        size={40}
-      />
-      <Photo
-        uri={data?.store_logo}
-        name={name || t('chat.headerFallback')}
-        style={styles.avatar}
-        initialSize={16}
-      />
-      <View style={styles.headerTitles}>
-        <ThemedText variant="h3" numberOfLines={1}>
-          {name || t('chat.headerFallback')}
-        </ThemedText>
-        <ThemedText variant="caption" color="textTertiary">
-          {t('chat.orderRef', { ref: orderRef })}
-        </ThemedText>
+    <View>
+      <View style={styles.header}>
+        <IconButton
+          icon="chevron-back"
+          onPress={() => router.back()}
+          accessibilityLabel={t('chat.back')}
+          size={40}
+        />
+        <Photo
+          uri={data?.store_logo}
+          name={name || t('chat.headerFallback')}
+          style={styles.avatar}
+          initialSize={16}
+        />
+        <View style={styles.headerTitles}>
+          <ThemedText variant="h3" numberOfLines={1}>
+            {name || t('chat.headerFallback')}
+          </ThemedText>
+          <ThemedText variant="caption" color="textTertiary">
+            {t('chat.orderRef', { ref: orderRef })}
+          </ThemedText>
+        </View>
+        {branchId && blocks.data && !block ? (
+          <IconButton
+            icon="ban-outline"
+            onPress={() => setConfirming(true)}
+            accessibilityLabel={t('safety.block')}
+            size={40}
+          />
+        ) : null}
       </View>
+      {block ? (
+        <View style={styles.blockedBanner}>
+          <ThemedText variant="caption" color="textSecondary" style={styles.flex}>
+            {t('safety.blockedBanner')}
+          </ThemedText>
+          <PressableScale
+            onPress={() => actions.unblock.mutate(block.id, { onError: failed })}
+            disabled={actions.unblock.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={t('safety.unblock')}
+            scaleTo={0.96}
+            hitSlop={10}
+          >
+            <ThemedText variant="captionStrong" color="brand">
+              {t('safety.unblock')}
+            </ThemedText>
+          </PressableScale>
+        </View>
+      ) : null}
+      <ConfirmDialog
+        visible={confirming}
+        title={t('safety.blockBusinessTitle', { name: name || t('chat.headerFallback') })}
+        body={t('safety.blockBusinessBody')}
+        primaryLabel={t('safety.cancel')}
+        onPrimary={() => setConfirming(false)}
+        secondaryLabel={t('safety.block')}
+        secondaryTone="danger"
+        secondaryLoading={actions.blockBusiness.isPending}
+        onSecondary={() => {
+          if (!branchId) return;
+          actions.blockBusiness.mutate(branchId, {
+            onSuccess: () => setConfirming(false),
+            onError: () => {
+              setConfirming(false);
+              failed();
+            },
+          });
+        }}
+        onRequestClose={() => setConfirming(false)}
+      />
     </View>
   );
 }
@@ -169,7 +232,11 @@ export function OrderChatScreen() {
     } catch (error) {
       setDraft(trimmed); // restore so the customer doesn't lose what they typed
       setSendError(
-        isApiError(error) && error.status === 429 ? t('chat.rateLimited') : t('chat.sendFailed'),
+        isApiError(error) && error.status === 429
+          ? t('chat.rateLimited')
+          : isApiError(error, 'inappropriate_language')
+            ? t('safety.inappropriate')
+            : t('chat.sendFailed'),
       );
     }
   }, [draft, isSending, sendMessage, t]);
@@ -297,6 +364,17 @@ const createStyles = (colors: Colors) =>
     },
     avatar: { width: 40, height: 40, borderRadius: radius.pill, overflow: 'hidden' },
     headerTitles: { flex: 1, minWidth: 0 },
+    blockedBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginHorizontal: spacing.gutter,
+      marginBottom: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
+      backgroundColor: colors.backgroundMuted,
+    },
     skeletons: { padding: spacing.gutter, gap: spacing.sm },
     skeletonEnd: { alignItems: 'flex-end' },
     listContent: { paddingHorizontal: spacing.gutter, paddingVertical: spacing.md, flexGrow: 1 },

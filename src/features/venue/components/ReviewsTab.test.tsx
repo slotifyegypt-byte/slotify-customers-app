@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import '@/lib/i18n';
 import { ThemeProvider } from '@/theme';
@@ -12,7 +12,10 @@ jest.mock('@/lib/theme/themePreferenceStore', () => ({
   useThemePreferenceStore: (select: (state: { preference: string }) => unknown) =>
     select({ preference: 'light' }),
 }));
-jest.mock('@/lib/supabase', () => ({ supabase: {} }));
+const mockRpc = jest.fn();
+jest.mock('@/lib/supabase', () => ({
+  supabase: { rpc: (...args: unknown[]) => mockRpc(...args) },
+}));
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn().mockResolvedValue(null),
   setItemAsync: jest.fn().mockResolvedValue(undefined),
@@ -70,5 +73,25 @@ describe('ReviewsTab reporting', () => {
   it('offers Report on every review once the customer has none of their own', async () => {
     await renderTab(new Set());
     expect(screen.getAllByRole('button', { name: 'Report' })).toHaveLength(2);
+  });
+});
+
+describe('ReviewsTab blocking', () => {
+  it("offers Block next to Report on other people's reviews only", async () => {
+    await renderTab(new Set(['mine']));
+    expect(screen.getAllByRole('button', { name: 'Block' })).toHaveLength(1);
+  });
+
+  it('blocks the reviewer after the customer confirms', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: null });
+    await renderTab(new Set(['mine']));
+    fireEvent.press(screen.getByRole('button', { name: 'Block' }));
+    expect(await screen.findByText('Block this person?')).toBeTruthy();
+    expect(mockRpc).not.toHaveBeenCalled();
+    const buttons = screen.getAllByRole('button', { name: 'Block' });
+    fireEvent.press(buttons[buttons.length - 1]);
+    await waitFor(() =>
+      expect(mockRpc).toHaveBeenCalledWith('block_reviewer', { p_review_id: 'theirs' }),
+    );
   });
 });

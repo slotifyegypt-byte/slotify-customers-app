@@ -1,17 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { PressableScale } from '@/components/PressableScale';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Skeleton } from '@/components/Skeleton';
 import { ThemedText } from '@/components/ThemedText';
+import { useBlockActions } from '@/features/safety/hooks/useBlocks';
 import { ReportSheet } from '@/features/support/components/ReportSheet';
 import { hiddenKey, useHiddenContentStore } from '@/features/support/store/hiddenContentStore';
 import { formatDate } from '@/lib/time/branchTime';
@@ -55,6 +57,8 @@ export function ReviewsTab({
   const colors = useColors();
   const hidden = useHiddenContentStore((state) => state.hidden);
   const [reportingId, setReportingId] = useState<string | null>(null);
+  const [blockingId, setBlockingId] = useState<string | null>(null);
+  const { blockReviewer } = useBlockActions();
   const [sort, setSort] = useState<SortKey>('recent');
   const [showGateHint, setShowGateHint] = useState(false);
 
@@ -207,18 +211,32 @@ export function ReviewsTab({
                     </View>
                   ) : null}
                   {ownReviewIds === undefined || ownReviewIds.has(review.id) ? null : (
-                    <PressableScale
-                      onPress={() => setReportingId(review.id)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('report.action')}
-                      scaleTo={0.96}
-                      style={styles.report}
-                    >
-                      <Ionicons name="flag-outline" size={15} color={colors.textTertiary} />
-                      <ThemedText variant="caption" color="textTertiary">
-                        {t('report.action')}
-                      </ThemedText>
-                    </PressableScale>
+                    <View style={styles.reviewActions}>
+                      <PressableScale
+                        onPress={() => setBlockingId(review.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('safety.block')}
+                        scaleTo={0.96}
+                        style={styles.report}
+                      >
+                        <Ionicons name="ban-outline" size={15} color={colors.textTertiary} />
+                        <ThemedText variant="caption" color="textTertiary">
+                          {t('safety.block')}
+                        </ThemedText>
+                      </PressableScale>
+                      <PressableScale
+                        onPress={() => setReportingId(review.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('report.action')}
+                        scaleTo={0.96}
+                        style={styles.report}
+                      >
+                        <Ionicons name="flag-outline" size={15} color={colors.textTertiary} />
+                        <ThemedText variant="caption" color="textTertiary">
+                          {t('report.action')}
+                        </ThemedText>
+                      </PressableScale>
+                    </View>
                   )}
                 </Card>
               </Animated.View>
@@ -229,6 +247,27 @@ export function ReviewsTab({
       <ReportSheet
         target={reportingId ? { kind: 'review', id: reportingId } : null}
         onClose={() => setReportingId(null)}
+      />
+      <ConfirmDialog
+        visible={blockingId !== null}
+        title={t('safety.blockReviewerTitle')}
+        body={t('safety.blockReviewerBody')}
+        primaryLabel={t('safety.cancel')}
+        onPrimary={() => setBlockingId(null)}
+        secondaryLabel={t('safety.block')}
+        secondaryTone="danger"
+        secondaryLoading={blockReviewer.isPending}
+        onSecondary={() => {
+          if (!blockingId) return;
+          blockReviewer.mutate(blockingId, {
+            onSuccess: () => setBlockingId(null),
+            onError: () => {
+              setBlockingId(null);
+              Alert.alert(t('safety.failedTitle'), t('safety.failedBody'));
+            },
+          });
+        }}
+        onRequestClose={() => setBlockingId(null)}
       />
     </View>
   );
@@ -250,8 +289,8 @@ const styles = StyleSheet.create({
   reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   reviewWho: { flex: 1, minWidth: 0 },
   comment: { marginTop: spacing.sm },
+  reviewActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.xs },
   report: {
-    alignSelf: 'flex-end',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

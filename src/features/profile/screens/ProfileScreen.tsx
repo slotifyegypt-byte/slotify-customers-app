@@ -163,6 +163,12 @@ export function ProfileScreen() {
               onPress={() => router.push('/(tabs)/profile/contact')}
             />
             <ListRow
+              title={t('profile.blocked')}
+              icon="ban-outline"
+              iconTone="neutral"
+              onPress={() => router.push('/(tabs)/profile/blocked')}
+            />
+            <ListRow
               title={t('profile.privacyPolicy')}
               icon="shield-checkmark-outline"
               iconTone="neutral"
