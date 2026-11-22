@@ -56,7 +56,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: `com.slotify.customers${ENV_SUFFIX[APP_ENV]}`,
     adaptiveIcon: {
-      backgroundColor: '#ECEAF4',
+      backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
@@ -114,7 +114,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-notifications',
       {
         icon: './assets/images/notification-icon.png',
-        color: '#2F2059',
+        color: '#2F1F5B',
       },
     ],
     // '@sentry/react-native/expo' is intentionally left out of the plugin
