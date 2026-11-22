@@ -47,3 +47,6 @@ coverage/
 
 # graphify knowledge-graph output — local tool artifact, not shipped
 graphify-out/
+
+# Supabase CLI cache (version check, linked project)
+supabase/.temp/
