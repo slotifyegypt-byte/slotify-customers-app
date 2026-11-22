@@ -360,6 +360,30 @@
       "newTime": "New time",
       "confirm": "Confirm new time",
       "pickToContinue": "Choose a time to continue"
+    },
+    "queue": {
+      "ticket": "Ticket {{number}}",
+      "turn": "It's your turn. Please come to the front desk.",
+      "turnWith": "It's your turn. {{name}} is ready for you.",
+      "next": "You're next.",
+      "ahead_one": "{{count}} person ahead of you.",
+      "ahead_other": "{{count}} people ahead of you.",
+      "early": "You're checked in. You'll be called at {{time}}.",
+      "earlyWith": "You're checked in. {{name}} will call you at {{time}}.",
+      "missed": "You missed your turn. Please talk to the front desk.",
+      "done": "Your visit is done. Thank you!",
+      "opensAt": "You can check in from {{time}}, when you arrive.",
+      "hereTitle": "Arrived?",
+      "hereBody": "Tap when you're at the branch and you'll join the queue.",
+      "imHere": "I'm here",
+      "errors": {
+        "locationDenied": "Allow location so we can see you're at the branch.",
+        "locationUnavailable": "We couldn't find your location. Try again in a moment.",
+        "tooFar": "You need to be at the branch to check in.",
+        "tooEarly": "You can check in from an hour before your booking.",
+        "tooLate": "This booking has already ended.",
+        "notConfirmed": "The branch hasn't confirmed this booking yet."
+      }
     }
   },
   "chat": {

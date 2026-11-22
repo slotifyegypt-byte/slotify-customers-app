@@ -21,6 +21,7 @@ import { enter, radius, spacing } from '@/theme';
 import { BookingHero } from '../components/BookingHero';
 import { ServicesCard, WhereWithCard } from '../components/BookingSummary';
 import { OrderTracker } from '../components/OrderTracker';
+import { QueueCard } from '../components/QueueCard';
 import { useStoreTeam } from '../hooks/useStoreTeam';
 import { canCustomerCancel, isOrderBooking } from '../utils/bookingDisplay';
 
@@ -153,6 +154,10 @@ export function BookingDetailScreen() {
             <OrderTracker status={data.booking_status} startsAt={data.booking_date} />
           </Animated.View>
         ) : null}
+
+        <Animated.View entering={enter(1)}>
+          <QueueCard booking={data} />
+        </Animated.View>
 
         <Animated.View entering={enter(2)}>
           <WhereWithCard booking={data} specialists={isOrder ? [] : specialists} />

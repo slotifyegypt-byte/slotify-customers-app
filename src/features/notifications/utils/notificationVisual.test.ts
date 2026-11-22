@@ -13,6 +13,7 @@ const CUSTOMER_TYPES = [
   'booking_reminder',
   'pickup_ready',
   'message_received',
+  'queue_called',
   'general',
 ] as const;
 

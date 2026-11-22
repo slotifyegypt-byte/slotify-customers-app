@@ -5753,49 +5753,70 @@ export type Database = {
       };
       queue_tickets: {
         Row: {
+          booking_id: string | null;
           branch_id: string;
           business_id: string;
           called_at: string | null;
           called_by: string | null;
+          customer_id: string | null;
           customer_name: string | null;
+          due_at: string | null;
+          employee_id: string | null;
           finished_at: string | null;
           id: string;
           issued_at: string;
           issued_by: string | null;
           number: number;
           queue_date: string;
+          served_by: string | null;
           status: Database["public"]["Enums"]["queue_ticket_status"];
         };
-        ComputedFields: never;
         Insert: {
+          booking_id?: string | null;
           branch_id: string;
           business_id: string;
           called_at?: string | null;
           called_by?: string | null;
+          customer_id?: string | null;
           customer_name?: string | null;
+          due_at?: string | null;
+          employee_id?: string | null;
           finished_at?: string | null;
           id?: string;
           issued_at?: string;
           issued_by?: string | null;
           number: number;
           queue_date: string;
+          served_by?: string | null;
           status?: Database["public"]["Enums"]["queue_ticket_status"];
         };
         Update: {
+          booking_id?: string | null;
           branch_id?: string;
           business_id?: string;
           called_at?: string | null;
           called_by?: string | null;
+          customer_id?: string | null;
           customer_name?: string | null;
+          due_at?: string | null;
+          employee_id?: string | null;
           finished_at?: string | null;
           id?: string;
           issued_at?: string;
           issued_by?: string | null;
           number?: number;
           queue_date?: string;
+          served_by?: string | null;
           status?: Database["public"]["Enums"]["queue_ticket_status"];
         };
         Relationships: [
+          {
+            foreignKeyName: "queue_tickets_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "queue_tickets_branch_id_business_id_fkey";
             columns: ["branch_id", "business_id"];
@@ -5832,8 +5853,29 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "queue_tickets_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "queue_tickets_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "queue_tickets_issued_by_fkey";
             columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "queue_tickets_served_by_fkey";
+            columns: ["served_by"];
             isOneToOne: false;
             referencedRelation: "employees";
             referencedColumns: ["id"];
@@ -8420,6 +8462,18 @@ export type Database = {
         Returns: Json;
       };
       get_my_promotions: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_queue_ticket: {
+        Args: { p_booking_id: string };
+        Returns: {
+          ahead: number;
+          called_at: string;
+          due_at: string;
+          employee_name: string;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+          ticket_id: string;
+          ticket_number: number;
+        }[];
+      };
       get_packages: {
         Args: { p_include_archived?: boolean };
         Returns: {
@@ -8438,13 +8492,33 @@ export type Database = {
       get_queue: {
         Args: { p_branch_id: string };
         Returns: {
+          booking_id: string;
+          call_place: number;
           called_at: string;
           customer_name: string;
+          due_at: string;
+          employee_id: string;
+          employee_name: string;
           finished_at: string;
           issued_at: string;
+          served_by: string;
+          served_by_name: string;
           status: Database["public"]["Enums"]["queue_ticket_status"];
           ticket_id: string;
           ticket_number: number;
+        }[];
+      };
+      get_queue_expected: {
+        Args: { p_branch_id: string };
+        Returns: {
+          booking_id: string;
+          customer_name: string;
+          employee_id: string;
+          employee_name: string;
+          ends_at: string;
+          services: string;
+          starts_at: string;
+          status: Database["public"]["Enums"]["booking_status"];
         }[];
       };
       get_review_stats: {
@@ -8899,19 +8973,88 @@ export type Database = {
         Returns: number;
       };
       queue_call: {
-        Args: { p_branch_id: string; p_ticket_id?: string };
+        Args: {
+          p_branch_id: string;
+          p_employee_id?: string;
+          p_ticket_id?: string;
+        };
         Returns: {
+          booking_id: string | null;
           branch_id: string;
           business_id: string;
           called_at: string | null;
           called_by: string | null;
+          customer_id: string | null;
           customer_name: string | null;
+          due_at: string | null;
+          employee_id: string | null;
           finished_at: string | null;
           id: string;
           issued_at: string;
           issued_by: string | null;
           number: number;
           queue_date: string;
+          served_by: string | null;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        SetofOptions: {
+          from: "*";
+          to: "queue_tickets";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      queue_check_in_booking: {
+        Args: { p_booking_id: string };
+        Returns: {
+          booking_id: string | null;
+          branch_id: string;
+          business_id: string;
+          called_at: string | null;
+          called_by: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          due_at: string | null;
+          employee_id: string | null;
+          finished_at: string | null;
+          id: string;
+          issued_at: string;
+          issued_by: string | null;
+          number: number;
+          queue_date: string;
+          served_by: string | null;
+          status: Database["public"]["Enums"]["queue_ticket_status"];
+        };
+        SetofOptions: {
+          from: "*";
+          to: "queue_tickets";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      queue_customer_check_in: {
+        Args: {
+          p_booking_id: string;
+          p_latitude?: number;
+          p_longitude?: number;
+        };
+        Returns: {
+          booking_id: string | null;
+          branch_id: string;
+          business_id: string;
+          called_at: string | null;
+          called_by: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          due_at: string | null;
+          employee_id: string | null;
+          finished_at: string | null;
+          id: string;
+          issued_at: string;
+          issued_by: string | null;
+          number: number;
+          queue_date: string;
+          served_by: string | null;
           status: Database["public"]["Enums"]["queue_ticket_status"];
         };
         SetofOptions: {
@@ -8927,17 +9070,22 @@ export type Database = {
           p_ticket_id: string;
         };
         Returns: {
+          booking_id: string | null;
           branch_id: string;
           business_id: string;
           called_at: string | null;
           called_by: string | null;
+          customer_id: string | null;
           customer_name: string | null;
+          due_at: string | null;
+          employee_id: string | null;
           finished_at: string | null;
           id: string;
           issued_at: string;
           issued_by: string | null;
           number: number;
           queue_date: string;
+          served_by: string | null;
           status: Database["public"]["Enums"]["queue_ticket_status"];
         };
         SetofOptions: {
@@ -8950,17 +9098,22 @@ export type Database = {
       queue_issue_ticket: {
         Args: { p_branch_id: string; p_customer_name?: string };
         Returns: {
+          booking_id: string | null;
           branch_id: string;
           business_id: string;
           called_at: string | null;
           called_by: string | null;
+          customer_id: string | null;
           customer_name: string | null;
+          due_at: string | null;
+          employee_id: string | null;
           finished_at: string | null;
           id: string;
           issued_at: string;
           issued_by: string | null;
           number: number;
           queue_date: string;
+          served_by: string | null;
           status: Database["public"]["Enums"]["queue_ticket_status"];
         };
         SetofOptions: {
@@ -9961,7 +10114,9 @@ export type Database = {
         | "message_received"
         | "review_received"
         | "time_off_decided"
-        | "general";
+        | "general"
+        | "queue_checked_in"
+        | "queue_called";
       pay_type: "hourly" | "salaried";
       payroll_adjustment_kind: "bonus" | "deduction";
       payroll_run_status: "draft" | "review" | "approved" | "paid";
@@ -10176,6 +10331,8 @@ export const Constants = {
         "review_received",
         "time_off_decided",
         "general",
+        "queue_checked_in",
+        "queue_called",
       ],
       pay_type: ["hourly", "salaried"],
       payroll_adjustment_kind: ["bonus", "deduction"],

@@ -53,6 +53,13 @@ export function notificationVisual(type: NotificationType, colors: Colors): Noti
       };
     case 'message_received':
       return { icon: 'chatbubble-ellipses-outline', ...brand };
+    case 'queue_called':
+      return {
+        icon: 'megaphone-outline',
+        tint: colors.successTint,
+        iconColor: colors.success,
+        showDirections: false,
+      };
     case 'general':
     default:
       return {
