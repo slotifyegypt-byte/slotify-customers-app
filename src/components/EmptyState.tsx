@@ -47,7 +47,9 @@ export function EmptyState({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flexGrow (not flex: 1): fills a full-height screen the same way, but inside a parent sized by its content
+    // (e.g. the Explore results sheet) flex: 1's zero basis collapsed it to its padding, spilling the content out.
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
