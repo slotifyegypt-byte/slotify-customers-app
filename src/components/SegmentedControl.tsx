@@ -47,6 +47,7 @@ export function SegmentedControl<T extends string>({
             ]}
           >
             <ThemedText
+              fit
               variant={selected ? 'captionStrong' : 'caption'}
               color={filled ? 'textOnBrand' : selected ? 'textPrimary' : 'textTertiary'}
               style={styles.label}

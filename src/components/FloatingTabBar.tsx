@@ -140,6 +140,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
               {options.tabBarIcon?.({ focused, color: tint, size: 24 })}
               <Text
                 numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
                 style={[
                   styles.label,
                   {

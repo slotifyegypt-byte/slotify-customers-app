@@ -33,7 +33,7 @@ export function Pill({ label, tone = 'neutral', icon, dot }: PillProps) {
     <View style={[styles.pill, { backgroundColor: colors[t.background] }]}>
       {dot ? <View style={[styles.dot, { backgroundColor: colors[t.text] }]} /> : null}
       {icon ? <Ionicons name={icon} size={12} color={colors[t.text]} /> : null}
-      <ThemedText variant="label" color={t.text}>
+      <ThemedText fit variant="label" color={t.text}>
         {label}
       </ThemedText>
     </View>

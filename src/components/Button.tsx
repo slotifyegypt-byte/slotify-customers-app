@@ -73,6 +73,7 @@ export function Button({
             <Ionicons name={icon} size={size === 'sm' ? 16 : 18} color={colors[textColor]} />
           ) : null}
           <ThemedText
+            fit
             variant="button"
             color={textColor}
             style={size === 'sm' ? styles.smallText : undefined}

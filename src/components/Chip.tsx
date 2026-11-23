@@ -39,6 +39,7 @@ export function Chip({ label, selected = false, onPress, icon }: ChipProps) {
         />
       ) : null}
       <ThemedText
+        fit
         variant="bodyMedium"
         color={selected ? 'textOnBrand' : 'textPrimary'}
         style={styles.label}
