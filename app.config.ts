@@ -20,6 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: DISPLAY_NAME[APP_ENV],
   slug: 'slotify-customers',
+  owner: 'slotify-eg',
   scheme: 'slotify',
   version: '1.0.0',
   orientation: 'portrait',
@@ -145,7 +146,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     eas: {
-      // Created via `eas build` under the @slotify-eg.com account (2026-09-19)
+      // Created via `eas build` under the @slotify-eg.com account (2026-09-19), now owned by the @slotify-eg organization
       // — dynamic app.config.ts can't be auto-written by the EAS CLI, so this
       // is hardcoded rather than read from an env var.
       projectId: 'b2bfa9c0-1b4e-49b6-b691-e4609db0a2cf',
