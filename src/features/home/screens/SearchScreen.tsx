@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Platform, StyleSheet, TextInput, View } from 'react-native';
@@ -35,6 +35,15 @@ export function SearchScreen() {
   const categories = useCategories();
   const categoryNames = useCategoryNames();
 
+  // A category picked on Home before opening search: the search stays inside it until the chip is cleared.
+  const params = useLocalSearchParams<{ category?: string }>();
+  const [categorySlug, setCategorySlug] = useState<string | null>(params.category || null);
+  const category = categorySlug ? categories.data?.find((c) => c.slug === categorySlug) : undefined;
+  const categoryName = category?.name ?? categoryNames.get(categorySlug ?? '') ?? categorySlug ?? '';
+  const placeholder = categorySlug
+    ? t('home.searchPlaceholderCategory', { category: categoryName.toLowerCase() })
+    : t('home.searchPlaceholder');
+
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -63,11 +72,12 @@ export function SearchScreen() {
   const results = useSearchStores(
     {
       q: debouncedQuery,
+      categorySlugs: categorySlug ? [categorySlug] : undefined,
       latitude: location.latitude ?? undefined,
       longitude: location.longitude ?? undefined,
       limit: 20,
     },
-    debouncedQuery.length > 0,
+    debouncedQuery.length > 0 || categorySlug !== null,
   );
 
   const runSearch = (term: string) => {
@@ -76,7 +86,8 @@ export function SearchScreen() {
     recordRecentSearch(term);
   };
 
-  const hasQuery = debouncedQuery.length > 0;
+  // With a category, its venues show straight away; typing narrows them.
+  const hasQuery = debouncedQuery.length > 0 || categorySlug !== null;
 
   const resultsEmpty = results.isLoading ? (
     <VenueListSkeleton count={4} />
@@ -92,7 +103,7 @@ export function SearchScreen() {
     <EmptyState
       icon="search-outline"
       title={t('search.noResults')}
-      body={t('search.noResultsBody', { query: debouncedQuery })}
+      body={t('search.noResultsBody', { query: debouncedQuery || categoryName })}
     />
   );
 
@@ -108,10 +119,10 @@ export function SearchScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder={t('home.searchPlaceholder')}
+            placeholder={placeholder}
             placeholderTextColor={colors.textTertiary}
             selectionColor={colors.brandAccent}
-            accessibilityLabel={t('home.searchPlaceholder')}
+            accessibilityLabel={placeholder}
             style={styles.input}
             autoFocus
             returnKeyType="search"
@@ -143,6 +154,12 @@ export function SearchScreen() {
           </ThemedText>
         </PressableScale>
       </Animated.View>
+
+      {categorySlug ? (
+        <View style={styles.activeCategory}>
+          <Chip label={categoryName} selected icon="close" onPress={() => setCategorySlug(null)} />
+        </View>
+      ) : null}
 
       {!hasQuery ? (
         <Animated.ScrollView
@@ -268,6 +285,7 @@ const createStyles = (colors: Colors) =>
     content: { paddingHorizontal: spacing.gutter, paddingBottom: 120, gap: 28 },
     results: { flexGrow: 1, gap: spacing.sm },
     count: { marginBottom: spacing.xxs },
+    activeCategory: { flexDirection: 'row', paddingHorizontal: spacing.gutter, paddingBottom: spacing.md },
     section: { gap: spacing.sm },
     chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   });

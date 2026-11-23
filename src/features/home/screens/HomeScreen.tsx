@@ -168,7 +168,13 @@ export function HomeScreen() {
 
         <Animated.View entering={enter(1)}>
           <PressableScale
-            onPress={() => router.push('/(tabs)/home/search')}
+            onPress={() =>
+              router.push(
+                selectedCategory
+                  ? `/(tabs)/home/search?category=${encodeURIComponent(selectedCategory.slug)}`
+                  : '/(tabs)/home/search',
+              )
+            }
             accessibilityRole="search"
             accessibilityLabel={searchPlaceholder}
             scaleTo={0.985}

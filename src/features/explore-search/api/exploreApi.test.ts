@@ -127,6 +127,20 @@ describe('search_branches contact fields', () => {
     const { stores } = await searchStores({ q: 'hair' });
     expect(stores[0]).toMatchObject({ phone: null, description: null });
   });
+
+  it('searches within a category when one is given, and leaves an empty query out', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
+    await searchStores({ q: '', categorySlugs: ['nail-salon'] });
+    const args = mockRpc.mock.calls.at(-1)?.[1];
+    expect(args).toMatchObject({ p_category_slugs: ['nail-salon'] });
+    expect(args).not.toHaveProperty('p_query');
+  });
+
+  it('sends no category filter when none is given', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
+    await searchStores({ q: 'hair' });
+    expect(mockRpc.mock.calls.at(-1)?.[1]).not.toHaveProperty('p_category_slugs');
+  });
 });
 
 describe('searchStores', () => {

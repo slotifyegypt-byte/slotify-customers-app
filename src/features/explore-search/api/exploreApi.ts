@@ -44,6 +44,8 @@ export interface SearchParams {
   latitude?: number;
   longitude?: number;
   q?: string;
+  /** Only branches in these categories -> `p_category_slugs`. */
+  categorySlugs?: string[];
   /** Radius in km, as a numeric string -> `p_radius_km`. */
   distance?: string;
   /** Minimum average rating -> `p_min_rating`. */
@@ -65,7 +67,8 @@ export async function searchStores(
   const { data, error } = await supabase.rpc(
     'search_branches',
     definedOnly({
-      p_query: params.q,
+      p_query: params.q || undefined,
+      p_category_slugs: params.categorySlugs?.length ? params.categorySlugs : undefined,
       p_lat: params.latitude,
       p_lng: params.longitude,
       p_radius_km: Number.isFinite(radius) ? radius : undefined,
