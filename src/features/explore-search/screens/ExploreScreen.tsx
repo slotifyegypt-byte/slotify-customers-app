@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Marker, type Region } from 'react-native-maps';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import Supercluster from 'supercluster';
 import type * as SuperclusterNS from 'supercluster';
 
@@ -37,6 +38,7 @@ const DEFAULT_DELTA = 360 / 2 ** DEFAULT_ZOOM;
 // circular pin's radius (selected pins render at size 36) plus a small gap.
 // The pin is center-anchored, so this only needs to clear its top half.
 const CALLOUT_LIFT = 30;
+const RECENTER_SIZE = 46;
 
 function regionToZoom(region: Region) {
   return Math.round(Math.log2(360 / region.longitudeDelta));
@@ -228,8 +230,13 @@ function ExploreMap({
   const colors = useColors();
   const { scheme } = useTheme();
   const styles = createStyles(colors);
-  // The results list is its own sheet (peek or pulled up); a selected pin swaps it for that venue's sheet.
-  const [resultsExpanded, setResultsExpanded] = useState(false);
+  // The results list is a bottom sheet; a selected pin swaps it for that venue's sheet. The recenter button rides on
+  // whichever is showing: the results sheet's top edge as it is dragged, the venue sheet's measured height.
+  const resultsSheetTop = useSharedValue(0);
+  const recenterOnResults = useAnimatedStyle(() => ({
+    top: resultsSheetTop.value - RECENTER_SIZE - spacing.md,
+    opacity: resultsSheetTop.value > 0 ? 1 : 0,
+  }));
   const mapRef = useRef<MapView>(null);
   const [region, setRegion] = useState<Region>(() => ({
     latitude,
@@ -306,6 +313,16 @@ function ExploreMap({
   };
 
   const sheetVisible = !isError;
+  const recenterButton = (
+    <IconButton
+      icon="locate"
+      variant="overlay"
+      size={RECENTER_SIZE}
+      color={colors.brandAccent}
+      accessibilityLabel={t('explore.recenter')}
+      onPress={recenter}
+    />
+  );
 
   return (
     <View style={styles.mapLayer}>
@@ -395,22 +412,16 @@ function ExploreMap({
         </MapView>
       )}
 
-      {sheetVisible ? (
+      {sheetVisible && selectedStore ? (
         <View style={styles.recenterWrap} pointerEvents="box-none">
-          <View style={{ marginBottom: sheetHeight + spacing.md }}>
-            <IconButton
-              icon="locate"
-              variant="overlay"
-              size={46}
-              color={colors.brandAccent}
-              accessibilityLabel={t('explore.recenter')}
-              onPress={recenter}
-            />
-          </View>
+          <View style={{ marginBottom: sheetHeight + spacing.md }}>{recenterButton}</View>
         </View>
       ) : null}
+      {sheetVisible && !selectedStore ? (
+        <Animated.View style={[styles.recenterFloat, recenterOnResults]}>{recenterButton}</Animated.View>
+      ) : null}
 
-      {sheetVisible ? (
+      {sheetVisible && selectedStore ? (
         <View style={styles.sheetPositioner} pointerEvents="box-none">
           {selectedStore ? (
             <SelectedStoreSheet
@@ -422,20 +433,18 @@ function ExploreMap({
               onCollapse={onCollapseSheet}
               onLayout={(e) => onSheetHeightChange(e.nativeEvent.layout.height)}
             />
-          ) : (
-            <ResultsSheet
-              stores={filteredStores}
-              categoryNameBySlug={categoryNameBySlug}
-              isLoading={isLoading}
-              filtersActive={filtersActive}
-              onClearFilters={onClearFilters}
-              expanded={resultsExpanded}
-              onExpand={() => setResultsExpanded(true)}
-              onCollapse={() => setResultsExpanded(false)}
-              onLayout={(e) => onSheetHeightChange(e.nativeEvent.layout.height)}
-            />
-          )}
+          ) : null}
         </View>
+      ) : null}
+      {sheetVisible && !selectedStore ? (
+        <ResultsSheet
+          stores={filteredStores}
+          categoryNameBySlug={categoryNameBySlug}
+          isLoading={isLoading}
+          filtersActive={filtersActive}
+          onClearFilters={onClearFilters}
+          animatedPosition={resultsSheetTop}
+        />
       ) : null}
     </View>
   );
@@ -494,6 +503,7 @@ const createStyles = (colors: Colors) =>
       alignItems: 'flex-end',
       paddingEnd: spacing.gutter,
     },
+    recenterFloat: { position: 'absolute', end: spacing.gutter },
     clusterBadge: {
       width: 44,
       height: 44,
