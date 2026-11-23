@@ -16,6 +16,15 @@ const DISPLAY_NAME: Record<AppEnv, string> = {
   production: 'Slotify',
 };
 
+// Native Google sign-in (src/features/auth/api/googleSignIn.ts). Each build profile has its own iOS client,
+// because an iOS OAuth client is tied to one bundle ID; the web client is shared and is the one Supabase checks.
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+// Google sends the iOS sign-in back to the app on the reversed client ID.
+const GOOGLE_IOS_URL_SCHEME = GOOGLE_IOS_CLIENT_ID
+  ? `com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID.replace('.apps.googleusercontent.com', '')}`
+  : undefined;
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: DISPLAY_NAME[APP_ENV],
@@ -77,6 +86,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-apple-authentication',
+    // Left out until the iOS client ID is set (the plugin refuses to build without its URL scheme); until
+    // then Google sign-in keeps using Supabase's browser flow. Changing this needs a new native build.
+    ...(GOOGLE_IOS_URL_SCHEME
+      ? [['@react-native-google-signin/google-signin', { iosUrlScheme: GOOGLE_IOS_URL_SCHEME }] as [string, unknown]]
+      : []),
     // The camera opens only on Profile → Loyalty cards → Add card, to scan a business's loyalty QR. It takes no photos and keeps no images.
     ['expo-camera', { cameraPermission: 'Slotify uses your camera to scan a loyalty QR code.', microphonePermission: false, recordAudioAndroid: false }],
     // Without this the layout stays left-to-right even when the phone itself is set to Arabic (only the in-app
@@ -145,6 +159,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     appEnv: APP_ENV,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    googleWebClientId: GOOGLE_WEB_CLIENT_ID,
+    googleIosClientId: GOOGLE_IOS_CLIENT_ID,
     eas: {
       // Created via `eas build` under the @slotify-eg.com account (2026-09-19), now owned by the @slotify-eg organization
       // — dynamic app.config.ts can't be auto-written by the EAS CLI, so this

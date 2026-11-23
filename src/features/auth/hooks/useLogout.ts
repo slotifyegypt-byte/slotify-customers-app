@@ -5,6 +5,8 @@ import { unregisterPush } from '@/features/notifications/push';
 import { useHiddenContentStore } from '@/features/support/store/hiddenContentStore';
 import { supabase } from '@/lib/supabase';
 
+import { signOutOfGoogle } from '../api/googleSignIn';
+
 export function useLogout() {
   const queryClient = useQueryClient();
 
@@ -21,6 +23,8 @@ export function useLogout() {
     // receiving the previous user's rows. Awaited, but never allowed to block
     // the cache clear: the local session is already gone at this point.
     await supabase.removeAllChannels().catch(() => undefined);
+    // So the next "Continue with Google" offers the account picker rather than reusing this account.
+    await signOutOfGoogle().catch(() => undefined);
     queryClient.clear(); // drop every cached server response — next sign-in starts clean
     // Reports are per customer: the next person to sign in on this phone must not inherit what this one hid.
     useHiddenContentStore.getState().clear();
