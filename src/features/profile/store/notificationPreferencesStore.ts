@@ -29,7 +29,7 @@ export const useNotificationPreferencesStore = create<NotificationPreferencesSta
   persist(
     (set) => ({
       bookingReminders: true,
-      promotions: false,
+      promotions: true,
       orderUpdates: true,
       chatMessages: true,
       setPreference: (key, value) =>
