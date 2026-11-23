@@ -22,8 +22,8 @@ import { enter, spacing } from '@/theme';
 import { SettingsGroup } from '../components/SettingsGroup';
 
 // customer-app-api-map.md §11 — Call Support is real (device dialer).
-const SUPPORT_PHONE_DISPLAY = '+20 10 023 4567';
-const SUPPORT_PHONE_TEL = 'tel:+20100234567';
+const SUPPORT_PHONE_DISPLAY = '+20 114 125 5695';
+const SUPPORT_PHONE_TEL = 'tel:+201141255695';
 
 export function ContactUsScreen() {
   const { t } = useTranslation();
