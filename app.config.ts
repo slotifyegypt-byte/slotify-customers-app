@@ -64,7 +64,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: `com.slotify.customers${ENV_SUFFIX[APP_ENV]}`,
+    // Google Play already has com.slotify.customers registered elsewhere, and Play never frees a package name, so the
+    // store app is com.slotify.customer. The internal dev and staging APKs keep their names (and their Google sign-in clients).
+    package: APP_ENV === 'production' ? 'com.slotify.customer' : `com.slotify.customers${ENV_SUFFIX[APP_ENV]}`,
     adaptiveIcon: {
       backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/android-icon-foreground.png',
